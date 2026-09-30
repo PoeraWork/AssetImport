@@ -7,6 +7,26 @@ internal static class CompiledPluginContract
 {
     private const string MaterialEditorGuid = "com.deathweasel.bepinex.materialeditor";
 
+    internal static void ValidateLegacyFrameworkReferences(MetadataAssembly plugin)
+    {
+        var reader = plugin.Reader;
+        var core = reader.AssemblyReferences.Select(reader.GetAssemblyReference)
+            .Single(reference => reader.GetString(reference.Name) == "mscorlib");
+        Require(core.Version == new Version(2, 0, 0, 0), "KK must target the CLR 2 core library.");
+        foreach (var handle in reader.TypeReferences)
+        {
+            string name = plugin.Names.GetTypeFromReference(reader, handle, 0);
+            // Desktop net35 has this type, but the reported KK Unity/Mono profile
+            // cannot load it. Its presence in an untaken validation branch can
+            // prevent the entire transform method from being JIT-compiled.
+            Require(name != "System.IO.InvalidDataException",
+                "KK references System.IO.InvalidDataException, which fails to load in the reported Unity 5.6 runtime.");
+            if (name == "System.ArgumentException")
+                Require(ReferenceAssembly(reader, handle) == "mscorlib", "Use the CLR 2 core ArgumentException.");
+        }
+        Console.WriteLine("  KK CLR 2 contract: no unavailable InvalidDataException reference");
+    }
+
     internal static void Validate(MetadataAssembly plugin, MetadataAssembly target, MetadataAssembly baseline, string minimum)
     {
         var source = plugin.Reader;

@@ -27,7 +27,7 @@
       "textures": [
         "checker.png"
       ],
-      "elapsed_seconds": 0.119
+      "elapsed_seconds": 0.138
     },
     {
       "id": "fbx-ascii",
@@ -48,7 +48,7 @@
       "textures": [
         "checker.png"
       ],
-      "elapsed_seconds": 0.111
+      "elapsed_seconds": 0.119
     },
     {
       "id": "fbx-binary",
@@ -69,7 +69,7 @@
       "textures": [
         "checker.png"
       ],
-      "elapsed_seconds": 0.109
+      "elapsed_seconds": 0.119
     },
     {
       "id": "dae",
@@ -90,7 +90,7 @@
       "textures": [
         "checker.png"
       ],
-      "elapsed_seconds": 0.111
+      "elapsed_seconds": 0.121
     },
     {
       "id": "gltf",
@@ -111,7 +111,7 @@
       "textures": [
         "checker.png"
       ],
-      "elapsed_seconds": 0.11
+      "elapsed_seconds": 0.121
     },
     {
       "id": "3ds",
@@ -132,7 +132,7 @@
       "textures": [
         "checker.png"
       ],
-      "elapsed_seconds": 0.114
+      "elapsed_seconds": 0.127
     },
     {
       "id": "ply",
@@ -151,7 +151,7 @@
       ],
       "model_pixels": 226631,
       "textures": [],
-      "elapsed_seconds": 0.034
+      "elapsed_seconds": 0.037
     },
     {
       "id": "stl",
@@ -170,7 +170,7 @@
       ],
       "model_pixels": 226631,
       "textures": [],
-      "elapsed_seconds": 0.082
+      "elapsed_seconds": 0.086
     },
     {
       "id": "ase",
@@ -189,7 +189,7 @@
       ],
       "model_pixels": 173787,
       "textures": [],
-      "elapsed_seconds": 0.058
+      "elapsed_seconds": 0.06
     },
     {
       "id": "ifc",
@@ -208,7 +208,7 @@
       ],
       "model_pixels": 267962,
       "textures": [],
-      "elapsed_seconds": 0.995
+      "elapsed_seconds": 1.015
     },
     {
       "id": "xgl",
@@ -227,7 +227,7 @@
       ],
       "model_pixels": 217924,
       "textures": [],
-      "elapsed_seconds": 0.069
+      "elapsed_seconds": 0.072
     },
     {
       "id": "dxf",
@@ -265,7 +265,7 @@
       ],
       "model_pixels": 287356,
       "textures": [],
-      "elapsed_seconds": 0.092
+      "elapsed_seconds": 0.096
     },
     {
       "id": "lws",
@@ -284,7 +284,7 @@
       ],
       "model_pixels": 299132,
       "textures": [],
-      "elapsed_seconds": 0.101
+      "elapsed_seconds": 0.1
     },
     {
       "id": "lxo",
@@ -303,7 +303,7 @@
       ],
       "model_pixels": 265704,
       "textures": [],
-      "elapsed_seconds": 0.125
+      "elapsed_seconds": 0.126
     },
     {
       "id": "x",
@@ -343,7 +343,7 @@
       "textures": [
         "earthSpherical.jpg"
       ],
-      "elapsed_seconds": 1.019
+      "elapsed_seconds": 1.032
     },
     {
       "id": "ms3d",
@@ -362,7 +362,7 @@
       ],
       "model_pixels": 259093,
       "textures": [],
-      "elapsed_seconds": 0.096
+      "elapsed_seconds": 0.097
     },
     {
       "id": "smd",
@@ -383,7 +383,7 @@
       "textures": [
         "checker.png"
       ],
-      "elapsed_seconds": 0.055
+      "elapsed_seconds": 0.056
     }
   ]
 }

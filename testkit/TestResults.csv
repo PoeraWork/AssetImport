@@ -12,7 +12,7 @@
 ,,4.0.3,,Studio,xgl,XGL,Models/Rare/xgl/sample_official.xgl,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,两个错位的绿色方块。
 ,,4.0.3,,Studio,dxf,DXF,Models/Rare/dxf/cube.dxf,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个无贴图的立方体。
 ,,4.0.3,,Studio,lwo,LWO,Models/Rare/lwo/simple_cube.lwo,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个无外置贴图的立方体。
-,,4.0.3,,Studio,lws,LWS,Models/Rare/lws/move_x.lws,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,已知限制（AssetImport 4.1.2）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
+,,4.0.3,,Studio,lws,LWS,Models/Rare/lws/move_x.lws,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,已知限制（AssetImport 4.1.3）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
 ,,4.0.3,,Studio,lxo,LXO,Models/Rare/lxo/sphereWithVertMap.lxo,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个带顶点映射的球体。
 ,,4.0.3,,Studio,x,X,Models/Rare/x/test_cube_text.x,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个立方体。
 ,,4.0.3,,Studio,ac,AC,Models/Rare/ac/SphereWithLight.ac,10,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,,一个带多色经纬 UV 测试贴图的细分球体；源文件灯光不代表游戏中新建灯光。
@@ -31,7 +31,7 @@
 ,,4.0.3,,Maker,xgl,XGL,Models/Rare/xgl/sample_official.xgl,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,两个错位的绿色方块。
 ,,4.0.3,,Maker,dxf,DXF,Models/Rare/dxf/cube.dxf,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个无贴图的立方体。
 ,,4.0.3,,Maker,lwo,LWO,Models/Rare/lwo/simple_cube.lwo,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个无外置贴图的立方体。
-,,4.0.3,,Maker,lws,LWS,Models/Rare/lws/move_x.lws,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,已知限制（AssetImport 4.1.2）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
+,,4.0.3,,Maker,lws,LWS,Models/Rare/lws/move_x.lws,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,已知限制（AssetImport 4.1.3）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
 ,,4.0.3,,Maker,lxo,LXO,Models/Rare/lxo/sphereWithVertMap.lxo,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个带顶点映射的球体。
 ,,4.0.3,,Maker,x,X,Models/Rare/x/test_cube_text.x,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个立方体。
 ,,4.0.3,,Maker,ac,AC,Models/Rare/ac/SphereWithLight.ac,按 Studio 比例再缩小 10 倍,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,,一个带多色经纬 UV 测试贴图的细分球体；源文件灯光不代表游戏中新建灯光。
@@ -50,7 +50,7 @@
 ,,5.0,,Studio,xgl,XGL,Models/Rare/xgl/sample_official.xgl,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,两个错位的绿色方块。
 ,,5.0,,Studio,dxf,DXF,Models/Rare/dxf/cube.dxf,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个无贴图的立方体。
 ,,5.0,,Studio,lwo,LWO,Models/Rare/lwo/simple_cube.lwo,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个无外置贴图的立方体。
-,,5.0,,Studio,lws,LWS,Models/Rare/lws/move_x.lws,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,已知限制（AssetImport 4.1.2）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
+,,5.0,,Studio,lws,LWS,Models/Rare/lws/move_x.lws,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,已知限制（AssetImport 4.1.3）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
 ,,5.0,,Studio,lxo,LXO,Models/Rare/lxo/sphereWithVertMap.lxo,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个带顶点映射的球体。
 ,,5.0,,Studio,x,X,Models/Rare/x/test_cube_text.x,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个立方体。
 ,,5.0,,Studio,ac,AC,Models/Rare/ac/SphereWithLight.ac,10,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,,一个带多色经纬 UV 测试贴图的细分球体；源文件灯光不代表游戏中新建灯光。
@@ -69,7 +69,7 @@
 ,,5.0,,Maker,xgl,XGL,Models/Rare/xgl/sample_official.xgl,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,两个错位的绿色方块。
 ,,5.0,,Maker,dxf,DXF,Models/Rare/dxf/cube.dxf,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个无贴图的立方体。
 ,,5.0,,Maker,lwo,LWO,Models/Rare/lwo/simple_cube.lwo,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个无外置贴图的立方体。
-,,5.0,,Maker,lws,LWS,Models/Rare/lws/move_x.lws,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,已知限制（AssetImport 4.1.2）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
+,,5.0,,Maker,lws,LWS,Models/Rare/lws/move_x.lws,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,已知限制（AssetImport 4.1.3）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
 ,,5.0,,Maker,lxo,LXO,Models/Rare/lxo/sphereWithVertMap.lxo,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个带顶点映射的球体。
 ,,5.0,,Maker,x,X,Models/Rare/x/test_cube_text.x,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个立方体。
 ,,5.0,,Maker,ac,AC,Models/Rare/ac/SphereWithLight.ac,按 Studio 比例再缩小 10 倍,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,,一个带多色经纬 UV 测试贴图的细分球体；源文件灯光不代表游戏中新建灯光。

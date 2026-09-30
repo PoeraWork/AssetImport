@@ -1,10 +1,10 @@
-KK AssetImport 4.1.2 · ME 4.0.3 / 5.0 一次性测试包
+KK AssetImport 4.1.3 · ME 4.0.3 / 5.0 一次性测试包
 
 先把整个 ZIP 解压到普通文件夹，再双击 index.html。所有说明和参考图都可离线查看。
 不要把整个测试包复制进游戏，只安装下面选中的一套 Installers 压缩包。
 
-1. Installers/KK_AssetImport4.1.2_ME403_Packed.zip：AssetImport 4.1.2 + 官方 ME 4.0.3。
-   Installers/KK_AssetImport4.1.2_ME500_Packed.zip：AssetImport 4.1.2 + 官方 ME 5.0。
+1. Installers/KK_AssetImport4.1.3_ME403_Packed.zip：AssetImport 4.1.3 + 官方 ME 4.0.3。
+   Installers/KK_AssetImport4.1.3_ME500_Packed.zip：AssetImport 4.1.3 + 官方 ME 5.0。
    两套任选一套先测；它们使用同一个 AssetImport DLL，只切换 ME。
    先退出游戏、备份并移走旧版重复 DLL，再将其中 BepInEx、runtimes 合并到游戏根目录。
    每套包内有安装说明和完整 ME 小包；不要同时安装两版 ME。
@@ -25,7 +25,7 @@ KK AssetImport 4.1.2 · ME 4.0.3 / 5.0 一次性测试包
 5. 出错先截图并收集日志，再换环境/重新启动。
    双击 Collect-Logs.cmd，输入游戏根目录，得到 CollectedLogs 下的 ZIP。
    手动回传：日志ZIP + 填好的CSV + 截图 + 模型预检Reports对应文件夹。
-   常见日志：游戏目录/BepInEx/LogOutput.log；更多位置见 LOGS-AND-ERRORS.zh-CN.txt。
+   常见日志：游戏目录/BepInEx/LogOutput.log 或游戏目录/output_log.txt；更多位置见 LOGS-AND-ERRORS.zh-CN.txt。
 
 两轮尽量保持其他插件、模型、导入选项不变。每次换 ME 前退出游戏，收集本轮日志。
 这是预览测试包；本机仅完成 macOS 原生解析/离线参考和脚本检查，Windows 游戏测试待回传。

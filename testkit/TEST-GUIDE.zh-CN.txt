@@ -1,8 +1,8 @@
-﻿KK AssetImport 4.1.2 双 MaterialEditor 环境测试指南
+﻿KK AssetImport 4.1.3 双 MaterialEditor 环境测试指南
 
 一、先选一套环境
 
-两套包都使用相同的 KK_AssetImport 4.1.2；分别搭配 ME 4.0.3 和 5.0。先测一套，结束并收集日志后再换另一套。建议先测 4.0.3 作为比较基线。
+两套包都使用相同的 KK_AssetImport 4.1.3；分别搭配 ME 4.0.3 和 5.0。先测一套，结束并收集日志后再换另一套。建议先测 4.0.3 作为比较基线。
 
 1. 完全退出 Koikatu 和 CharaStudio。备份当前插件、相关配置和用于测试的卡片/场景；优先在游戏副本中测试。
 2. 按测试包顶层安装说明安装选中的一个环境，保留包内完整目录结构。两个 ME 环境不能同时复制进游戏；仅把 DLL 改名仍可能重复加载。旧版 ME/AssetImport 如需移出，请放在游戏 BepInEx/plugins 目录以外的备份位置。
@@ -14,7 +14,7 @@
 
 可先双击测试包根目录 Check-Models.cmd。它需要 Windows 64 位和 .NET Framework 4.6.2 或更新版，用同款 AssimpNet/原生库检查 19 个样例，并分别比较直接文件导入与模拟插件 IO 路径。报告写入 Reports/ModelCheck_时间戳/ 下的 CSV、LOG、JSON。它不加载 MaterialEditor 或 Unity，所以预检通过不等于游戏内通过。预检失败也请保存报告；游戏内测试仍按对应条目记录。
 
-LWS 当前是已确认的已知限制，不是预期能成功的普通样例。AssetImport 4.1.2 的内存导入路径没有缓存 LWS 引用的 LWO；即使旁边保留 simple_cube.lwo，插件路径仍可能丢失关联。Assimp 会返回 SceneFlags.Incomplete 并生成 SkeletonMaterial 占位骨架（该例 108 顶点/36 三角形/4 骨骼），而真实目标是立方体（文件模式 24 顶点/12 三角形/0 骨骼）。预检应显示 FAIL（id=lws，mode=plugin-io），不能将“有几何返回”、占位骨架或文件模式成功填写为插件导入通过。未运行的结果仍填“未测”，实际遇到该现象填“失败/已知限制”并附报告。可直接导入配套 LWO 示例，单独验证立方体本体；这不算修复或通过 LWS。
+LWS 当前是已确认的已知限制，不是预期能成功的普通样例。AssetImport 4.1.3 的内存导入路径没有缓存 LWS 引用的 LWO；即使旁边保留 simple_cube.lwo，插件路径仍可能丢失关联。Assimp 会返回 SceneFlags.Incomplete 并生成 SkeletonMaterial 占位骨架（该例 108 顶点/36 三角形/4 骨骼），而真实目标是立方体（文件模式 24 顶点/12 三角形/0 骨骼）。预检应显示 FAIL（id=lws，mode=plugin-io），不能将“有几何返回”、占位骨架或文件模式成功填写为插件导入通过。未运行的结果仍填“未测”，实际遇到该现象填“失败/已知限制”并附报告。可直接导入配套 LWO 示例，单独验证立方体本体；这不算修复或通过 LWS。
 
 先从 OBJ / FBX / DAE / glTF 等常见样例各跑一例，再完成清单中其余格式。FBX ASCII 和二进制是两个独立测试。不要只移动入口模型文件；同目录的 MTL、PNG、BIN、配套 LWO/SMD 等文件须一起保留。导入文件以最终 demo 清单的 entry 为准，不要误选配套文件。
 
@@ -45,7 +45,7 @@ TestResults.csv 按 ME 环境、Studio/Maker 和入口文件预填。结果列�
 
 五、出错后立即保留日志
 
-不要先重启。KK 主程序与 Studio 可能写入同一份 BepInEx/LogOutput.log；启动下一个程序也可能覆盖上一轮。先截图、记录发生时间；可正常退出则退出，再运行收集脚本。卡死时可在游戏仍运行时收集，但日志快照可能不完整。
+不要先重启。KK 主程序与 Studio 可能写入同一份 BepInEx/LogOutput.log 或游戏根目录 output_log.txt；启动下一个程序也可能覆盖上一轮。先截图、记录发生时间；可正常退出则退出，再运行收集脚本。卡死时可在游戏仍运行时收集，但日志快照可能不完整。
 
 最简单：双击 Collect-Logs.cmd，按提示输入含 Koikatu.exe / CharaStudio.exe 的游戏根目录（不要输入 plugins 目录）。也可把游戏文件夹拖到该 CMD。
 

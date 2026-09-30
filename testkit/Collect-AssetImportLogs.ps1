@@ -63,6 +63,7 @@ function Copy-AllowlistedFile([string]$RelativePath) {
 
 @(
     'BepInEx\LogOutput.log',
+    'output_log.txt',
     'Koikatu_Data\output_log.txt',
     'CharaStudio_Data\output_log.txt',
     'BepInEx\config\org.njaecha.plugins.assetimport.cfg'
@@ -120,7 +121,7 @@ foreach ($item in @($managed | Where-Object { $_.AssemblyName -match '^KKS' })) 
 $activeGames = @(Get-Process -Name 'Koikatu', 'CharaStudio' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ProcessName -Unique)
 if ($activeGames.Count -gt 0) { $warnings.Add('游戏仍在运行，日志可能继续变化：' + ($activeGames -join ', ') + '。请在本次出错后、再次启动游戏前收集。脚本不会关闭游戏。') }
 if (-not (Test-Path -LiteralPath (Join-Path $root 'BepInEx\LogOutput.log') -PathType Leaf)) {
-    $warnings.Add('缺少 BepInEx/LogOutput.log：可能尚未启动成功、磁盘日志被禁用，或传入目录不正确。脚本不会修改日志配置。')
+    $warnings.Add('缺少 BepInEx/LogOutput.log：可查看已收集的根目录 output_log.txt 或 *_Data/output_log.txt；主日志缺失本身不代表插件失败。脚本不会修改日志配置。')
 }
 
 $inventory | Sort-Object Path | Export-Csv -LiteralPath (Join-Path $bundle 'PluginInventory.csv') -NoTypeInformation -Encoding UTF8

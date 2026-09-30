@@ -6,6 +6,9 @@ BepInEx\LogOutput.log
   首选日志。查看启动时 AssetImport、MaterialEditor 的加载版本和依赖失败，然后查看出错时间前后的异常及调用栈。BepInEx 官方说明首次正常运行会生成此文件：
   https://docs.bepinex.dev/articles/user_guide/installation/index.html
 
+output_log.txt
+  某些整合环境把 Unity 日志放在游戏根目录；用户本次日志也包含 BepInEx 与 AssetImport 错误，没有 BepInEx/LogOutput.log 时可直接提供此文件。
+
 Koikatu_Data\output_log.txt
 CharaStudio_Data\output_log.txt
   Unity 5 Windows Player 的常见日志位置，仅在文件存在时复制。Unity 文档给出的默认模式是 <EXECNAME>_Data/output_log.txt；实际路径可受启动方式、权限或参数影响。本脚本不遍历 AppData 寻找其他日志。
@@ -18,7 +21,7 @@ BepInEx\config\org.njaecha.plugins.assetimport.cfg
 
 • PluginInventory.csv：BepInEx/plugins 下 DLL 的相对路径、程序集/文件版本；相关组件的 SHA-256。另记录 BepInEx/0Harmony、游戏 EXE 及包内 Assimp 原生库元数据，不复制这些程序文件。
 • Environment.txt：采集时间、时区、Windows/PowerShell 位数、检测到的 ME/AssetImport 版本、游戏进程名；不主动读取 Windows 用户名/电脑名。插件版本来自磁盘元数据，不表示该插件已经成功载入。
-• CollectedFiles.csv：四个允许复制的文件是否存在/成功、大小和源修改时间。
+• CollectedFiles.csv：五个允许复制的文件是否存在/成功、大小和源修改时间。
 • Warnings.txt：重复程序集、错放 KKS、缺失 ME/AssetImport 等提示。脚本不自动卸载或移动任何文件。
 
 常见现象与下一步
@@ -57,6 +60,9 @@ BepInEx\config\org.njaecha.plugins.assetimport.cfg
    在表中分开标记首次导入、角色卡、服装卡、场景以及重启后的结果。收集失败当次日志，注明源文件还在不在、是同版本重载还是跨 ME 版本重载。不要覆盖唯一原始卡片。
 
 12. LWS 预检 FAIL（id=lws，mode=plugin-io），或出现 SkeletonMaterial 骨架形状
-   这是 AssetImport 4.1.2 已确认的 LWS 关联 LWO 文件缓存限制：内存模式丢失引用后，Assimp 返回 SceneFlags.Incomplete 和占位骨架；真实目标应是立方体。不能因返回了网格就标成功。保留 FAIL（id=lws，mode=plugin-io） 报告，填写已知限制；可用配套 LWO 的直接导入另测本体。
+   这是 AssetImport 4.1.3 已确认的 LWS 关联 LWO 文件缓存限制：内存模式丢失引用后，Assimp 返回 SceneFlags.Incomplete 和占位骨架；真实目标应是立方体。不能因返回了网格就标成功。保留 FAIL（id=lws，mode=plugin-io） 报告，填写已知限制；可用配套 LWO 的直接导入另测本体。
 
 回传前可删除或打码原始日志中的个人路径/名称。不要只截最后一行异常：首条相关错误和完整调用栈通常更有价值。脚本生成的本地 ZIP 不会自动发送。
+
+13. TypeLoadException: Could not load type System.IO.InvalidDataException
+   4.1.1 用户日志已确认节点转换阶段触发此错误，4.1.2 也包含该引用。4.1.3 移除该不兼容类型引用；请确认启动日志实际显示 KK_AssetImport 4.1.3，再复测。此错误不代表 FBX 顶点/UV 无法解析。

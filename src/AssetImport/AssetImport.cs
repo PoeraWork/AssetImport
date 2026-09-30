@@ -30,7 +30,7 @@ namespace AssetImport
         internal const string MinimumMaterialEditorVersion = "3.13.5";
 #endif
         public const string GUID = "org.njaecha.plugins.assetimport";
-        public const string Version = "4.1.2";
+        public const string Version = "4.1.3";
 
         internal new static ManualLogSource Logger;
         internal static AssetSceneController asc;

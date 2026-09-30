@@ -33,3 +33,14 @@ Windows KK/KKS 游戏运行、实际 Unity 渲染、完整 Harmony 安装、卡�
 - 扩展兼容检查读取真实编译产物：KK 的 MaterialEditor AssemblyRef 为 `4.0.3.0`，依赖属性为 `4.0.3`。对 4.0.3、5.0、KKS 3.13.5 均验证了 3 个类型引用、2 个纹理导入方法的完整签名和可见性，以及内联枚举值。
 - 三版本的真实 `LoadData` 状态机分别为 `<LoadData>d__35`、`<LoadData>d__146`、`<LoadData>d__30`；各 5 个隔离执行用例、Hook 目标签名及未知布局回退均通过。测试构建与运行无警告。
 - 安装说明与清单最低要求同步为 4.0.3；继续使用原项目式 Packed 目录。上述验证不运行 Windows 游戏，也不覆盖实际 Mono 程序集绑定、Unity 渲染或卡片/场景保存恢复，实机测试仍待执行。
+
+## 4.1.3：用户 FBX 日志对应的节点转换修复
+
+日期：2026-10-01（Asia/Shanghai）。用户提供游戏根目录 `output_log.txt`，实际加载 KK_AssetImport 4.1.1、ME 5.0、Unity 5.6.2、Windows x64。ASCII 与 binary 房屋 demo 都已完成 Walls/Roof/Chimney 的顶点、法线、三角面和 UV 转换，随后在 `ConvertTransform → BuildFromNode` 报 `TypeLoadException: Could not load type 'System.IO.InvalidDataException' from assembly 'KK_AssetImport'`。这是异常类型加载失败，不能解释为模型数据触发了普通的无效数据异常，也不是“FBX 完全没有解析”。完整用户日志不纳入仓库或发行包。
+
+- 将几何 helper 的两个 `InvalidDataException` 引用替换为 CLR 2 核心库的 `ArgumentException`，保留非法变换与 BlendShape 数据校验，不改网格算法或 ME 接口。
+- 新增针对编译 DLL 的回归：4.1.2 产物先因该类型引用而失败；4.1.3 编译后通过，并确认 KK 的 mscorlib 为 2.0。此检查针对已报告的问题，不宣称覆盖全部 Unity API。
+- KK net35 / KKS net462 编译通过，保留两条既有文件对话框弃用警告；几何回归 292,799 个断言通过；KK ME 4.0.3 / 5.0 和 KKS 3.13.5 的 API / Hook 隔离回归通过。
+- 日志收集器额外允许复制游戏根目录 `output_log.txt`，白名单从四项增至五项。在 macOS PowerShell 7.6.6 合成目录实际运行并检查：缺少 BepInEx 主日志时仍复制根目录日志，记录插件 4.1.3；不采集无关配置和卡片。Windows PowerShell 5.1 尚未实机运行。
+- 提供完整 Packed 包与面向已有 4.1.1 / 4.1.2 安装的 DLL 小更新包；后者保留原 AssimpNet、LitJSON、原生库和 ME。相同 demo 可继续复测，无需再次下载素材。
+- 这是针对已捕获错误的代码修复；尚无 4.1.3 游戏成功截图或保存重载验证，不将编译和纯托管测试当作实机通过。LWS 缓存限制与原 zipmod 服装卡白模问题未在本次修复。

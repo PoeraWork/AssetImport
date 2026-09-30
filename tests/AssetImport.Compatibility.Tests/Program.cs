@@ -45,6 +45,7 @@ internal static class Program
         Assert(me.Reader.GetAssemblyDefinition().Version == expectedVersion, game + ": exact pinned MaterialEditor fixture " + expectedVersion);
         using var baseline = new MetadataAssembly(Path.Combine(fixtures, "MaterialEditor.dll"));
         using var plugin = new MetadataAssembly(Path.Combine(fixtures, "AssetImport.dll"));
+        if (game == "KK") CompiledPluginContract.ValidateLegacyFrameworkReferences(plugin);
         CompiledPluginContract.Validate(plugin, me, baseline, minimumVersion);
         var fourArgs = Enumerable.Repeat("System.Boolean", 4).ToArray();
         var loadData = me.RequireMethod(ControllerName, "LoadData", fourArgs);
