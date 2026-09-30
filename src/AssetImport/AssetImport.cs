@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using ADV.Commands.Base;
+using System;
+using System.IO;
 using UnityEngine;
 using BepInEx;
 using BepInEx.Logging;
@@ -20,9 +21,13 @@ namespace AssetImport
     [BepInDependency("LoadFileLmitedFix")]
     public class AssetImport : BaseUnityPlugin
     {
+#if KK
+        public const string PluginName = "KK_AssetImport";
+#else
         public const string PluginName = "KKS_AssetImport";
+#endif
         public const string GUID = "org.njaecha.plugins.assetimport";
-        public const string Version = "4.0.1";
+        public const string Version = "4.1.0";
 
         internal new static ManualLogSource Logger;
         internal static AssetSceneController asc;
@@ -37,15 +42,44 @@ namespace AssetImport
         // current import
         internal static LoadProcess currentLoadProcess;
 
+#if !KK
         internal static ComputeShader vertexDeltaComputeShader;
+#endif
 
         void Awake()
         {
             Logger = base.Logger;
+#if KK
+            // Use the matching Assimp 5 library, isolated from the game's other importers.
+            string nativePath = Path.Combine(Path.GetDirectoryName(Info.Location),
+                "runtimes/win-x64/native/assimp.dll");
+            if (IntPtr.Size != 8 || !File.Exists(nativePath))
+            {
+                Logger.LogError("KK AssetImport requires the full Windows x64 package. Missing native library: " + nativePath);
+                enabled = false;
+                return;
+            }
+            try
+            {
+                var library = Assimp.Unmanaged.AssimpLibrary.Instance;
+                if (library.IsLibraryLoaded && !string.Equals(Path.GetFullPath(library.LibraryPath),
+                    Path.GetFullPath(nativePath), StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Another plugin has already loaded AssimpNet from " +
+                        library.LibraryPath + ". Restart with only one AssimpNet importer enabled.");
+                if (!library.LoadLibrary(nativePath))
+                    throw new InvalidOperationException("Assimp returned an unsuccessful library load.");
+            }
+            catch (Exception exception)
+            {
+                Logger.LogError("Could not load the bundled Assimp 5 library: " + exception);
+                enabled = false;
+                return;
+            }
+#endif
             
             KeyboardShortcut defaultShortcut = new KeyboardShortcut(KeyCode.I, KeyCode.LeftAlt);
             hotkey = Config.Bind("_General_", "Hotkey", defaultShortcut, "Press this key to open the UI");
-            defaultDir = Config.Bind("_General_", "Default Directory", "C:", "The default directory of the file dialogue.");
+            defaultDir = Config.Bind("_General_", "Default Directory", Paths.GameRootPath, "The default directory of the file dialogue.");
             dumpAssets = Config.Bind("Backend", "Dump Assets", false, "Dumps assets to /UserData/AssetImport/ when loading a card with assets.");
 
             UI = this.GetOrAddComponent<AssetUI>();
@@ -62,12 +96,14 @@ namespace AssetImport
 
             instance = this;
             
-            // load assets
+#if !KK
+            // KK uses CPU deltas; Unity 5.6 cannot load this 2019 bundle.
             byte[] data = ResourceUtils.GetEmbeddedResource("assetimport-resources");
             AssetBundle bundle = AssetBundle.LoadFromMemory(data);
             // vertexDelta ComputeShader
             ComputeShader vertexDelta = bundle.LoadAsset<ComputeShader>("VertexDelta");
             vertexDeltaComputeShader = vertexDelta;
+#endif
         }
 
         private void AccessoryTransferred(object sender, KKAPI.Maker.AccessoryTransferEventArgs e)
