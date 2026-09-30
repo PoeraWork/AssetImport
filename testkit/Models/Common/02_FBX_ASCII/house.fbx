@@ -1,0 +1,223 @@
+; FBX 7.4.0 project file
+; Original geometry generated for AssetImport tests
+FBXHeaderExtension:  {
+  FBXHeaderVersion: 1003
+  FBXVersion: 7400
+  Creator: "PoeraWork demo generator"
+}
+GlobalSettings:  {
+  Version: 1000
+  Properties70:  {
+    P: "UpAxis", "int", "Integer", "",1
+    P: "UpAxisSign", "int", "Integer", "",1
+    P: "FrontAxis", "int", "Integer", "",2
+    P: "FrontAxisSign", "int", "Integer", "",-1
+    P: "CoordAxis", "int", "Integer", "",0
+    P: "CoordAxisSign", "int", "Integer", "",1
+    P: "UnitScaleFactor", "double", "Number", "",100
+  }
+}
+Documents:  {
+ Count: 1
+ Document: 1, "Scene", "Scene" {
+  RootNode: 0
+ }
+}
+Definitions:  {
+ Version: 100
+ Count: 11
+ ObjectType: "Geometry" { Count: 3 }
+ ObjectType: "Model" { Count: 3 }
+ ObjectType: "Material" { Count: 3 }
+ ObjectType: "Texture" { Count: 1 }
+ ObjectType: "Video" { Count: 1 }
+}
+Objects:  {
+ Geometry: 100, "Geometry::Walls", "Mesh" {
+  Vertices: *72 { a: -1,0,0.7,1,0,0.7,1,1.2,0.7,-1,1.2,0.7,1,0,-0.7,-1,0,-0.7,-1,1.2,-0.7,1,1.2,-0.7,-1,0,-0.7,-1,0,0.7,-1,1.2,0.7,-1,1.2,-0.7,1,0,0.7,1,0,-0.7,1,1.2,-0.7,1,1.2,0.7,-1,1.2,0.7,1,1.2,0.7,1,1.2,-0.7,-1,1.2,-0.7,-1,0,-0.7,1,0,-0.7,1,0,0.7,-1,0,0.7 }
+  PolygonVertexIndex: *36 { a: 0,1,-3,0,2,-4,4,5,-7,4,6,-8,8,9,-11,8,10,-12,12,13,-15,12,14,-16,16,17,-19,16,18,-20,20,21,-23,20,22,-24 }
+  GeometryVersion: 124
+  LayerElementNormal: 0 {
+   Version: 101
+   Name: ""
+   MappingInformationType: "ByVertice"
+   ReferenceInformationType: "Direct"
+   Normals: *72 { a: 0,0,1,0,0,1,0,0,1,0,0,1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,-1,0,0,-1,0,0,-1,0,0,-1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,-0,1,0,-0,1,0,-0,1,0,-0,1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,0 }
+  }
+  LayerElementUV: 0 {
+   Version: 101
+   Name: "UVMap"
+   MappingInformationType: "ByVertice"
+   ReferenceInformationType: "Direct"
+   UV: *48 { a: 0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1 }
+  }
+  LayerElementMaterial: 0 {
+   Version: 101
+   Name: ""
+   MappingInformationType: "AllSame"
+   ReferenceInformationType: "IndexToDirect"
+   Materials: *1 { a: 0 }
+  }
+  Layer: 0 {
+   Version: 100
+   LayerElement: { Type: "LayerElementNormal" TypedIndex: 0 }
+   LayerElement: { Type: "LayerElementMaterial" TypedIndex: 0 }
+   LayerElement: { Type: "LayerElementUV" TypedIndex: 0 }
+  }
+ }
+ Model: 200, "Model::Walls", "Mesh" {
+  Version: 232
+  Properties70:  {
+   P: "Lcl Translation", "Lcl Translation", "", "A",0,0,0
+   P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+   P: "Lcl Scaling", "Lcl Scaling", "", "A",1,1,1
+  }
+  Shading: T
+  Culling: "CullingOff"
+ }
+ Geometry: 101, "Geometry::Roof", "Mesh" {
+  Vertices: *54 { a: -1.1,1.2,0.8,1.1,1.2,0.8,-0.35,2,0.8,1.1,1.2,-0.8,-1.1,1.2,-0.8,-0.35,2,-0.8,-1.1,1.2,-0.8,-1.1,1.2,0.8,-0.35,2,0.8,-0.35,2,-0.8,-0.35,2,-0.8,-0.35,2,0.8,1.1,1.2,0.8,1.1,1.2,-0.8,-1.1,1.2,-0.8,1.1,1.2,-0.8,1.1,1.2,0.8,-1.1,1.2,0.8 }
+  PolygonVertexIndex: *24 { a: 0,1,-3,3,4,-6,6,7,-9,6,8,-10,10,11,-13,10,12,-14,14,15,-17,14,16,-18 }
+  GeometryVersion: 124
+  LayerElementNormal: 0 {
+   Version: 101
+   Name: ""
+   MappingInformationType: "ByVertice"
+   ReferenceInformationType: "Direct"
+   Normals: *54 { a: 0,0,1,0,0,1,0,0,1,0,0,-1,0,0,-1,0,0,-1,-0.7295372,0.6839411,0,-0.7295372,0.6839411,0,-0.7295372,0.6839411,0,-0.7295372,0.6839411,0,0.4830773,0.8755777,-0,0.4830773,0.8755777,-0,0.4830773,0.8755777,-0,0.4830773,0.8755777,-0,0,-1,0,0,-1,0,0,-1,0,0,-1,0 }
+  }
+  LayerElementUV: 0 {
+   Version: 101
+   Name: "UVMap"
+   MappingInformationType: "ByVertice"
+   ReferenceInformationType: "Direct"
+   UV: *36 { a: 0,0,1,0,0.35,1,0,0,1,0,0.65,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1 }
+  }
+  LayerElementMaterial: 0 {
+   Version: 101
+   Name: ""
+   MappingInformationType: "AllSame"
+   ReferenceInformationType: "IndexToDirect"
+   Materials: *1 { a: 0 }
+  }
+  Layer: 0 {
+   Version: 100
+   LayerElement: { Type: "LayerElementNormal" TypedIndex: 0 }
+   LayerElement: { Type: "LayerElementMaterial" TypedIndex: 0 }
+   LayerElement: { Type: "LayerElementUV" TypedIndex: 0 }
+  }
+ }
+ Model: 201, "Model::Roof", "Mesh" {
+  Version: 232
+  Properties70:  {
+   P: "Lcl Translation", "Lcl Translation", "", "A",0,0,0
+   P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+   P: "Lcl Scaling", "Lcl Scaling", "", "A",1,1,1
+  }
+  Shading: T
+  Culling: "CullingOff"
+ }
+ Geometry: 102, "Geometry::Chimney", "Mesh" {
+  Vertices: *72 { a: 0.4,1.35,0,0.68,1.35,0,0.68,2.15,0,0.4,2.15,0,0.68,1.35,-0.28,0.4,1.35,-0.28,0.4,2.15,-0.28,0.68,2.15,-0.28,0.4,1.35,-0.28,0.4,1.35,0,0.4,2.15,0,0.4,2.15,-0.28,0.68,1.35,0,0.68,1.35,-0.28,0.68,2.15,-0.28,0.68,2.15,0,0.4,2.15,0,0.68,2.15,0,0.68,2.15,-0.28,0.4,2.15,-0.28,0.4,1.35,-0.28,0.68,1.35,-0.28,0.68,1.35,0,0.4,1.35,0 }
+  PolygonVertexIndex: *36 { a: 0,1,-3,0,2,-4,4,5,-7,4,6,-8,8,9,-11,8,10,-12,12,13,-15,12,14,-16,16,17,-19,16,18,-20,20,21,-23,20,22,-24 }
+  GeometryVersion: 124
+  LayerElementNormal: 0 {
+   Version: 101
+   Name: ""
+   MappingInformationType: "ByVertice"
+   ReferenceInformationType: "Direct"
+   Normals: *72 { a: 0,0,1,0,0,1,0,0,1,0,0,1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,-1,0,0,-1,0,0,-1,0,0,-1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,-0,1,0,-0,1,0,-0,1,0,-0,1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,0 }
+  }
+  LayerElementUV: 0 {
+   Version: 101
+   Name: "UVMap"
+   MappingInformationType: "ByVertice"
+   ReferenceInformationType: "Direct"
+   UV: *48 { a: 0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,0,1,1,0,1 }
+  }
+  LayerElementMaterial: 0 {
+   Version: 101
+   Name: ""
+   MappingInformationType: "AllSame"
+   ReferenceInformationType: "IndexToDirect"
+   Materials: *1 { a: 0 }
+  }
+  Layer: 0 {
+   Version: 100
+   LayerElement: { Type: "LayerElementNormal" TypedIndex: 0 }
+   LayerElement: { Type: "LayerElementMaterial" TypedIndex: 0 }
+   LayerElement: { Type: "LayerElementUV" TypedIndex: 0 }
+  }
+ }
+ Model: 202, "Model::Chimney", "Mesh" {
+  Version: 232
+  Properties70:  {
+   P: "Lcl Translation", "Lcl Translation", "", "A",0,0,0
+   P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+   P: "Lcl Scaling", "Lcl Scaling", "", "A",1,1,1
+  }
+  Shading: T
+  Culling: "CullingOff"
+ }
+ Material: 300, "Material::CheckerWalls", "" {
+  Version: 102
+  ShadingModel: "lambert"
+  MultiLayer: 0
+  Properties70:  {
+   P: "DiffuseColor", "Color", "", "A",1,1,1
+   P: "DiffuseFactor", "Number", "", "A",1
+  }
+ }
+ Material: 301, "Material::OrangeRoof", "" {
+  Version: 102
+  ShadingModel: "lambert"
+  MultiLayer: 0
+  Properties70:  {
+   P: "DiffuseColor", "Color", "", "A",0.85,0.22,0.045
+   P: "DiffuseFactor", "Number", "", "A",1
+  }
+ }
+ Material: 302, "Material::DarkChimney", "" {
+  Version: 102
+  ShadingModel: "lambert"
+  MultiLayer: 0
+  Properties70:  {
+   P: "DiffuseColor", "Color", "", "A",0.1,0.14,0.18
+   P: "DiffuseFactor", "Number", "", "A",1
+  }
+ }
+ Texture: 400, "Texture::Checker", "" {
+  Type: "TextureVideoClip"
+  Version: 202
+  TextureName: "Texture::Checker"
+  Media: "Video::Checker"
+  FileName: "checker.png"
+  RelativeFilename: "checker.png"
+  ModelUVTranslation: 0,0
+  ModelUVScaling: 1,1
+  Texture_Alpha_Source: "None"
+  Cropping: 0,0,0,0
+ }
+ Video: 500, "Video::Checker", "Clip" {
+  Type: "Clip"
+  Properties70: {
+   P: "Path", "KString", "XRefUrl", "", "checker.png"
+  }
+  UseMipMap: 0
+  Filename: "checker.png"
+  RelativeFilename: "checker.png"
+ }
+}
+Connections: {
+ C: "OO",200,0
+ C: "OO",100,200
+ C: "OO",300,200
+ C: "OO",201,0
+ C: "OO",101,201
+ C: "OO",301,201
+ C: "OO",202,0
+ C: "OO",102,202
+ C: "OO",302,202
+ C: "OP",400,300,"DiffuseColor"
+ C: "OO",500,400
+}

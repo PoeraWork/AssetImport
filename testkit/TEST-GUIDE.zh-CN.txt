@@ -1,0 +1,60 @@
+﻿KK AssetImport 4.1.2 双 MaterialEditor 环境测试指南
+
+一、先选一套环境
+
+两套包都使用相同的 KK_AssetImport 4.1.2；分别搭配 ME 4.0.3 和 5.0。先测一套，结束并收集日志后再换另一套。建议先测 4.0.3 作为比较基线。
+
+1. 完全退出 Koikatu 和 CharaStudio。备份当前插件、相关配置和用于测试的卡片/场景；优先在游戏副本中测试。
+2. 按测试包顶层安装说明安装选中的一个环境，保留包内完整目录结构。两个 ME 环境不能同时复制进游戏；仅把 DLL 改名仍可能重复加载。旧版 ME/AssetImport 如需移出，请放在游戏 BepInEx/plugins 目录以外的备份位置。
+3. 本包是插件与样例，不是完整游戏环境。两套环境共同采用 KKAPI >= 1.45.1、ResourceRedirector >= 1.2.0，以及提供 ExtendedSave/Sideloader >= 21.0 的 BepisPlugins 21.0 或更新版；原有 BepInEx 和其他依赖仍须满足安装说明。实际 ME 4.0.3 DLL 声明 KKAPI 1.45.1、ExtendedSave/Sideloader 21.0；ME 5.0 DLL 声明 1.42.2 / 20.0，但本插件统一要求 KKAPI 1.45.1，因此不能按 ME 5.0 单独的较低门槛搭配本包。KK 和 KKS 插件不能混放。
+4. 用本包脚本收集一次环境清单，检查 Warnings.txt 中的重复程序集提醒。插件 DLL 版本清单只代表磁盘上的文件；实际成功加载版本还要看 BepInEx/LogOutput.log 启动部分。
+5. 保持两轮的游戏版本、其他插件、导入选项和测试文件相同；另存 ME 各自改写过的卡片。换版前退出游戏、备份本轮日志，再恢复你的基线环境。不要把 ME 5.0 改写后的唯一卡片直接覆盖回旧环境。
+
+二、开始导入
+
+可先双击测试包根目录 Check-Models.cmd。它需要 Windows 64 位和 .NET Framework 4.6.2 或更新版，用同款 AssimpNet/原生库检查 19 个样例，并分别比较直接文件导入与模拟插件 IO 路径。报告写入 Reports/ModelCheck_时间戳/ 下的 CSV、LOG、JSON。它不加载 MaterialEditor 或 Unity，所以预检通过不等于游戏内通过。预检失败也请保存报告；游戏内测试仍按对应条目记录。
+
+LWS 当前是已确认的已知限制，不是预期能成功的普通样例。AssetImport 4.1.2 的内存导入路径没有缓存 LWS 引用的 LWO；即使旁边保留 simple_cube.lwo，插件路径仍可能丢失关联。Assimp 会返回 SceneFlags.Incomplete 并生成 SkeletonMaterial 占位骨架（该例 108 顶点/36 三角形/4 骨骼），而真实目标是立方体（文件模式 24 顶点/12 三角形/0 骨骼）。预检应显示 FAIL（id=lws，mode=plugin-io），不能将“有几何返回”、占位骨架或文件模式成功填写为插件导入通过。未运行的结果仍填“未测”，实际遇到该现象填“失败/已知限制”并附报告。可直接导入配套 LWO 示例，单独验证立方体本体；这不算修复或通过 LWS。
+
+先从 OBJ / FBX / DAE / glTF 等常见样例各跑一例，再完成清单中其余格式。FBX ASCII 和二进制是两个独立测试。不要只移动入口模型文件；同目录的 MTL、PNG、BIN、配套 LWO/SMD 等文件须一起保留。导入文件以最终 demo 清单的 entry 为准，不要误选配套文件。
+
+Studio：启动 CharaStudio，建空场景，按默认 LeftAlt+I 打开 AssetImport，选择样例入口。无需预先建球体。
+Maker：启动 Koikatu 的角色编辑器，使用测试角色，进入饰品页；选择一个可替换的普通饰品并设置父节点，再按 LeftAlt+I 导入到当前槽位。只选空槽可能不足以导入。避免替换自己未备份的饰品。
+
+记录导入 Scale；从样例建议值开始，没有建议时先用 1.0。尺寸过大/过小可调整比例重新导入，并在结果表注明。基础样例用于静态几何；首轮关闭 Import Armature / Import Blendshapes（如果界面提供），并保持两环境其他选项一致。
+
+点击 Import。若出现预载面板，逐项核对贴图路径；需要时切到 Textures 页，确认使用正确的配套贴图，点击 Finish。无贴图、无骨骼的文件可能直接完成，这是正常路径。若没有窗口先核对热键配置及启动日志。
+
+三、每例至少检查这些项目
+
+• 几何：存在且可见，轮廓/部件数量与参考相符；没有成片缺面、异常拉伸、错位。转动相机检查背面和遮挡。源格式坐标轴、比例和相机朝向可能不同，不以单一截图朝向作为失败判据。
+• 材质/颜色：本应有色或有纹理的区域没有意外变成全白/粉红；分材质区域是否仍区分。无外贴图的样例仍要检查基本着色和可见性。
+• 纹理：对清单标为有纹理的样例，检查棋盘/图案可见、UV 不明显错乱、纹理方向与参考相符。清单无纹理的样例填“不适用”；纯色本身不是贴图丢失。
+• ME 编辑：打开 MaterialEditor，确认导入对象材质能被选中，简单修改一个颜色或贴图相关值，另存测试卡/场景。避免用新功能作为两版基础导入是否等价的唯一判据。
+• 保存重载：Studio 另存新场景，清空后加载；Maker 分别另存测试角色卡和服装卡，再加载，核对导入物几何和纹理。每轮还至少挑一例完全退出并重启后重载，排除只在内存缓存中正常。
+
+针对你原有的 zipmod 服装卡问题，可另加自有卡片的副本对照：先在原环境记录，再在选中的 ME 环境加载；记录发生于首次服装载入、保存后载入或重启后载入。基础 demo 不包含你的 zipmod 卡，也不能单独验证该问题已解决。本脚本不会自动收集这些卡片。
+
+四、参考效果与结果表
+
+参考图用来识别形状、部件和图案；若由离线渲染生成，它不是 KK 已运行成功的截图。Unity 的 shader、灯光、曝光会改变亮暗和高光，不要求像素一致。以随包样例清单记录的预期为准；没有纹理的格式不应为了凑结果填写“贴图通过”。
+
+TestResults.csv 按 ME 环境、Studio/Maker 和入口文件预填。结果列使用“未测 / 通过 / 失败 / 不适用”。保存重载的角色卡与服装卡分开记录；Studio 对应列填不适用。失败时写操作、首条相关错误、截图文件名、收集的 ZIP 文件名和时间。未测不能当通过。CSV 为 UTF-8 BOM，可用 Excel 或文本编辑器打开。
+
+样例覆盖 18 个入口扩展名：fbx、dae、gltf、3ds、ase、obj、ifc、xgl、ply、dxf、lwo、lws、lxo、stl、x、ac、ms3d、smd。一个最小静态文件通过，只说明该例的解析、几何/材质和保存路径通过；不代表对应格式所有历史版本、动画、骨骼、复杂 shader 或变形特性都受支持。
+
+五、出错后立即保留日志
+
+不要先重启。KK 主程序与 Studio 可能写入同一份 BepInEx/LogOutput.log；启动下一个程序也可能覆盖上一轮。先截图、记录发生时间；可正常退出则退出，再运行收集脚本。卡死时可在游戏仍运行时收集，但日志快照可能不完整。
+
+最简单：双击 Collect-Logs.cmd，按提示输入含 Koikatu.exe / CharaStudio.exe 的游戏根目录（不要输入 plugins 目录）。也可把游戏文件夹拖到该 CMD。
+
+或在 Windows PowerShell 5.1 中进入脚本所在目录后运行：
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Collect-AssetImportLogs.ps1 -GameRoot "D:\Games\Koikatu" -RunLabel "ME403-Studio-FBX"
+
+RunLabel 只用英文字母、数字、点、下划线和短横线。换 5.0 时可使用 ME500。默认输出在脚本旁 CollectedLogs 下，带时间戳且不会覆盖前一次。ExecutionPolicy Bypass 只作用于本次 PowerShell 进程，不更改系统策略；企业策略仍可能阻止运行，可依下方日志路径手动复制。
+
+ZIP 包含指定日志、AssetImport 配置、插件元数据清单、缺失/重复提醒和基础环境信息。脚本不上传、不关闭游戏、不修改配置、不复制 DLL 或 UserData、卡片、模型、贴图。原始日志和本插件配置可能含路径或卡片名，回传前请查看并按需要打码。回传 ZIP + 填好的 CSV + 自愿提供的测试截图；若运行过模型预检，再单独提供对应 Reports/ModelCheck_时间戳 文件夹。日志脚本不会自动复制 Reports。
+
+日志位置和错误说明请读 LOGS-AND-ERRORS.zh-CN.txt。脚本按 PowerShell 5.1 语法编写，已在 macOS / PowerShell 7.6.6 的合成游戏目录执行成功；Windows PowerShell 5.1 尚未实机执行，仍需在你电脑上确认。

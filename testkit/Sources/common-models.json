@@ -1,0 +1,262 @@
+{
+  "title": "Original checker house common-format demos",
+  "assets": [
+    {
+      "entry": "01_OBJ/house.obj",
+      "format": "obj",
+      "expected_shape": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "texture": "checker.png",
+      "expected_materials": 3,
+      "files": [
+        "01_OBJ/checker.png",
+        "01_OBJ/house.mtl",
+        "01_OBJ/house.obj"
+      ],
+      "source": {
+        "kind": "original_generated",
+        "author": "PoeraWork AssetImport demo fixture",
+        "license": "CC0-1.0",
+        "generator": "https://github.com/PoeraWork/AssetImport/blob/kk-support/scripts/testkit/generate_common.py"
+      },
+      "notes": "",
+      "bounds_y_up": [
+        [
+          -1.1,
+          0,
+          -0.8
+        ],
+        [
+          1.1,
+          2.15,
+          0.8
+        ]
+      ],
+      "triangles": 32
+    },
+    {
+      "entry": "02_FBX_ASCII/house.fbx",
+      "format": "fbx-ascii",
+      "expected_shape": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "texture": "checker.png",
+      "expected_materials": 3,
+      "files": [
+        "02_FBX_ASCII/checker.png",
+        "02_FBX_ASCII/house.fbx"
+      ],
+      "source": {
+        "kind": "original_generated",
+        "author": "PoeraWork AssetImport demo fixture",
+        "license": "CC0-1.0",
+        "generator": "https://github.com/PoeraWork/AssetImport/blob/kk-support/scripts/testkit/generate_common.py"
+      },
+      "notes": "FBX 7.4 ASCII，UV + 外置 checker.png；与 binary FBX 分开验证。",
+      "bounds_y_up": [
+        [
+          -1.1,
+          0,
+          -0.8
+        ],
+        [
+          1.1,
+          2.15,
+          0.8
+        ]
+      ],
+      "triangles": 32
+    },
+    {
+      "entry": "03_FBX_BINARY/house.fbx",
+      "format": "fbx-binary",
+      "expected_shape": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "texture": "checker.png",
+      "expected_materials": 3,
+      "files": [
+        "03_FBX_BINARY/checker.png",
+        "03_FBX_BINARY/house.fbx"
+      ],
+      "source": {
+        "kind": "original_generated",
+        "author": "PoeraWork AssetImport demo fixture",
+        "license": "CC0-1.0",
+        "generator": "https://github.com/PoeraWork/AssetImport/blob/kk-support/scripts/testkit/generate_common.py",
+        "conversion": "Assimp v5.0.1 (8f0c6b04), assimp export 01_OBJ/house.obj 03_FBX_BINARY/house.fbx -ffbx"
+      },
+      "notes": "FBX binary，使用原生 Assimp v5.0.1 从本套自有 OBJ 导出；UV + 外置 checker.png。",
+      "bounds_y_up": [
+        [
+          -1.1,
+          0,
+          -0.8
+        ],
+        [
+          1.1,
+          2.15,
+          0.8
+        ]
+      ],
+      "triangles": 32
+    },
+    {
+      "entry": "04_DAE/house.dae",
+      "format": "dae",
+      "expected_shape": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "texture": "checker.png",
+      "expected_materials": 3,
+      "files": [
+        "04_DAE/checker.png",
+        "04_DAE/house.dae"
+      ],
+      "source": {
+        "kind": "original_generated",
+        "author": "PoeraWork AssetImport demo fixture",
+        "license": "CC0-1.0",
+        "generator": "https://github.com/PoeraWork/AssetImport/blob/kk-support/scripts/testkit/generate_common.py"
+      },
+      "notes": "",
+      "bounds_y_up": [
+        [
+          -1.1,
+          0,
+          -0.8
+        ],
+        [
+          1.1,
+          2.15,
+          0.8
+        ]
+      ],
+      "triangles": 32
+    },
+    {
+      "entry": "05_GLTF/house.gltf",
+      "format": "gltf",
+      "expected_shape": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "texture": "checker.png",
+      "expected_materials": 3,
+      "files": [
+        "05_GLTF/checker.png",
+        "05_GLTF/house.bin",
+        "05_GLTF/house.gltf"
+      ],
+      "source": {
+        "kind": "original_generated",
+        "author": "PoeraWork AssetImport demo fixture",
+        "license": "CC0-1.0",
+        "generator": "https://github.com/PoeraWork/AssetImport/blob/kk-support/scripts/testkit/generate_common.py"
+      },
+      "notes": "保留同目录 house.bin 和 checker.png；验证 glTF 外置缓冲与外置纹理。",
+      "bounds_y_up": [
+        [
+          -1.1,
+          0,
+          -0.8
+        ],
+        [
+          1.1,
+          2.15,
+          0.8
+        ]
+      ],
+      "triangles": 32
+    },
+    {
+      "entry": "07_3DS/house.3ds",
+      "format": "3ds",
+      "expected_shape": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "texture": "checker.png",
+      "expected_materials": 3,
+      "files": [
+        "07_3DS/checker.png",
+        "07_3DS/house.3ds"
+      ],
+      "source": {
+        "kind": "original_generated",
+        "author": "PoeraWork AssetImport demo fixture",
+        "license": "CC0-1.0",
+        "generator": "https://github.com/PoeraWork/AssetImport/blob/kk-support/scripts/testkit/generate_common.py"
+      },
+      "notes": "3DS 按格式惯例保存 Z-up；导入后应是烟囱朝上的房子。",
+      "bounds_y_up": [
+        [
+          -1.1,
+          0,
+          -0.8
+        ],
+        [
+          1.1,
+          2.15,
+          0.8
+        ]
+      ],
+      "triangles": 32
+    },
+    {
+      "entry": "08_PLY/house.ply",
+      "format": "ply",
+      "expected_shape": "与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。",
+      "texture_expected": false,
+      "texture": null,
+      "expected_materials": 1,
+      "files": [
+        "08_PLY/house.ply"
+      ],
+      "source": {
+        "kind": "original_generated",
+        "author": "PoeraWork AssetImport demo fixture",
+        "license": "CC0-1.0",
+        "generator": "https://github.com/PoeraWork/AssetImport/blob/kk-support/scripts/testkit/generate_common.py"
+      },
+      "notes": "无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。",
+      "bounds_y_up": [
+        [
+          -1.1,
+          0,
+          -0.8
+        ],
+        [
+          1.1,
+          2.15,
+          0.8
+        ]
+      ],
+      "triangles": 32
+    },
+    {
+      "entry": "09_STL/house.stl",
+      "format": "stl",
+      "expected_shape": "与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。",
+      "texture_expected": false,
+      "texture": null,
+      "expected_materials": 1,
+      "files": [
+        "09_STL/house.stl"
+      ],
+      "source": {
+        "kind": "original_generated",
+        "author": "PoeraWork AssetImport demo fixture",
+        "license": "CC0-1.0",
+        "generator": "https://github.com/PoeraWork/AssetImport/blob/kk-support/scripts/testkit/generate_common.py"
+      },
+      "notes": "标准二进制 STL，无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。",
+      "bounds_y_up": [
+        [
+          -1.1,
+          0,
+          -0.8
+        ],
+        [
+          1.1,
+          2.15,
+          0.8
+        ]
+      ],
+      "triangles": 32
+    }
+  ]
+}

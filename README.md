@@ -42,6 +42,10 @@ ABMX 5.4、KKPE 2.21.5、DynamicBoneEditor 1.1 属于可选兼容项。安装它
 
 ## Windows 游戏内验证
 
+完整对照包为 `KK_AssetImport4.1.2_ME403_ME500_TestKit.zip`：解压后打开 `index.html`，选择随包的 ME 4.0.3 或 5.0 安装环境，再测试 19 个模型（覆盖文件选择器全部 18 种扩展名，FBX 分 ASCII / binary）。两套使用同一个 AssetImport DLL，便于隔离 ME 版本差异。包内有参考图、76 项结果表、模型预检和日志收集脚本；ME 官方许可和对应源码随安装包提供。参考图为离线渲染，不是游戏测试通过的截图。构建步骤见 [测试包维护说明](docs/TESTKIT.md)。
+
+**已知限制：**4.1.2 的 LWS 内存导入未缓存配套 LWO，可能返回占位骨架而不是场景几何。预检会把此项标为失败；直接读取 LWO 成功不代表 LWS 通过。原生解析预检的其余 37 项通过也不替代 Windows 游戏内显示、ME 编辑和保存重载测试。
+
 测试素材单独放在 `KK_AssetImportv4.1.2TestAssets.zip`，内含 `TestAssets/` 和 `Windows测试说明.md`，可解压到任意方便的位置。正常安装插件不需要这个包。
 
 4.1.2 基于 MaterialEditor 4.0.3 编译，并保留 5.0 的兼容回归检查。Windows 游戏内运行仍待验证，清单见 [Windows 测试说明](docs/KK-TESTING.md)。目前没有 KKS 服装白模已解决的实机验证结论，也不承诺 KK/KKS 角色卡、服装卡或场景可以互通。

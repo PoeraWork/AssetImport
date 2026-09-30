@@ -1,0 +1,821 @@
+{
+  "schema_version": 1,
+  "scope": "Rare-format demo asset inputs; successful parsing does not certify Windows/Unity rendering.",
+  "upstream_repository": "https://github.com/assimp/assimp",
+  "upstream_tag": "v5.0.1",
+  "upstream_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+  "asset_license": "Selected upstream models: Assimp BSD-3-Clause, from test/models rather than test/models-nonbsd. IFC additional attribution is included. Generated DXF cube, checker PNG and latitude/longitude UV JPEG are original test fixtures supplied for unrestricted reuse; the UV JPEG is CC0-1.0.",
+  "license_files": [
+    {
+      "path": "licenses/Assimp-v5.0.1-LICENSE.txt",
+      "bytes": 3791,
+      "sha256": "a26ccc3dbf2f58ea99c100945a8a126fa0f9f4d7fd2b49aa8bdb8e09355864d8",
+      "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/LICENSE",
+      "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+      "source_sha256": "a26ccc3dbf2f58ea99c100945a8a126fa0f9f4d7fd2b49aa8bdb8e09355864d8",
+      "modifications": []
+    }
+  ],
+  "demos": [
+    {
+      "format": "ase",
+      "entry": "ase/ThreeCubesGreen.ase",
+      "files": [
+        {
+          "path": "ase/ThreeCubesGreen.ase",
+          "bytes": 8731,
+          "sha256": "44624fc9ac196addc5feaf89b4e643654f101ae0a393f6cea7de6eb5f2b12040",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/ASE/ThreeCubesGreen.ASE",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "44624fc9ac196addc5feaf89b4e643654f101ae0a393f6cea7de6eb5f2b12040",
+          "modifications": []
+        }
+      ],
+      "expected_structure": "Three box meshes, each 8 source vertices and 12 triangles, with three plain colored materials.",
+      "notes": [
+        "No external textures. Material colors differ slightly despite the original filename."
+      ],
+      "validation": {
+        "native_file_import": {
+          "format": "ase",
+          "entry": "ase/ThreeCubesGreen.ase",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "ase/ThreeCubesGreen.ase"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 5,
+            "meshes": 3,
+            "animations": 0,
+            "embedded_textures": 0,
+            "materials": 3,
+            "vertices": 72,
+            "faces": 36,
+            "bones": 0,
+            "animation_channels": 0,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              -150.0,
+              -152.493103,
+              -30.7479
+            ],
+            "bounds_max": [
+              150.0,
+              241.412781,
+              476.731293
+            ],
+            "center": [
+              0.0,
+              44.459839,
+              222.991699
+            ]
+          },
+          "external_textures": [],
+          "log": "validation/ase.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 0.001
+    },
+    {
+      "format": "ifc",
+      "entry": "ifc/AC14-FZK-Haus.ifc",
+      "files": [
+        {
+          "path": "ifc/AC14-FZK-Haus.ifc",
+          "bytes": 4065749,
+          "sha256": "c8600fd63d1734d18f40fb1237533e9a3ec46c157489be7d501c166b99f21846",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/IFC/AC14-FZK-Haus.ifc",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "c8600fd63d1734d18f40fb1237533e9a3ec46c157489be7d501c166b99f21846",
+          "modifications": []
+        },
+        {
+          "path": "ifc/AC14-FZK-Haus.source.txt",
+          "bytes": 297,
+          "sha256": "eadaf42aa7124b03dfacd50f1264fa18d4bb7634863e24c47ef6d1c62369cfdc",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/IFC/AC14-FZK-Haus.source.txt",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "eadaf42aa7124b03dfacd50f1264fa18d4bb7634863e24c47ef6d1c62369cfdc",
+          "modifications": []
+        }
+      ],
+      "expected_structure": "Architectural house containing walls, roof, windows, doors and furnishing components.",
+      "notes": [
+        "Larger architectural sample (about 4 MB). Start in Studio; adjust scaling to fit the view.",
+        "Created by KIT/IAI; the supplied source note explicitly permits redistribution and requests attribution."
+      ],
+      "validation": {
+        "native_file_import": {
+          "format": "ifc",
+          "entry": "ifc/AC14-FZK-Haus.ifc",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "ifc/AC14-FZK-Haus.ifc"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 216,
+            "meshes": 66,
+            "animations": 0,
+            "embedded_textures": 0,
+            "materials": 11,
+            "vertices": 16532,
+            "faces": 31235,
+            "bones": 0,
+            "animation_channels": 0,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              -4.199849,
+              -4.104517,
+              -13.0
+            ],
+            "bounds_max": [
+              15.531504,
+              12.7,
+              9.8
+            ],
+            "center": [
+              5.665828,
+              4.297741,
+              -1.6
+            ]
+          },
+          "external_textures": [],
+          "log": "validation/ifc.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 0.1
+    },
+    {
+      "format": "xgl",
+      "entry": "xgl/sample_official.xgl",
+      "files": [
+        {
+          "path": "xgl/sample_official.xgl",
+          "bytes": 3141,
+          "sha256": "9ab28385b862d13ef3ffe003ce8d9e1f028b4ebf2781be389227bcefaf781008",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/XGL/sample_official.xgl",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "9ab28385b862d13ef3ffe003ce8d9e1f028b4ebf2781be389227bcefaf781008",
+          "modifications": []
+        }
+      ],
+      "expected_structure": "One green box mesh, plus scene lighting and transform data.",
+      "notes": [
+        "The plugin imports geometry, materials and node transforms; this is not a test of scene-light import."
+      ],
+      "validation": {
+        "native_file_import": {
+          "format": "xgl",
+          "entry": "xgl/sample_official.xgl",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "xgl/sample_official.xgl"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 3,
+            "meshes": 1,
+            "animations": 0,
+            "embedded_textures": 0,
+            "materials": 1,
+            "vertices": 24,
+            "faces": 12,
+            "bones": 0,
+            "animation_channels": 0,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              -0.9,
+              -0.5,
+              0.0
+            ],
+            "bounds_max": [
+              1.0,
+              1.4,
+              1.0
+            ],
+            "center": [
+              0.05,
+              0.45,
+              0.5
+            ]
+          },
+          "external_textures": [],
+          "log": "validation/xgl.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 1
+    },
+    {
+      "format": "dxf",
+      "entry": "dxf/cube.dxf",
+      "files": [
+        {
+          "path": "dxf/cube.dxf",
+          "bytes": 816,
+          "sha256": "ff29b125747364bdba173d91f083eb2b1e196e3113de1a42a93fcee7d2331309",
+          "source": "Generated by prepare_rare.py for this pack: a one-unit cube encoded as six DXF R12 3DFACE entities.",
+          "modifications": []
+        }
+      ],
+      "expected_structure": "A one-unit cube with six quad 3DFACE entities, yielding 12 non-degenerate triangles.",
+      "notes": [
+        "This is a genuine ASCII AutoCAD R12 DXF file (AC1009), not a renamed model.",
+        "No bitmap textures. DXF color index interpretation is importer-dependent."
+      ],
+      "validation": {
+        "native_file_import": {
+          "format": "dxf",
+          "entry": "dxf/cube.dxf",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "dxf/cube.dxf"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 1,
+            "meshes": 1,
+            "animations": 0,
+            "embedded_textures": 0,
+            "materials": 1,
+            "vertices": 8,
+            "faces": 12,
+            "bones": 0,
+            "animation_channels": 0,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              -0.5,
+              -0.5,
+              -0.5
+            ],
+            "bounds_max": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "center": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "external_textures": [],
+          "log": "validation/dxf.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 1
+    },
+    {
+      "format": "lwo",
+      "entry": "lwo/simple_cube.lwo",
+      "files": [
+        {
+          "path": "lwo/simple_cube.lwo",
+          "bytes": 560,
+          "sha256": "e19be259e868c6943a05d28129b80a052468a37e82a18a4e915a778d53e5e6e3",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/LWS/simple_cube.lwo",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "e19be259e868c6943a05d28129b80a052468a37e82a18a4e915a778d53e5e6e3",
+          "modifications": []
+        }
+      ],
+      "expected_structure": "One simple LightWave cube, with polygon geometry and no external dependencies.",
+      "notes": [],
+      "validation": {
+        "native_file_import": {
+          "format": "lwo",
+          "entry": "lwo/simple_cube.lwo",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "lwo/simple_cube.lwo"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 2,
+            "meshes": 1,
+            "animations": 0,
+            "embedded_textures": 0,
+            "materials": 1,
+            "vertices": 24,
+            "faces": 12,
+            "bones": 0,
+            "animation_channels": 0,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              -1.45,
+              0.0,
+              -0.9
+            ],
+            "bounds_max": [
+              1.25,
+              1.9,
+              1.2
+            ],
+            "center": [
+              -0.1,
+              0.95,
+              0.15
+            ]
+          },
+          "external_textures": [],
+          "log": "validation/lwo.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 0.5
+    },
+    {
+      "format": "lws",
+      "entry": "lws/move_x.lws",
+      "files": [
+        {
+          "path": "lws/move_x.lws",
+          "bytes": 7246,
+          "sha256": "34aa54b472dca0212ca883337896f3c8c20adfb17c6137c8d65a65a606bbd6fc",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/LWS/move_x.lws",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "34aa54b472dca0212ca883337896f3c8c20adfb17c6137c8d65a65a606bbd6fc",
+          "modifications": []
+        },
+        {
+          "path": "lws/simple_cube.lwo",
+          "bytes": 560,
+          "sha256": "e19be259e868c6943a05d28129b80a052468a37e82a18a4e915a778d53e5e6e3",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/LWS/simple_cube.lwo",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "e19be259e868c6943a05d28129b80a052468a37e82a18a4e915a778d53e5e6e3",
+          "modifications": []
+        }
+      ],
+      "expected_structure": "A LightWave scene referencing the adjacent simple_cube.lwo; scene includes translation animation.",
+      "notes": [
+        "Keep simple_cube.lwo beside move_x.lws.",
+        "The current plugin reads LWS from memory without caching its referenced LWO. Native file import and plugin memory import must be reported separately.",
+        "Animation data in the source is not a promise that AssetImport plays source animation."
+      ],
+      "validation": {
+        "native_file_import": {
+          "format": "lws",
+          "entry": "lws/move_x.lws",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "lws/move_x.lws"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 6,
+            "meshes": 1,
+            "animations": 1,
+            "embedded_textures": 0,
+            "materials": 1,
+            "vertices": 24,
+            "faces": 12,
+            "bones": 0,
+            "animation_channels": 1,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              -1.420649,
+              -0.04,
+              -0.859424
+            ],
+            "bounds_max": [
+              1.224698,
+              1.643159,
+              1.145899
+            ],
+            "center": [
+              -0.097976,
+              0.80158,
+              0.143237
+            ]
+          },
+          "external_textures": [],
+          "log": "validation/lws.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 0.5
+    },
+    {
+      "format": "lxo",
+      "entry": "lxo/sphereWithVertMap.lxo",
+      "files": [
+        {
+          "path": "lxo/sphereWithVertMap.lxo",
+          "bytes": 35408,
+          "sha256": "d905042540a09b2997c398ad00b0e1e61765b6c0d09942814aa4e1e3c48a11e6",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/LWO/LXOB_Modo/sphereWithVertMap.lxo",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "d905042540a09b2997c398ad00b0e1e61765b6c0d09942814aa4e1e3c48a11e6",
+          "modifications": []
+        }
+      ],
+      "expected_structure": "A Modo/LXOB sphere with vertex-map data.",
+      "notes": [
+        "Assimp 5.0.1 LWO importer explicitly supports the lxo extension and LXOB header.",
+        "Vertex maps may include data that AssetImport does not expose."
+      ],
+      "validation": {
+        "native_file_import": {
+          "format": "lxo",
+          "entry": "lxo/sphereWithVertMap.lxo",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "lxo/sphereWithVertMap.lxo"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 2,
+            "meshes": 1,
+            "animations": 0,
+            "embedded_textures": 0,
+            "materials": 1,
+            "vertices": 266,
+            "faces": 528,
+            "bones": 0,
+            "animation_channels": 0,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              -2.15,
+              -2.1,
+              -2.5
+            ],
+            "bounds_max": [
+              2.15,
+              2.1,
+              2.6
+            ],
+            "center": [
+              0.0,
+              0.0,
+              0.05
+            ]
+          },
+          "external_textures": [],
+          "log": "validation/lxo.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 0.5
+    },
+    {
+      "format": "x",
+      "entry": "x/test_cube_text.x",
+      "files": [
+        {
+          "path": "x/test_cube_text.x",
+          "bytes": 4985,
+          "sha256": "8b3c3fe7960a709f6894c281c68a1c23a89b86f3cc738f090a13ebc02310d113",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/X/test_cube_text.x",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "8b3c3fe7960a709f6894c281c68a1c23a89b86f3cc738f090a13ebc02310d113",
+          "modifications": []
+        }
+      ],
+      "expected_structure": "One text-format DirectX cube with UV coordinates, normals and a plain material.",
+      "notes": [
+        "This is a genuine DirectX X text file (xof 0303txt 0032), with no external textures."
+      ],
+      "validation": {
+        "native_file_import": {
+          "format": "x",
+          "entry": "x/test_cube_text.x",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "x/test_cube_text.x"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 2,
+            "meshes": 1,
+            "animations": 0,
+            "embedded_textures": 0,
+            "materials": 1,
+            "vertices": 24,
+            "faces": 12,
+            "bones": 1,
+            "animation_channels": 0,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              -1.0,
+              -1.000001,
+              -1.0
+            ],
+            "bounds_max": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "center": [
+              0.0,
+              -0.0,
+              0.0
+            ]
+          },
+          "external_textures": [],
+          "log": "validation/x.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 1
+    },
+    {
+      "format": "ac",
+      "entry": "ac/SphereWithLight.ac",
+      "files": [
+        {
+          "path": "ac/SphereWithLight.ac",
+          "bytes": 18117,
+          "sha256": "334d64402c97d2566d934b2777790ca34e81f032e7454e0bed3a1b74402d214b",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/AC/SphereWithLight.ac",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "f8ab826915c4b1e708929a6e5c5afbd5910d2ae4148702d3c46e8763f22ab7d2",
+          "modifications": [
+            "Replaced the sibling-directory texture reference with earthSpherical.jpg; model geometry is unchanged."
+          ]
+        },
+        {
+          "path": "ac/earthSpherical.jpg",
+          "bytes": 391721,
+          "sha256": "6f3858efbe81c26b73f821c7e62e3435ab99f232647cb3d51e3caa6ada532663",
+          "source": "Procedurally generated for the AssetImport test kit: a 1024x512 equirectangular UV chart with 16 multicolor longitude columns, 8 labeled latitude bands, and bold equator/prime-meridian markers. No third-party artwork.",
+          "license": "CC0-1.0",
+          "author": "Generated for PoeraWork/AssetImport",
+          "replaces_upstream_texture": {
+            "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/LWO/LWO2/MappingModes/earthSpherical.jpg",
+            "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+            "source_sha256": "1f266755c1a69b4871bbfc3ac761886e59b9ae11ba304f11339130a565eb1c34"
+          },
+          "modifications": [
+            "Replaced the upstream JPEG, which failed strict decoding, with an original CC0 UV test chart. Kept the filename earthSpherical.jpg so the AC model reference remains unchanged."
+          ]
+        }
+      ],
+      "expected_structure": "One sphere bearing a vivid multicolor latitude/longitude UV grid and a light node; the original sphere is small (about 0.1 units across).",
+      "notes": [
+        "The image reference has been made relative to the demo folder.",
+        "If the texture preview cannot resolve it, choose the included earthSpherical.jpg manually.",
+        "Scene lighting is not expected to be recreated by AssetImport.",
+        "earthSpherical.jpg is an original CC0 UV chart, not an Earth map; the upstream image was replaced because it could not be strictly decoded."
+      ],
+      "validation": {
+        "native_file_import": {
+          "format": "ac",
+          "entry": "ac/SphereWithLight.ac",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "ac/SphereWithLight.ac"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 3,
+            "meshes": 1,
+            "animations": 0,
+            "embedded_textures": 0,
+            "materials": 1,
+            "vertices": 9072,
+            "faces": 17664,
+            "bones": 0,
+            "animation_channels": 0,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              -0.118654,
+              -0.064242,
+              0.003052
+            ],
+            "bounds_max": [
+              -0.010209,
+              0.043522,
+              0.10863
+            ],
+            "center": [
+              -0.064432,
+              -0.01036,
+              0.055841
+            ]
+          },
+          "external_textures": [
+            {
+              "reference": "earthSpherical.jpg",
+              "exists_in_demo_folder": true
+            }
+          ],
+          "log": "validation/ac.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 10
+    },
+    {
+      "format": "ms3d",
+      "entry": "ms3d/twospheres.ms3d",
+      "files": [
+        {
+          "path": "ms3d/twospheres.ms3d",
+          "bytes": 21028,
+          "sha256": "84ee21b2640626a026287a109e2052c857dede93e0a76f19225c5f1960029d70",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/MS3D/twospheres.ms3d",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "84ee21b2640626a026287a109e2052c857dede93e0a76f19225c5f1960029d70",
+          "modifications": []
+        }
+      ],
+      "expected_structure": "Two sphere mesh groups (Sphere01 and Sphere03) in MilkShape 3D binary format.",
+      "notes": [
+        "This sample has no bitmap dependency."
+      ],
+      "validation": {
+        "native_file_import": {
+          "format": "ms3d",
+          "entry": "ms3d/twospheres.ms3d",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "ms3d/twospheres.ms3d"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 1,
+            "meshes": 1,
+            "animations": 0,
+            "embedded_textures": 0,
+            "materials": 1,
+            "vertices": 198,
+            "faces": 240,
+            "bones": 0,
+            "animation_channels": 0,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              -63.0,
+              -13.5,
+              -94.0
+            ],
+            "bounds_max": [
+              167.0,
+              181.0,
+              94.0
+            ],
+            "center": [
+              52.0,
+              83.75,
+              0.0
+            ]
+          },
+          "external_textures": [],
+          "log": "validation/ms3d.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 0.01
+    },
+    {
+      "format": "smd",
+      "entry": "smd/triangle.smd",
+      "files": [
+        {
+          "path": "smd/triangle.smd",
+          "bytes": 223,
+          "sha256": "225de0413b4ee3c438c7724fb0d5fed56618b31644fab0bb301a23cbdf9bbc6c",
+          "source_url": "https://github.com/assimp/assimp/blob/8f0c6b04b2257a520aaab38421b2e090204b69df/test/models/SMD/triangle.smd",
+          "source_commit": "8f0c6b04b2257a520aaab38421b2e090204b69df",
+          "source_sha256": "097c6d0fbdd0da771f706026a2c2cf3697b74a8ba28e2bd4169a8cb971c6a8d0",
+          "modifications": [
+            "Replaced the non-existent placeholder material texture none.quak with the bundled checker.png."
+          ]
+        },
+        {
+          "path": "smd/checker.png",
+          "bytes": 240,
+          "sha256": "d643c618366e345efb324a940a1445b18720481ddff80fdb7af7471dd3c8aa47",
+          "source": "Generated deterministic 64x64 RGBA four-color checker fixture for AssetImport testing; no third-party artwork.",
+          "modifications": []
+        }
+      ],
+      "expected_structure": "One single-sided triangle bound to one root bone, with UV coordinates and an included checker texture.",
+      "notes": [
+        "The triangle is flat and one-sided; view from both sides if it appears absent.",
+        "Only the material filename changed; the original one-bone test geometry is retained.",
+        "If the texture preview cannot resolve it, choose the included checker.png manually."
+      ],
+      "validation": {
+        "native_file_import": {
+          "format": "smd",
+          "entry": "smd/triangle.smd",
+          "status": "passed",
+          "method": "Assimp v5.0.1 command-line info, standard postprocessing, filesystem import",
+          "command": [
+            "assimp",
+            "info",
+            "smd/triangle.smd"
+          ],
+          "returncode": 0,
+          "geometry": {
+            "nodes": 2,
+            "meshes": 1,
+            "animations": 1,
+            "embedded_textures": 0,
+            "materials": 1,
+            "vertices": 3,
+            "faces": 1,
+            "bones": 1,
+            "animation_channels": 1,
+            "primitive_types": "triangles",
+            "bounds_min": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "bounds_max": [
+              1.0,
+              1.0,
+              0.0
+            ],
+            "center": [
+              0.5,
+              0.5,
+              0.0
+            ]
+          },
+          "external_textures": [
+            {
+              "reference": "checker.png",
+              "exists_in_demo_folder": true
+            }
+          ],
+          "log": "validation/smd.txt"
+        },
+        "plugin_memory_import": "pending root probe",
+        "windows_unity_rendering": "not_run"
+      },
+      "suggested_studio_scale": 1
+    }
+  ],
+  "strict_texture_validation": [
+    {
+      "path": "ac/earthSpherical.jpg",
+      "sha256": "6f3858efbe81c26b73f821c7e62e3435ab99f232647cb3d51e3caa6ada532663",
+      "size": [
+        1024,
+        512
+      ],
+      "mode": "RGB",
+      "strict_decode": "passed",
+      "decoder": "Pillow 12.3.0; verify and load; LOAD_TRUNCATED_IMAGES=False"
+    },
+    {
+      "path": "smd/checker.png",
+      "sha256": "d643c618366e345efb324a940a1445b18720481ddff80fdb7af7471dd3c8aa47",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "strict_decode": "passed",
+      "decoder": "Pillow 12.3.0; verify and load; LOAD_TRUNCATED_IMAGES=False"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AssetImport 模型参考图</title><style>
+:root{font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif;color:#19334c;background:#edf2f7}*{box-sizing:border-box}body{margin:0}header,main{max-width:1400px;margin:auto;padding:28px}header{padding-bottom:10px}h1{font-size:30px;margin:0 0 14px}header p{line-height:1.7;max-width:1000px;margin:8px 0}.notice{border-left:4px solid #327ca3;padding:10px 14px;background:#fff;border-radius:5px}.tools{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}input,select,a.button{border:1px solid #cad6e2;background:white;padding:10px 13px;border-radius:7px;font:inherit;color:inherit}input{flex:1;min-width:190px}a{color:#176482}a.button{text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:24px}article{background:white;border:1px solid #dce5ed;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px #23415c09}article img{display:block;width:100%;height:auto}.body{padding:18px 20px 22px}h2{margin:0;font-size:22px}.tag{font-size:13px;color:#167060}.body p{line-height:1.65;margin:10px 0}.notes{font-size:13px;color:#62788d}.path{font-size:12px;overflow-wrap:anywhere}footer{padding:24px 28px 40px;max-width:1400px;margin:auto;color:#62788d;font-size:13px;line-height:1.7}article[hidden]{display:none}</style>
+<header><h1>AssetImport · 模型参考图</h1><p class="notice">模型参考渲染，非游戏截图；只对比几何和纹理，游戏光照/位置可不同。</p>
+<p>19 个样例覆盖文件选择器中的 18 种格式，FBX 分别提供 ASCII 和二进制。图像由 Assimp 读取的模型数据生成，使用中性光照、自动居中和双面显示。点击图片查看原图；此页可直接离线打开。</p>
+<p>STL、PLY 等没有贴图的样例出现白色或默认材质属正常，不能据此判断导入失败。参考图不验证动画、蒙皮、游戏着色器或卡片保存。</p>
+<div class="tools"><input id="q" type="search" placeholder="查找格式，例如 FBX、IFC、OBJ" aria-label="查找格式"><select id="filter" aria-label="材质类型"><option value="all">全部样例</option><option value="true">应有纹理</option><option value="false">几何 / 纯色材质</option></select><a class="button" href="overview.png" target="_blank">打开总览图</a></div></header><main class="grid">
+<article data-label="obj" data-texture="true">
+<a href="obj.png" target="_blank"><img src="obj.png" alt="OBJ 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>OBJ</h2><p class="tag">应显示纹理</p><p>小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Common/01_OBJ/house.obj">Models/Common/01_OBJ/house.obj</a></p></div></article><article data-label="fbx-ascii" data-texture="true">
+<a href="fbx-ascii.png" target="_blank"><img src="fbx-ascii.png" alt="FBX-ASCII 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>FBX-ASCII</h2><p class="tag">应显示纹理</p><p>小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。</p><p class="notes">FBX 7.4 ASCII，UV + 外置 checker.png；与 binary FBX 分开验证。</p>
+<p class="path">入口：<a href="../Models/Common/02_FBX_ASCII/house.fbx">Models/Common/02_FBX_ASCII/house.fbx</a></p></div></article><article data-label="fbx-binary" data-texture="true">
+<a href="fbx-binary.png" target="_blank"><img src="fbx-binary.png" alt="FBX-BINARY 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>FBX-BINARY</h2><p class="tag">应显示纹理</p><p>小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。</p><p class="notes">FBX binary，使用原生 Assimp v5.0.1 从本套自有 OBJ 导出；UV + 外置 checker.png。</p>
+<p class="path">入口：<a href="../Models/Common/03_FBX_BINARY/house.fbx">Models/Common/03_FBX_BINARY/house.fbx</a></p></div></article><article data-label="dae" data-texture="true">
+<a href="dae.png" target="_blank"><img src="dae.png" alt="DAE 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>DAE</h2><p class="tag">应显示纹理</p><p>小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Common/04_DAE/house.dae">Models/Common/04_DAE/house.dae</a></p></div></article><article data-label="gltf" data-texture="true">
+<a href="gltf.png" target="_blank"><img src="gltf.png" alt="GLTF 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>GLTF</h2><p class="tag">应显示纹理</p><p>小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。</p><p class="notes">保留同目录 house.bin 和 checker.png；验证 glTF 外置缓冲与外置纹理。</p>
+<p class="path">入口：<a href="../Models/Common/05_GLTF/house.gltf">Models/Common/05_GLTF/house.gltf</a></p></div></article><article data-label="3ds" data-texture="true">
+<a href="3ds.png" target="_blank"><img src="3ds.png" alt="3DS 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>3DS</h2><p class="tag">应显示纹理</p><p>小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。</p><p class="notes">3DS 按格式惯例保存 Z-up；导入后应是烟囱朝上的房子。</p>
+<p class="path">入口：<a href="../Models/Common/07_3DS/house.3ds">Models/Common/07_3DS/house.3ds</a></p></div></article><article data-label="ply" data-texture="false">
+<a href="ply.png" target="_blank"><img src="ply.png" alt="PLY 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>PLY</h2><p class="tag">无需贴图：检查几何或纯色材质</p><p>与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。</p><p class="notes">无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。</p>
+<p class="path">入口：<a href="../Models/Common/08_PLY/house.ply">Models/Common/08_PLY/house.ply</a></p></div></article><article data-label="stl" data-texture="false">
+<a href="stl.png" target="_blank"><img src="stl.png" alt="STL 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>STL</h2><p class="tag">无需贴图：检查几何或纯色材质</p><p>与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。</p><p class="notes">标准二进制 STL，无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。</p>
+<p class="path">入口：<a href="../Models/Common/09_STL/house.stl">Models/Common/09_STL/house.stl</a></p></div></article><article data-label="ase" data-texture="false">
+<a href="ase.png" target="_blank"><img src="ase.png" alt="ASE 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>ASE</h2><p class="tag">无需贴图：检查几何或纯色材质</p><p>三个独立方块，带纯色材质。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Rare/ase/ThreeCubesGreen.ase">Models/Rare/ase/ThreeCubesGreen.ase</a></p></div></article><article data-label="ifc" data-texture="false">
+<a href="ifc.png" target="_blank"><img src="ifc.png" alt="IFC 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>IFC</h2><p class="tag">无需贴图：检查几何或纯色材质</p><p>一栋带内部结构的房屋建筑，含门窗、楼梯等多个网格。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Rare/ifc/AC14-FZK-Haus.ifc">Models/Rare/ifc/AC14-FZK-Haus.ifc</a></p></div></article><article data-label="xgl" data-texture="false">
+<a href="xgl.png" target="_blank"><img src="xgl.png" alt="XGL 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>XGL</h2><p class="tag">无需贴图：检查几何或纯色材质</p><p>两个错位的绿色方块。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Rare/xgl/sample_official.xgl">Models/Rare/xgl/sample_official.xgl</a></p></div></article><article data-label="dxf" data-texture="false">
+<a href="dxf.png" target="_blank"><img src="dxf.png" alt="DXF 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>DXF</h2><p class="tag">无需贴图：检查几何或纯色材质</p><p>一个无贴图的立方体。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Rare/dxf/cube.dxf">Models/Rare/dxf/cube.dxf</a></p></div></article><article data-label="lwo" data-texture="false">
+<a href="lwo.png" target="_blank"><img src="lwo.png" alt="LWO 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>LWO</h2><p class="tag">无需贴图：检查几何或纯色材质</p><p>一个无外置贴图的立方体。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Rare/lwo/simple_cube.lwo">Models/Rare/lwo/simple_cube.lwo</a></p></div></article><article data-label="lws" data-texture="false">
+<a href="lws.png" target="_blank"><img src="lws.png" alt="LWS 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>LWS</h2><p class="tag">已知失败 · 图片仅表示模型的目标外观</p><p>场景中的立方体；本插件不播放源文件的物体位移动画。</p><p class="notes">4.1.2 已知限制：插件内存导入未缓存配套 LWO，会返回 Incomplete / SkeletonMaterial 占位骨架；预检 plugin-io 应为 FAIL。参考图展示正确文件导入的目标立方体，并非当前插件通过。请单独测 LWO。</p>
+<p class="path">入口：<a href="../Models/Rare/lws/move_x.lws">Models/Rare/lws/move_x.lws</a></p></div></article><article data-label="lxo" data-texture="false">
+<a href="lxo.png" target="_blank"><img src="lxo.png" alt="LXO 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>LXO</h2><p class="tag">无需贴图：检查几何或纯色材质</p><p>一个带顶点映射的球体。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Rare/lxo/sphereWithVertMap.lxo">Models/Rare/lxo/sphereWithVertMap.lxo</a></p></div></article><article data-label="x" data-texture="false">
+<a href="x.png" target="_blank"><img src="x.png" alt="X 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>X</h2><p class="tag">无需贴图：检查几何或纯色材质</p><p>一个立方体。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Rare/x/test_cube_text.x">Models/Rare/x/test_cube_text.x</a></p></div></article><article data-label="ac" data-texture="true">
+<a href="ac.png" target="_blank"><img src="ac.png" alt="AC 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>AC</h2><p class="tag">应显示纹理</p><p>一个带多色经纬 UV 测试贴图的细分球体，有网格线和方向/区域标记；源文件灯光不代表游戏中新建灯光。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Rare/ac/SphereWithLight.ac">Models/Rare/ac/SphereWithLight.ac</a></p></div></article><article data-label="ms3d" data-texture="false">
+<a href="ms3d.png" target="_blank"><img src="ms3d.png" alt="MS3D 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>MS3D</h2><p class="tag">无需贴图：检查几何或纯色材质</p><p>两个球体组成的模型。</p><p class="notes"></p>
+<p class="path">入口：<a href="../Models/Rare/ms3d/twospheres.ms3d">Models/Rare/ms3d/twospheres.ms3d</a></p></div></article><article data-label="smd" data-texture="true">
+<a href="smd.png" target="_blank"><img src="smd.png" alt="SMD 模型参考渲染" loading="lazy"></a>
+<div class="body"><h2>SMD</h2><p class="tag">应显示纹理</p><p>一个带棋盘贴图的三角片，单面；转到背面可能不可见。</p><p class="notes"> 参考图使用双面显示；游戏内单面三角片从背面可能不可见。</p>
+<p class="path">入口：<a href="../Models/Rare/smd/triangle.smd">Models/Rare/smd/triangle.smd</a></p></div></article></main><footer>软件参考渲染：Pillow / numpy；几何与材质来自 AssimpNet 5.0.0-beta1 + Assimp v5.0.1 读取结果。所有模型按各自尺寸自动缩放取景；图片之间的大小不代表实际单位或游戏导入比例。<br>源模型出处与许可证见测试包中的来源说明。渲染报告：<a href="render-report.json">render-report.json</a>。</footer>
+<script>const q=document.querySelector('#q'),f=document.querySelector('#filter');function filter(){const text=q.value.trim().toLowerCase();document.querySelectorAll('article').forEach(a=>a.hidden=!(a.dataset.label.includes(text)&&(f.value==='all'||a.dataset.texture===f.value)))}q.addEventListener('input',filter);f.addEventListener('change',filter);</script></html>

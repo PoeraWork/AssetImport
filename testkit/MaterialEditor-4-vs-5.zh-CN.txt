@@ -1,0 +1,43 @@
+﻿MaterialEditor 4.0.3 与 5.0：本次测试的差异和边界
+资料核对：2026-10-01；目标：Koikatu / CharaStudio（KK）。
+
+两套环境使用完全相同的 KK_AssetImport 4.1.2 二进制。区别是官方 MaterialEditor 4.0.3（KK_Plugins v270）或 5.0（v271），不是两份功能不同的 AssetImport。本插件按 4.0.3 编译，声明最低 4.0.3，同时对真实 5.0 DLL 做了静态回归。
+
+1. 官方变更
+
+• v270 是本包 4.0.3 的来源；v271 是 5.0 的来源。它们是 KK_Plugins 合集发布号，不是 MaterialEditor 自身的版本号。
+  https://github.com/IllusionMods/KK_Plugins/releases/tag/v270
+  https://github.com/IllusionMods/KK_Plugins/releases/tag/v271
+
+• ME 5.0 重做了界面和内部编辑流程：材质操作、卡片/场景存储与界面行渲染拆分；增加选择/标签点击等扩展接口和属性分类。PR #397 明确保留既有 public API，并说明该次重构没有更改卡片/场景保存格式。这能解释旧调用仍可链接，但不能据此承诺所有 5.0 新特性保存后均可无损降回 4.0.3。
+  https://github.com/IllusionMods/KK_Plugins/pull/397
+
+• 新版增加/改善 shader manifest 的界面元数据，包括显示名称、Boolean/Enum/Vector 属性编辑、条件显示、子分类和主题；另有 Cubemap/HDR 载入、共享状态、重置和性能修正。普通静态贴图 demo 不能覆盖这些全部新能力。
+  https://github.com/IllusionMods/KK_Plugins/pull/403
+
+• 增加 Shift 悬停查看 shader 提示，并修正复制/传播材质时的角色 siru 状态同步。这类变化会触及实际材质编辑和更新流程。
+  https://github.com/IllusionMods/KK_Plugins/pull/399
+
+• v271 发布说明明确提醒此次 ME 改动大、可能引入新问题，并建议使用 StudioImageEmbed 的用户同步更新该插件。本包不会因为测试而自动改动你的其他插件；如已安装 StudioImageEmbed，请记录版本并核对官方说明。
+  https://github.com/IllusionMods/KK_Plugins/releases/tag/v271
+
+2. 实际官方 DLL 的依赖门槛
+
+已读取本包实际 DLL 的 BepInDependency 元数据，而非按 ME 主版本号猜测：
+
+ME 4.0.3（v270）：ResourceRedirector >= 1.2.0；KKAPI >= 1.45.1；ExtendedSave >= 21.0；Sideloader >= 21.0。
+ME 5.0（v271）：ResourceRedirector >= 1.2.0；KKAPI >= 1.42.2；ExtendedSave >= 20.0；Sideloader >= 20.0。
+
+官方 5.0 文件声明的依赖门槛反而较低，这是该发布包的实际元数据；不代表搭配本插件就可以降低全部依赖。本次 AssetImport 4.1.2 统一要求 KKAPI >= 1.45.1。为了只改变 ME 一个变量，两套环境共同使用 KKAPI >= 1.45.1、ResourceRedirector >= 1.2.0，以及提供 ExtendedSave/Sideloader >= 21.0 的 BepisPlugins 21.0 或更新版。还需满足测试包安装说明中 AssetImport 的其他依赖。
+
+3. 已验证的兼容性
+
+已在 macOS 构建 KK 目标，并针对真实 ME 4.0.3 / 5.0 DLL 检查生产程序集链接的类型、SetMaterialTexture 方法签名及枚举值、BepInDependency 最低版本、场景加载方法和载入协程补丁锚点。还执行了生产补丁的 IL 变换回归，验证能从协程对象取到所属控制器；不认识的布局保留原始 IL。
+
+这些检查验证的是“调用和补丁可以匹配这些版本”。它们没有启动 Windows KK / Unity，也没有证明材质、shader、zipmod 服装卡、存档或第三方插件组合在游戏里完全一致。
+
+4. 为什么仍需两套环境实测
+
+方法名称与参数不变时，内部的材质更新时机、贴图缓存、界面编辑状态和保存/恢复流程仍可能变化；AssetImport 还会补丁 ME 的载入协程，公开 API 兼容并不能涵盖全部内部行为。因此必须分别记录：首次导入几何、纹理显示、ME 编辑、保存后重载、重启后重载。
+
+请用原始卡片的副本分别测试两版。不要用 ME 5.0 改写唯一原件后再直接降级覆盖。本次基础 demo 为静态模型回归，不构成所有格式的骨骼、动画、Blendshape、Cubemap 或复杂 PBR 材质支持承诺。Windows 游戏内结果目前留给你填写。

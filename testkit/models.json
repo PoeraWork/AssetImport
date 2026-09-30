@@ -1,0 +1,216 @@
+{
+  "schema": 1,
+  "plugin": "4.1.2",
+  "scope": "18 extensions shown in the file dialog; FBX ASCII and binary tested separately. Static geometry/material smoke tests only.",
+  "demos": [
+    {
+      "id": "obj",
+      "format": "obj",
+      "entry": "Models/Common/01_OBJ/house.obj",
+      "label": "OBJ",
+      "expected": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "notes": "",
+      "studio_scale": "1",
+      "maker_scale": "0.1"
+    },
+    {
+      "id": "fbx-ascii",
+      "format": "fbx",
+      "entry": "Models/Common/02_FBX_ASCII/house.fbx",
+      "label": "FBX-ASCII",
+      "expected": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "notes": "FBX 7.4 ASCII，UV + 外置 checker.png；与 binary FBX 分开验证。",
+      "studio_scale": "1",
+      "maker_scale": "0.1"
+    },
+    {
+      "id": "fbx-binary",
+      "format": "fbx",
+      "entry": "Models/Common/03_FBX_BINARY/house.fbx",
+      "label": "FBX-BINARY",
+      "expected": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "notes": "FBX binary，使用原生 Assimp v5.0.1 从本套自有 OBJ 导出；UV + 外置 checker.png。",
+      "studio_scale": "1",
+      "maker_scale": "0.1"
+    },
+    {
+      "id": "dae",
+      "format": "dae",
+      "entry": "Models/Common/04_DAE/house.dae",
+      "label": "DAE",
+      "expected": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "notes": "",
+      "studio_scale": "1",
+      "maker_scale": "0.1"
+    },
+    {
+      "id": "gltf",
+      "format": "gltf",
+      "entry": "Models/Common/05_GLTF/house.gltf",
+      "label": "GLTF",
+      "expected": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "notes": "保留同目录 house.bin 和 checker.png；验证 glTF 外置缓冲与外置纹理。",
+      "studio_scale": "1",
+      "maker_scale": "0.1"
+    },
+    {
+      "id": "3ds",
+      "format": "3ds",
+      "entry": "Models/Common/07_3DS/house.3ds",
+      "label": "3DS",
+      "expected": "小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。",
+      "texture_expected": true,
+      "notes": "3DS 按格式惯例保存 Z-up；导入后应是烟囱朝上的房子。",
+      "studio_scale": "1",
+      "maker_scale": "0.1"
+    },
+    {
+      "id": "ply",
+      "format": "ply",
+      "entry": "Models/Common/08_PLY/house.ply",
+      "label": "PLY",
+      "expected": "与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。",
+      "texture_expected": false,
+      "notes": "无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。",
+      "studio_scale": "1",
+      "maker_scale": "0.1"
+    },
+    {
+      "id": "stl",
+      "format": "stl",
+      "entry": "Models/Common/09_STL/house.stl",
+      "label": "STL",
+      "expected": "与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。",
+      "texture_expected": false,
+      "notes": "标准二进制 STL，无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。",
+      "studio_scale": "1",
+      "maker_scale": "0.1"
+    },
+    {
+      "id": "ase",
+      "format": "ase",
+      "entry": "Models/Rare/ase/ThreeCubesGreen.ase",
+      "label": "ASE",
+      "expected": "三个独立方块，带纯色材质。",
+      "texture_expected": false,
+      "notes": "",
+      "studio_scale": "0.001",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    },
+    {
+      "id": "ifc",
+      "format": "ifc",
+      "entry": "Models/Rare/ifc/AC14-FZK-Haus.ifc",
+      "label": "IFC",
+      "expected": "一栋带内部结构的房屋建筑，含门窗、楼梯等多个网格。",
+      "texture_expected": false,
+      "notes": "",
+      "studio_scale": "0.1",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    },
+    {
+      "id": "xgl",
+      "format": "xgl",
+      "entry": "Models/Rare/xgl/sample_official.xgl",
+      "label": "XGL",
+      "expected": "两个错位的绿色方块。",
+      "texture_expected": false,
+      "notes": "",
+      "studio_scale": "1",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    },
+    {
+      "id": "dxf",
+      "format": "dxf",
+      "entry": "Models/Rare/dxf/cube.dxf",
+      "label": "DXF",
+      "expected": "一个无贴图的立方体。",
+      "texture_expected": false,
+      "notes": "",
+      "studio_scale": "1",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    },
+    {
+      "id": "lwo",
+      "format": "lwo",
+      "entry": "Models/Rare/lwo/simple_cube.lwo",
+      "label": "LWO",
+      "expected": "一个无外置贴图的立方体。",
+      "texture_expected": false,
+      "notes": "",
+      "studio_scale": "0.5",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    },
+    {
+      "id": "lws",
+      "format": "lws",
+      "entry": "Models/Rare/lws/move_x.lws",
+      "label": "LWS",
+      "expected": "场景中的立方体；本插件不播放源文件的物体位移动画。",
+      "texture_expected": false,
+      "notes": "4.1.2 已知限制：插件内存导入未缓存配套 LWO，会返回 Incomplete / SkeletonMaterial 占位骨架；预检 plugin-io 应为 FAIL。参考图展示正确文件导入的目标立方体，并非当前插件通过。请单独测 LWO。",
+      "studio_scale": "0.5",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    },
+    {
+      "id": "lxo",
+      "format": "lxo",
+      "entry": "Models/Rare/lxo/sphereWithVertMap.lxo",
+      "label": "LXO",
+      "expected": "一个带顶点映射的球体。",
+      "texture_expected": false,
+      "notes": "",
+      "studio_scale": "0.5",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    },
+    {
+      "id": "x",
+      "format": "x",
+      "entry": "Models/Rare/x/test_cube_text.x",
+      "label": "X",
+      "expected": "一个立方体。",
+      "texture_expected": false,
+      "notes": "",
+      "studio_scale": "1",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    },
+    {
+      "id": "ac",
+      "format": "ac",
+      "entry": "Models/Rare/ac/SphereWithLight.ac",
+      "label": "AC",
+      "expected": "一个带多色经纬 UV 测试贴图的细分球体，有网格线和方向/区域标记；源文件灯光不代表游戏中新建灯光。",
+      "texture_expected": true,
+      "notes": "",
+      "studio_scale": "10",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    },
+    {
+      "id": "ms3d",
+      "format": "ms3d",
+      "entry": "Models/Rare/ms3d/twospheres.ms3d",
+      "label": "MS3D",
+      "expected": "两个球体组成的模型。",
+      "texture_expected": false,
+      "notes": "",
+      "studio_scale": "0.01",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    },
+    {
+      "id": "smd",
+      "format": "smd",
+      "entry": "Models/Rare/smd/triangle.smd",
+      "label": "SMD",
+      "expected": "一个带棋盘贴图的三角片，单面；转到背面可能不可见。",
+      "texture_expected": true,
+      "notes": "",
+      "studio_scale": "1",
+      "maker_scale": "按 Studio 比例再缩小 10 倍"
+    }
+  ]
+}

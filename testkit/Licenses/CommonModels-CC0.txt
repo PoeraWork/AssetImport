@@ -1,0 +1,3 @@
+All geometry, UV data, checker.png, generator code and descriptions in this demo set are original fixtures created for PoeraWork AssetImport.
+Dedicated to the public domain under CC0 1.0 Universal (CC0-1.0).
+https://creativecommons.org/publicdomain/zero/1.0/

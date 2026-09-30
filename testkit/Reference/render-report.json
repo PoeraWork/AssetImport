@@ -1,0 +1,389 @@
+{
+  "renderer": "Pillow/numpy orthographic software rasterizer",
+  "disclaimer": "模型参考渲染，非游戏截图；只对比几何和纹理，游戏光照/位置可不同",
+  "assjson_source": "AssimpNet 5.0.0-beta1 + native Assimp v5.0.1; MakeLeftHanded/Triangulate",
+  "limitations": [
+    "Not game screenshots or a Unity rendering test",
+    "Opaque, double-sided reference shading",
+    "Reference camera auto-centers each model; no source animation, source lights, skinning or game shader simulation"
+  ],
+  "images": [
+    {
+      "id": "obj",
+      "image": "obj.png",
+      "instances": 3,
+      "triangles": 32,
+      "bounds_min": [
+        -1.1,
+        0.0,
+        -0.8
+      ],
+      "bounds_max": [
+        1.1,
+        2.15,
+        0.8
+      ],
+      "model_pixels": 226631,
+      "textures": [
+        "checker.png"
+      ],
+      "elapsed_seconds": 0.119
+    },
+    {
+      "id": "fbx-ascii",
+      "image": "fbx-ascii.png",
+      "instances": 3,
+      "triangles": 32,
+      "bounds_min": [
+        -1.1,
+        0.0,
+        -0.8
+      ],
+      "bounds_max": [
+        1.1,
+        2.15,
+        0.8
+      ],
+      "model_pixels": 226631,
+      "textures": [
+        "checker.png"
+      ],
+      "elapsed_seconds": 0.111
+    },
+    {
+      "id": "fbx-binary",
+      "image": "fbx-binary.png",
+      "instances": 3,
+      "triangles": 32,
+      "bounds_min": [
+        -1.1,
+        0.0,
+        -0.8
+      ],
+      "bounds_max": [
+        1.1,
+        2.15,
+        0.8
+      ],
+      "model_pixels": 226631,
+      "textures": [
+        "checker.png"
+      ],
+      "elapsed_seconds": 0.109
+    },
+    {
+      "id": "dae",
+      "image": "dae.png",
+      "instances": 3,
+      "triangles": 32,
+      "bounds_min": [
+        -1.1,
+        0.0,
+        -0.8
+      ],
+      "bounds_max": [
+        1.1,
+        2.15,
+        0.8
+      ],
+      "model_pixels": 226631,
+      "textures": [
+        "checker.png"
+      ],
+      "elapsed_seconds": 0.111
+    },
+    {
+      "id": "gltf",
+      "image": "gltf.png",
+      "instances": 3,
+      "triangles": 32,
+      "bounds_min": [
+        -1.1,
+        0.0,
+        -0.8
+      ],
+      "bounds_max": [
+        1.1,
+        2.15,
+        0.8
+      ],
+      "model_pixels": 226631,
+      "textures": [
+        "checker.png"
+      ],
+      "elapsed_seconds": 0.11
+    },
+    {
+      "id": "3ds",
+      "image": "3ds.png",
+      "instances": 3,
+      "triangles": 32,
+      "bounds_min": [
+        -1.1,
+        0.0,
+        -0.8
+      ],
+      "bounds_max": [
+        1.1,
+        2.15,
+        0.8
+      ],
+      "model_pixels": 226631,
+      "textures": [
+        "checker.png"
+      ],
+      "elapsed_seconds": 0.114
+    },
+    {
+      "id": "ply",
+      "image": "ply.png",
+      "instances": 1,
+      "triangles": 32,
+      "bounds_min": [
+        -1.1,
+        0.0,
+        -0.8
+      ],
+      "bounds_max": [
+        1.1,
+        2.15,
+        0.8
+      ],
+      "model_pixels": 226631,
+      "textures": [],
+      "elapsed_seconds": 0.034
+    },
+    {
+      "id": "stl",
+      "image": "stl.png",
+      "instances": 1,
+      "triangles": 32,
+      "bounds_min": [
+        -1.1,
+        0.0,
+        -0.8
+      ],
+      "bounds_max": [
+        1.1,
+        2.15,
+        0.8
+      ],
+      "model_pixels": 226631,
+      "textures": [],
+      "elapsed_seconds": 0.082
+    },
+    {
+      "id": "ase",
+      "image": "ase.png",
+      "instances": 3,
+      "triangles": 36,
+      "bounds_min": [
+        -300.0,
+        -130.74790000000002,
+        -152.493
+      ],
+      "bounds_max": [
+        0.0,
+        326.731,
+        241.4127
+      ],
+      "model_pixels": 173787,
+      "textures": [],
+      "elapsed_seconds": 0.058
+    },
+    {
+      "id": "ifc",
+      "image": "ifc.png",
+      "instances": 294,
+      "triangles": 35906,
+      "bounds_min": [
+        -3.0,
+        -1.0000005682482,
+        -3.0000000437114
+      ],
+      "bounds_max": [
+        15.0,
+        6.317689781443208,
+        13.0
+      ],
+      "model_pixels": 267962,
+      "textures": [],
+      "elapsed_seconds": 0.995
+    },
+    {
+      "id": "xgl",
+      "image": "xgl.png",
+      "instances": 2,
+      "triangles": 24,
+      "bounds_min": [
+        -0.9,
+        -0.5,
+        -1.0
+      ],
+      "bounds_max": [
+        1.0,
+        1.4,
+        0.0
+      ],
+      "model_pixels": 217924,
+      "textures": [],
+      "elapsed_seconds": 0.069
+    },
+    {
+      "id": "dxf",
+      "image": "dxf.png",
+      "instances": 1,
+      "triangles": 12,
+      "bounds_min": [
+        -0.5,
+        -0.5,
+        -0.5
+      ],
+      "bounds_max": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "model_pixels": 250924,
+      "textures": [],
+      "elapsed_seconds": 0.03
+    },
+    {
+      "id": "lwo",
+      "image": "lwo.png",
+      "instances": 1,
+      "triangles": 12,
+      "bounds_min": [
+        -1.45,
+        0.0,
+        -1.2
+      ],
+      "bounds_max": [
+        1.25,
+        1.9,
+        0.9
+      ],
+      "model_pixels": 287356,
+      "textures": [],
+      "elapsed_seconds": 0.092
+    },
+    {
+      "id": "lws",
+      "image": "lws.png",
+      "instances": 1,
+      "triangles": 12,
+      "bounds_min": [
+        -1.4206490999999999,
+        -0.04,
+        -1.1458992
+      ],
+      "bounds_max": [
+        1.2246975,
+        1.6431586999999999,
+        0.8594244
+      ],
+      "model_pixels": 299132,
+      "textures": [],
+      "elapsed_seconds": 0.101
+    },
+    {
+      "id": "lxo",
+      "image": "lxo.png",
+      "instances": 1,
+      "triangles": 528,
+      "bounds_min": [
+        -2.15,
+        -2.1,
+        -2.6
+      ],
+      "bounds_max": [
+        2.15,
+        2.1,
+        2.5
+      ],
+      "model_pixels": 265704,
+      "textures": [],
+      "elapsed_seconds": 0.125
+    },
+    {
+      "id": "x",
+      "image": "x.png",
+      "instances": 1,
+      "triangles": 12,
+      "bounds_min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "bounds_max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "model_pixels": 250924,
+      "textures": [],
+      "elapsed_seconds": 0.071
+    },
+    {
+      "id": "ac",
+      "image": "ac.png",
+      "instances": 1,
+      "triangles": 17664,
+      "bounds_min": [
+        -0.118654,
+        -0.0642417,
+        -0.10863
+      ],
+      "bounds_max": [
+        -0.0102094,
+        0.0435225,
+        -0.00305168
+      ],
+      "model_pixels": 252151,
+      "textures": [
+        "earthSpherical.jpg"
+      ],
+      "elapsed_seconds": 1.019
+    },
+    {
+      "id": "ms3d",
+      "image": "ms3d.png",
+      "instances": 2,
+      "triangles": 240,
+      "bounds_min": [
+        -63.0,
+        -13.5,
+        -94.0
+      ],
+      "bounds_max": [
+        167.0,
+        181.0,
+        94.0
+      ],
+      "model_pixels": 259093,
+      "textures": [],
+      "elapsed_seconds": 0.096
+    },
+    {
+      "id": "smd",
+      "image": "smd.png",
+      "instances": 1,
+      "triangles": 1,
+      "bounds_min": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bounds_max": [
+        1.0,
+        1.0,
+        0.0
+      ],
+      "model_pixels": 160461,
+      "textures": [
+        "checker.png"
+      ],
+      "elapsed_seconds": 0.055
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+﻿测试批次,日期时间,ME环境,实际ME版本,程序,DemoID,格式,入口文件_测试包相对路径,建议Scale,实际Scale,几何,材质与颜色,纹理,ME编辑,场景保存重载,角色卡保存重载,服装卡保存重载,重启后重载,整体结果,首条相关错误,日志ZIP文件名,截图文件名,备注,预期形状
+,,4.0.3,,Studio,obj,OBJ,Models/Common/01_OBJ/house.obj,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Studio,fbx-ascii,FBX-ASCII,Models/Common/02_FBX_ASCII/house.fbx,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,FBX 7.4 ASCII，UV + 外置 checker.png；与 binary FBX 分开验证。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Studio,fbx-binary,FBX-BINARY,Models/Common/03_FBX_BINARY/house.fbx,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,FBX binary，使用原生 Assimp v5.0.1 从本套自有 OBJ 导出；UV + 外置 checker.png。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Studio,dae,DAE,Models/Common/04_DAE/house.dae,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Studio,gltf,GLTF,Models/Common/05_GLTF/house.gltf,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,保留同目录 house.bin 和 checker.png；验证 glTF 外置缓冲与外置纹理。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Studio,3ds,3DS,Models/Common/07_3DS/house.3ds,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,3DS 按格式惯例保存 Z-up；导入后应是烟囱朝上的房子。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Studio,ply,PLY,Models/Common/08_PLY/house.ply,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。,与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。
+,,4.0.3,,Studio,stl,STL,Models/Common/09_STL/house.stl,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,标准二进制 STL，无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。,与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。
+,,4.0.3,,Studio,ase,ASE,Models/Rare/ase/ThreeCubesGreen.ase,0.001,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,三个独立方块，带纯色材质。
+,,4.0.3,,Studio,ifc,IFC,Models/Rare/ifc/AC14-FZK-Haus.ifc,0.1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一栋带内部结构的房屋建筑，含门窗、楼梯等多个网格。
+,,4.0.3,,Studio,xgl,XGL,Models/Rare/xgl/sample_official.xgl,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,两个错位的绿色方块。
+,,4.0.3,,Studio,dxf,DXF,Models/Rare/dxf/cube.dxf,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个无贴图的立方体。
+,,4.0.3,,Studio,lwo,LWO,Models/Rare/lwo/simple_cube.lwo,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个无外置贴图的立方体。
+,,4.0.3,,Studio,lws,LWS,Models/Rare/lws/move_x.lws,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,已知限制（AssetImport 4.1.2）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
+,,4.0.3,,Studio,lxo,LXO,Models/Rare/lxo/sphereWithVertMap.lxo,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个带顶点映射的球体。
+,,4.0.3,,Studio,x,X,Models/Rare/x/test_cube_text.x,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个立方体。
+,,4.0.3,,Studio,ac,AC,Models/Rare/ac/SphereWithLight.ac,10,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,,一个带多色经纬 UV 测试贴图的细分球体；源文件灯光不代表游戏中新建灯光。
+,,4.0.3,,Studio,ms3d,MS3D,Models/Rare/ms3d/twospheres.ms3d,0.01,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,两个球体组成的模型。
+,,4.0.3,,Studio,smd,SMD,Models/Rare/smd/triangle.smd,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,,一个带棋盘贴图的三角片，单面；转到背面可能不可见。
+,,4.0.3,,Maker,obj,OBJ,Models/Common/01_OBJ/house.obj,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Maker,fbx-ascii,FBX-ASCII,Models/Common/02_FBX_ASCII/house.fbx,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,FBX 7.4 ASCII，UV + 外置 checker.png；与 binary FBX 分开验证。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Maker,fbx-binary,FBX-BINARY,Models/Common/03_FBX_BINARY/house.fbx,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,FBX binary，使用原生 Assimp v5.0.1 从本套自有 OBJ 导出；UV + 外置 checker.png。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Maker,dae,DAE,Models/Common/04_DAE/house.dae,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Maker,gltf,GLTF,Models/Common/05_GLTF/house.gltf,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,保留同目录 house.bin 和 checker.png；验证 glTF 外置缓冲与外置纹理。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Maker,3ds,3DS,Models/Common/07_3DS/house.3ds,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,3DS 按格式惯例保存 Z-up；导入后应是烟囱朝上的房子。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,4.0.3,,Maker,ply,PLY,Models/Common/08_PLY/house.ply,0.1,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。,与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。
+,,4.0.3,,Maker,stl,STL,Models/Common/09_STL/house.stl,0.1,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,标准二进制 STL，无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。,与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。
+,,4.0.3,,Maker,ase,ASE,Models/Rare/ase/ThreeCubesGreen.ase,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,三个独立方块，带纯色材质。
+,,4.0.3,,Maker,ifc,IFC,Models/Rare/ifc/AC14-FZK-Haus.ifc,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一栋带内部结构的房屋建筑，含门窗、楼梯等多个网格。
+,,4.0.3,,Maker,xgl,XGL,Models/Rare/xgl/sample_official.xgl,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,两个错位的绿色方块。
+,,4.0.3,,Maker,dxf,DXF,Models/Rare/dxf/cube.dxf,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个无贴图的立方体。
+,,4.0.3,,Maker,lwo,LWO,Models/Rare/lwo/simple_cube.lwo,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个无外置贴图的立方体。
+,,4.0.3,,Maker,lws,LWS,Models/Rare/lws/move_x.lws,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,已知限制（AssetImport 4.1.2）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
+,,4.0.3,,Maker,lxo,LXO,Models/Rare/lxo/sphereWithVertMap.lxo,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个带顶点映射的球体。
+,,4.0.3,,Maker,x,X,Models/Rare/x/test_cube_text.x,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个立方体。
+,,4.0.3,,Maker,ac,AC,Models/Rare/ac/SphereWithLight.ac,按 Studio 比例再缩小 10 倍,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,,一个带多色经纬 UV 测试贴图的细分球体；源文件灯光不代表游戏中新建灯光。
+,,4.0.3,,Maker,ms3d,MS3D,Models/Rare/ms3d/twospheres.ms3d,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,两个球体组成的模型。
+,,4.0.3,,Maker,smd,SMD,Models/Rare/smd/triangle.smd,按 Studio 比例再缩小 10 倍,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,,一个带棋盘贴图的三角片，单面；转到背面可能不可见。
+,,5.0,,Studio,obj,OBJ,Models/Common/01_OBJ/house.obj,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Studio,fbx-ascii,FBX-ASCII,Models/Common/02_FBX_ASCII/house.fbx,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,FBX 7.4 ASCII，UV + 外置 checker.png；与 binary FBX 分开验证。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Studio,fbx-binary,FBX-BINARY,Models/Common/03_FBX_BINARY/house.fbx,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,FBX binary，使用原生 Assimp v5.0.1 从本套自有 OBJ 导出；UV + 外置 checker.png。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Studio,dae,DAE,Models/Common/04_DAE/house.dae,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Studio,gltf,GLTF,Models/Common/05_GLTF/house.gltf,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,保留同目录 house.bin 和 checker.png；验证 glTF 外置缓冲与外置纹理。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Studio,3ds,3DS,Models/Common/07_3DS/house.3ds,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,3DS 按格式惯例保存 Z-up；导入后应是烟囱朝上的房子。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Studio,ply,PLY,Models/Common/08_PLY/house.ply,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。,与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。
+,,5.0,,Studio,stl,STL,Models/Common/09_STL/house.stl,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,标准二进制 STL，无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。,与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。
+,,5.0,,Studio,ase,ASE,Models/Rare/ase/ThreeCubesGreen.ase,0.001,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,三个独立方块，带纯色材质。
+,,5.0,,Studio,ifc,IFC,Models/Rare/ifc/AC14-FZK-Haus.ifc,0.1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一栋带内部结构的房屋建筑，含门窗、楼梯等多个网格。
+,,5.0,,Studio,xgl,XGL,Models/Rare/xgl/sample_official.xgl,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,两个错位的绿色方块。
+,,5.0,,Studio,dxf,DXF,Models/Rare/dxf/cube.dxf,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个无贴图的立方体。
+,,5.0,,Studio,lwo,LWO,Models/Rare/lwo/simple_cube.lwo,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个无外置贴图的立方体。
+,,5.0,,Studio,lws,LWS,Models/Rare/lws/move_x.lws,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,已知限制（AssetImport 4.1.2）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
+,,5.0,,Studio,lxo,LXO,Models/Rare/lxo/sphereWithVertMap.lxo,0.5,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个带顶点映射的球体。
+,,5.0,,Studio,x,X,Models/Rare/x/test_cube_text.x,1,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,一个立方体。
+,,5.0,,Studio,ac,AC,Models/Rare/ac/SphereWithLight.ac,10,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,,一个带多色经纬 UV 测试贴图的细分球体；源文件灯光不代表游戏中新建灯光。
+,,5.0,,Studio,ms3d,MS3D,Models/Rare/ms3d/twospheres.ms3d,0.01,,未测,未测,不适用,未测,未测,不适用,不适用,未测,未测,,,,,两个球体组成的模型。
+,,5.0,,Studio,smd,SMD,Models/Rare/smd/triangle.smd,1,,未测,未测,未测,未测,未测,不适用,不适用,未测,未测,,,,,一个带棋盘贴图的三角片，单面；转到背面可能不可见。
+,,5.0,,Maker,obj,OBJ,Models/Common/01_OBJ/house.obj,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Maker,fbx-ascii,FBX-ASCII,Models/Common/02_FBX_ASCII/house.fbx,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,FBX 7.4 ASCII，UV + 外置 checker.png；与 binary FBX 分开验证。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Maker,fbx-binary,FBX-BINARY,Models/Common/03_FBX_BINARY/house.fbx,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,FBX binary，使用原生 Assimp v5.0.1 从本套自有 OBJ 导出；UV + 外置 checker.png。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Maker,dae,DAE,Models/Common/04_DAE/house.dae,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Maker,gltf,GLTF,Models/Common/05_GLTF/house.gltf,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,保留同目录 house.bin 和 checker.png；验证 glTF 外置缓冲与外置纹理。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Maker,3ds,3DS,Models/Common/07_3DS/house.3ds,0.1,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,3DS 按格式惯例保存 Z-up；导入后应是烟囱朝上的房子。,小房子：青绿/米黄棋盘墙面，橙色不对称斜屋顶，屋顶右侧有深灰烟囱。屋脊偏左，烟囱偏右。
+,,5.0,,Maker,ply,PLY,Models/Common/08_PLY/house.ply,0.1,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。,与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。
+,,5.0,,Maker,stl,STL,Models/Common/09_STL/house.stl,0.1,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,标准二进制 STL，无材质/贴图，仅检查几何。白色/默认材质正常，不代表导入失败。,与彩色小房子相同的几何轮廓：长方体墙体、不对称斜屋顶、偏置烟囱；只测试几何。
+,,5.0,,Maker,ase,ASE,Models/Rare/ase/ThreeCubesGreen.ase,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,三个独立方块，带纯色材质。
+,,5.0,,Maker,ifc,IFC,Models/Rare/ifc/AC14-FZK-Haus.ifc,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一栋带内部结构的房屋建筑，含门窗、楼梯等多个网格。
+,,5.0,,Maker,xgl,XGL,Models/Rare/xgl/sample_official.xgl,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,两个错位的绿色方块。
+,,5.0,,Maker,dxf,DXF,Models/Rare/dxf/cube.dxf,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个无贴图的立方体。
+,,5.0,,Maker,lwo,LWO,Models/Rare/lwo/simple_cube.lwo,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个无外置贴图的立方体。
+,,5.0,,Maker,lws,LWS,Models/Rare/lws/move_x.lws,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,已知限制（AssetImport 4.1.2）：plugin-io 未缓存关联 LWO，SceneFlags.Incomplete + SkeletonMaterial 占位骨架；预检应为 FAIL（id=lws，mode=plugin-io），不能判成功。可直接测配套 LWO 本体。,真实目标是立方体（24 顶点/12 三角形/0 骨骼）；占位骨架（108/36/4）不是成功导入。
+,,5.0,,Maker,lxo,LXO,Models/Rare/lxo/sphereWithVertMap.lxo,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个带顶点映射的球体。
+,,5.0,,Maker,x,X,Models/Rare/x/test_cube_text.x,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,一个立方体。
+,,5.0,,Maker,ac,AC,Models/Rare/ac/SphereWithLight.ac,按 Studio 比例再缩小 10 倍,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,,一个带多色经纬 UV 测试贴图的细分球体；源文件灯光不代表游戏中新建灯光。
+,,5.0,,Maker,ms3d,MS3D,Models/Rare/ms3d/twospheres.ms3d,按 Studio 比例再缩小 10 倍,,未测,未测,不适用,未测,不适用,未测,未测,未测,未测,,,,,两个球体组成的模型。
+,,5.0,,Maker,smd,SMD,Models/Rare/smd/triangle.smd,按 Studio 比例再缩小 10 倍,,未测,未测,未测,未测,不适用,未测,未测,未测,未测,,,,,一个带棋盘贴图的三角片，单面；转到背面可能不可见。

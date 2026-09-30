@@ -1,0 +1,5 @@
+!**/*.obj
+/Reports/
+/CollectedLogs/
+/Diagnostic/
+/Installers/
