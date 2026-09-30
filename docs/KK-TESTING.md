@@ -1,12 +1,12 @@
 # KK 预览版 4.1.4：Windows 测试
 
-此文档是**待执行的手工验证清单**，不表示游戏内测试已经通过。请使用备份卡片、场景或单独的测试存档。当前任务只验证 KK 移植，不包含 KKS 服装白模的复现或修复结论。
+此文档是**完整手工验证清单**，未勾选的项目仍待执行。2026-10-01，用户确认 4.1.4 已解决本次报告的 KKS 场景在 KK 中的材质串位问题；该确认不代表下方所有项目通过。请使用备份卡片、场景或单独的测试存档。当前任务只验证 KK 移植，不包含 KKS 服装白模的复现或修复结论。
 
 ## 1. 安装与启动
 
 准备 Windows x64 KK、BepInEx 5.4.22+（5.x）、KKAPI 1.45.1+、KK MaterialEditor 4.0.3+、LoadFileLimitedFix。LoadFileLimitedFix 可从 [IllusionFixes Releases](https://github.com/IllusionMods/IllusionFixes/releases) 的 KK 包获取。不要把 KKS 版依赖装入 KK。
 
-4.1.4 基于 [官方 MaterialEditor 4.0.3（v270）](https://github.com/IllusionMods/KK_Plugins/releases/tag/v270) 编译，并保留 5.0 的兼容回归检查；Windows 实机仍待测试。建议分别使用 4.0.3 和 5.0 执行下方清单并记录实际版本。旧 AssetImport 4.1.0 / 4.1.1 包要求 MaterialEditor 5.0，测试 4.0.3 时须换用本次 4.1.4 包。
+4.1.4 基于 [官方 MaterialEditor 4.0.3（v270）](https://github.com/IllusionMods/KK_Plugins/releases/tag/v270) 编译，并保留 5.0 的兼容回归检查；两版 ME 的完整 Windows 测试矩阵仍待完成。建议分别使用 4.0.3 和 5.0 执行下方清单并记录实际版本。旧 AssetImport 4.1.0 / 4.1.1 包要求 MaterialEditor 5.0，测试 4.0.3 时须换用本次 4.1.4 包。
 
 退出游戏后，将 `KK_AssetImportv4.1.4Packed.zip` 内的 `BepInEx` 和 `runtimes` 两个文件夹一起解压至游戏根目录（`Koikatu.exe` 所在处），合并同名文件夹。4.1.1 用户可直接覆盖。若安装过 4.1.0 预览版，先将旧 `BepInEx/plugins/AssetImportKK` 整个文件夹移出游戏目录，避免双份加载。检查目录结构：
 

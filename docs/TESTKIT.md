@@ -45,4 +45,4 @@ python3 scripts/testkit/render_references.py --scenes artifacts/reference-scenes
 - 全部贴图严格解码通过。上游 AC 示例原 JPEG 不可解码，已换为自建 CC0 经纬 UV 测试图，并保留修改和来源记录。
 - 19 张参考图和总览经视觉核对，离线参考页链接有效。CSV 的 76 行覆盖两版 ME × Studio/Maker × 19 例，初始状态仍是未测。
 - PowerShell 收集器在 macOS PowerShell 7.6.6 的合成游戏目录实际运行，验证五文件白名单（含游戏根目录 output_log.txt）、插件版本识别、重复 ME 提示、缺失日志和不收集其他配置/卡片。按 Windows PowerShell 5.1 语法编写，但没有 Windows PS5.1 / CMD 实机执行结果。
-- 本机未运行 Windows 原生 DLL、Unity/Mono 或游戏；所有游戏内结果、ME 编辑和保存重载仍需用户回传。原来的 zipmod 服装卡白模问题没有本轮已解决的结论。
+- 本机未运行 Windows 原生 DLL、Unity/Mono 或游戏。2026-10-01，用户确认 4.1.4 已解决本次 KKS 场景在 KK 中的材质串位；这不是 19 个样例的完整测试矩阵，ME 编辑和保存重载仍需验证。原来的 zipmod 服装卡白模问题没有本轮已解决的结论。

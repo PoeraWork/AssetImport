@@ -6,7 +6,9 @@ AssetImport 将外部 3D 模型导入 Koikatsu（KK）或 Koikatsu Sunshine（KK
 
 4.1.4 修复大网格拆分后材质编号顺移的问题：原零件拆成多块时保留同一材质/renderer 名称，避免加载 KKS 场景时树、飘带、风筝等贴图串位。另为新导入模型解析同目录/相对子目录的贴图，并修正安装包时间戳导致 BepInEx 缓存旧版本的问题，启动时记录真实 Runtime build。包含 4.1.3 的节点转换类型修复。
 
-已装完整 4.1.1 / 4.1.2 / 4.1.3 的用户可用 `KK_AssetImportv4.1.4_DLL_Update.zip`，退出游戏后只覆盖其中 DLL，保留 ME 与运行库。复测场景请重开原始 KKS 场景 PNG；在错位版本里重新保存过的场景可能已有错误编辑，不能自动修复这些记录。新导入房屋 demo 时关闭 Material per Renderer；该选项会跳过源材质/贴图。已完成针对原场景网格与材质名的回归检查，Windows 显示和保存重载仍待验证，不保证所有跨游戏 shader 与场景插件互通。
+已装完整 4.1.1 / 4.1.2 / 4.1.3 的用户可用 `KK_AssetImportv4.1.4_DLL_Update.zip`，退出游戏后只覆盖其中 DLL，保留 ME 与运行库。复测场景请重开原始 KKS 场景 PNG；在错位版本里重新保存过的场景可能已有错误编辑，不能自动修复这些记录。新导入房屋 demo 时关闭 Material per Renderer；该选项会跳过源材质/贴图。
+
+**2026-10-01：用户确认 4.1.4 已解决本次 KKS 场景在 KK 中的材质串位问题。** 该结果对应本次报告的场景；完整格式矩阵、保存重载及其他跨游戏 shader / 场景插件组合仍待验证。详细记录见 [验证记录](docs/VALIDATION.md)。
 
 ## 安装 KK 预览版
 
@@ -52,7 +54,7 @@ ABMX 5.4、KKPE 2.21.5、DynamicBoneEditor 1.1 属于可选兼容项。安装它
 
 测试素材单独放在 `KK_AssetImportv4.1.4TestAssets.zip`，内含 `TestAssets/` 和 `Windows测试说明.md`，可解压到任意方便的位置。正常安装插件不需要这个包。
 
-4.1.4 基于 MaterialEditor 4.0.3 编译，并保留 5.0 的兼容回归检查。Windows 游戏内运行仍待验证，清单见 [Windows 测试说明](docs/KK-TESTING.md)。目前没有 KKS 服装白模已解决的实机验证结论，也不承诺 KK/KKS 角色卡、服装卡或场景可以互通。
+4.1.4 基于 MaterialEditor 4.0.3 编译，并保留 5.0 的兼容回归检查。本次场景材质修复已获用户实测确认，其余验证范围见 [Windows 测试说明](docs/KK-TESTING.md)。目前没有 KKS 服装白模已解决的实机验证结论，也不承诺所有 KK/KKS 角色卡、服装卡或场景可以互通。
 
 ## 在 macOS 上构建
 
