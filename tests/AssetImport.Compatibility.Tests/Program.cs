@@ -27,19 +27,25 @@ internal static class Program
     {
         try
         {
-            foreach (string game in new[] { "KK", "KKS" }) Validate(game);
-            Console.WriteLine("PASS: real KK/KKS signatures, production IL rewrite, executed receiver/order/flags, label transfer and unsupported-layout fallback.");
+            Validate("KK", "MaterialEditor.dll", new Version(4, 0, 3, 0), "4.0.3");
+            Validate("KK", "MaterialEditor_5.0.dll", new Version(5, 0, 0, 0), "4.0.3");
+            Validate("KKS", "MaterialEditor.dll", new Version(3, 13, 5, 0), "3.13.5");
+            Console.WriteLine("PASS: compiled dependency minimum and linked API contracts, real KK 4.0.3/5.0 and KKS signatures, production IL rewrite, executed receiver/order/flags, label transfer and unsupported-layout fallback.");
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
     }
 
-    private static void Validate(string game)
+    private static void Validate(string game, string materialEditorFile, Version expectedVersion, string minimumVersion)
     {
         string fixtures = Path.Combine(AppContext.BaseDirectory, "Fixtures", game);
         using var gameAssembly = new MetadataAssembly(Path.Combine(fixtures, "Assembly-CSharp.dll"));
         gameAssembly.RequireMethod("Studio.SceneInfo", "Load", "System.String");
-        using var me = new MetadataAssembly(Path.Combine(fixtures, "MaterialEditor.dll"));
+        using var me = new MetadataAssembly(Path.Combine(fixtures, materialEditorFile));
+        Assert(me.Reader.GetAssemblyDefinition().Version == expectedVersion, game + ": exact pinned MaterialEditor fixture " + expectedVersion);
+        using var baseline = new MetadataAssembly(Path.Combine(fixtures, "MaterialEditor.dll"));
+        using var plugin = new MetadataAssembly(Path.Combine(fixtures, "AssetImport.dll"));
+        CompiledPluginContract.Validate(plugin, me, baseline, minimumVersion);
         var fourArgs = Enumerable.Repeat("System.Boolean", 4).ToArray();
         var loadData = me.RequireMethod(ControllerName, "LoadData", fourArgs);
         Assert(me.Reader.GetMethodDefinition(loadData).DecodeSignature(me.Names, null).ReturnType == "System.Collections.IEnumerator", "four-argument LoadData returns an iterator");
@@ -78,7 +84,7 @@ internal static class Program
 
         // Project metadata-only field identities onto an executable inert iterator.
         // Instructions/branches still come from each real DLL. No plugin code runs.
-        Type stateType = CreateStateType(stateFields.Values.ToArray(), game);
+        Type stateType = CreateStateType(stateFields.Values.ToArray(), game + expectedVersion);
         var fieldMap = stateFields.ToDictionary(kv => kv.Key, kv => stateType.GetField(kv.Value.Name));
         var method = stateType.GetMethod("MoveNext");
         var labelGenerator = new DynamicMethod("labels", typeof(void), Type.EmptyTypes).GetILGenerator();

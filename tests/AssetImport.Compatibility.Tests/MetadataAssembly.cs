@@ -18,8 +18,7 @@ internal sealed class MetadataAssembly : IDisposable
     }
     internal string Name(TypeDefinitionHandle handle)
     {
-        var type = Reader.GetTypeDefinition(handle);
-        return TypeNames.Join(Reader.GetString(type.Namespace), Reader.GetString(type.Name));
+        return Names.GetTypeFromDefinition(Reader, handle, 0);
     }
     internal TypeDefinitionHandle FindType(string name) => Reader.TypeDefinitions.Single(t => Name(t) == name);
     internal MethodDefinitionHandle RequireMethod(string typeName, string methodName, params string[] parameters)
@@ -53,12 +52,16 @@ internal sealed class TypeNames : ISignatureTypeProvider<string, object>
     public string GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
         var type = reader.GetTypeDefinition(handle);
-        return Join(reader.GetString(type.Namespace), reader.GetString(type.Name));
+        var parent = type.GetDeclaringType();
+        return parent.IsNil ? Join(reader.GetString(type.Namespace), reader.GetString(type.Name)) :
+            GetTypeFromDefinition(reader, parent, 0) + "+" + reader.GetString(type.Name);
     }
     public string GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
         var type = reader.GetTypeReference(handle);
-        return Join(reader.GetString(type.Namespace), reader.GetString(type.Name));
+        return type.ResolutionScope.Kind == HandleKind.TypeReference
+            ? GetTypeFromReference(reader, (TypeReferenceHandle)type.ResolutionScope, 0) + "+" + reader.GetString(type.Name)
+            : Join(reader.GetString(type.Namespace), reader.GetString(type.Name));
     }
     public string GetTypeFromSpecification(MetadataReader reader, object genericContext, TypeSpecificationHandle handle, byte rawTypeKind) =>
         reader.GetTypeSpecification(handle).DecodeSignature(this, genericContext);

@@ -42,7 +42,7 @@ def main():
         files[PLUGIN + 'licenses/' + name] = (ROOT / 'docs' / 'licenses' / name).read_bytes()
     instructions = 'AssetImport\nClose the game and Studio before installing. Copy the complete BepInEx and runtimes directories to the matching game root. Open AssetImport with Left Alt + I.\n'
     files['安装说明.txt'] = instructions.replace('\n', '\r\n').encode('utf-8-sig')
-    manifest = {'plugin': 'KK_AssetImport', 'version': version, 'status': 'preview; Windows game validation pending', 'target': 'Koikatsu / Unity 5.6 / .NET 3.5 / Windows x64', 'dependencies': {'AssimpNet': '5.0.0-beta1', 'native Assimp': '5.0.1', 'LitJSON': '0.19.0'}, 'requiredPlugins': {'BepInEx': '5.4.22+', 'KKAPI': '1.45.1+', 'KK_MaterialEditor': '5.0+', 'LoadFileLimitedFix': 'KK build'}, 'sha256': {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}}
+    manifest = {'plugin': 'KK_AssetImport', 'version': version, 'status': 'preview; Windows game validation pending', 'target': 'Koikatsu / Unity 5.6 / .NET 3.5 / Windows x64', 'dependencies': {'AssimpNet': '5.0.0-beta1', 'native Assimp': '5.0.1', 'LitJSON': '0.19.0'}, 'requiredPlugins': {'BepInEx': '5.4.22+', 'KKAPI': '1.45.1+', 'KK_MaterialEditor': '4.0.3+', 'LoadFileLimitedFix': 'KK build'}, 'sha256': {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}}
     package = output / ('KK_AssetImportv' + version + 'Packed.zip')
     write_zip(package, files)
     package.with_suffix('.manifest.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')

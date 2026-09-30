@@ -14,6 +14,9 @@
     <Reference Include="0Harmony" HintPath="$(PkgIllusionLibs_BepInEx_Harmony)/lib/net35/0Harmony.dll" />
     <Compile Include="../../src/AssetImport/AssetImport.MaterialEditorLoadDataPatch.cs" Link="MaterialEditorLoadDataPatch.cs" />
     <None Include="../../src/Custom Dependencies/KK/KK_MaterialEditor.dll" Link="Fixtures/KK/MaterialEditor.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../src/Custom Dependencies/KK/KK_MaterialEditor_5.0.dll" Link="Fixtures/KK/MaterialEditor_5.0.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../src/AssetImport/bin/$(Configuration)/net35/KK_AssetImport.dll" Link="Fixtures/KK/AssetImport.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../src/AssetImport/bin/$(Configuration)/net462/KKS_AssetImport.dll" Link="Fixtures/KKS/AssetImport.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../src/Custom Dependencies/KKS_MaterialEditor.dll" Link="Fixtures/KKS/MaterialEditor.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(PkgIllusionLibs_Koikatu_Assembly-CSharp)/lib/net35/Assembly-CSharp.dll" Link="Fixtures/KK/Assembly-CSharp.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(PkgIllusionLibs_KoikatsuSunshine_Assembly-CSharp)/lib/net46/Assembly-CSharp.dll" Link="Fixtures/KKS/Assembly-CSharp.dll" CopyToOutputDirectory="PreserveNewest" />
