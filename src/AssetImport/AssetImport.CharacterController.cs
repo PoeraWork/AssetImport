@@ -819,6 +819,7 @@ namespace AssetImport
             );
             import.Load();
             if (!import.IsLoaded) return;
+            import.ResolveTextureFiles(path);
 
             AccessoryHelper helper = new AccessoryHelper(ChaControl, accessory, slot);
             Main.currentLoadProcess = new LoadProcess(baseObject, helper, import, scale, LoadProcess.LoadProcessKind.Normal);

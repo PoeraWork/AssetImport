@@ -8,6 +8,6 @@ Options: `--kit <testkit folder>`, `--native <native Assimp library>`, `--report
 
 Each demo is tested in two modes. `file` reads the original file with its companion files available. `plugin-io` reproduces the current KK plugin's choice of memory import versus cached file import: same-name OBJ MTL and glTF external buffers are copied to a temporary folder, while other inputs are read from a memory stream. Both use `MakeLeftHanded | Triangulate` and retain empty bones. This is an IO simulation, not execution of the full plugin cache or Unity construction code.
 
-The checker rejects empty meshes and `SceneFlags.Incomplete`. In Assimp 5.0.1, LWS memory import can return a skeleton placeholder after failing to find the referenced LWO. Nonzero triangle counts alone must not mark this as a success. AssetImport 4.1.3 therefore has one expected known failure in this kit: LWS `plugin-io`.
+The checker rejects empty meshes and `SceneFlags.Incomplete`. In Assimp 5.0.1, LWS memory import can return a skeleton placeholder after failing to find the referenced LWO. Nonzero triangle counts alone must not mark this as a success. AssetImport 4.1.4 therefore has one expected known failure in this kit: LWS `plugin-io`.
 
 Exit codes: 0 = all parse checks pass; 2 = one or more model checks fail; 1 = fatal initialization/manifest/report error. The supplied kit's known LWS failure produces exit code 2. Reports include a CSV, JSON and full log. They are independent of the game's BepInEx log.

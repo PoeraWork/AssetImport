@@ -385,6 +385,7 @@ namespace AssetImport
             );
             import.Load();
             if (!import.IsLoaded) return;
+            import.ResolveTextureFiles(path);
 
             // preimport phase
             Main.currentLoadProcess = new LoadProcess(baseGameObject, ociitem, import, scale, LoadProcess.LoadProcessKind.Normal);

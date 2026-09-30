@@ -30,7 +30,7 @@ namespace AssetImport
         internal const string MinimumMaterialEditorVersion = "3.13.5";
 #endif
         public const string GUID = "org.njaecha.plugins.assetimport";
-        public const string Version = "4.1.3";
+        public const string Version = "4.1.4";
 
         internal new static ManualLogSource Logger;
         internal static AssetSceneController asc;
@@ -52,6 +52,7 @@ namespace AssetImport
         void Awake()
         {
             Logger = base.Logger;
+            Logger.LogInfo($"Runtime build {Version}; assembly {typeof(AssetImport).Assembly.GetName().Version}");
 #if KK
             // Match the original Packed ZIP layout; do not depend on the working directory.
             string nativePath = Path.Combine(Paths.GameRootPath,
