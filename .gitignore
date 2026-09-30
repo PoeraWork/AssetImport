@@ -403,3 +403,8 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio
+
+# Reproducibly fetched build-only plugin references; see scripts/dependencies.json.
+/.build-downloads/
+/src/Custom Dependencies/KK/*.dll
+**/dotnet-home/

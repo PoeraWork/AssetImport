@@ -14,6 +14,7 @@ using System.Xml;
 using HSPE;
 using MaterialEditorAPI;
 using Main = AssetImport.AssetImport;
+using System.Runtime.CompilerServices;
 
 namespace AssetImport
 {
@@ -266,9 +267,11 @@ namespace AssetImport
                 }
             }
             
-            ForceKKPEreload();
+            if (Hooks.IsOptionalIntegrationAvailable(Hooks.PoseEditorAssembly))
+                Hooks.RunOptionalIntegration(Hooks.PoseEditorAssembly, "scene pose editor reload", ForceKKPEreload);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private void ForceKKPEreload()
         {
             try
@@ -401,6 +404,13 @@ namespace AssetImport
         /// </summary>
         /// <param name="loadProcess"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void RefreshPoseController(GameObject target)
+        {
+            DestroyImmediate(target.GetComponent<PoseController>());
+            target.AddComponent<PoseController>();
+        }
+
         internal OCIItem FinishLoadProcess(LoadProcess loadProcess)
         {
             AssetUI.PreloadUI = false;
@@ -434,7 +444,7 @@ namespace AssetImport
             // ItemComponent
             ItemComponent itemComponent = loadProcessBase.GetComponent<ItemComponent>();
             itemComponent.rendNormal = import.Renderers.ToArray();
-            itemComponent.rendAlpha = Array.Empty<Renderer>(); // remove alpha renderer that is on the sphere by default
+            itemComponent.rendAlpha = new Renderer[0]; // remove alpha renderer that is on the sphere by default
 
             // ItemFKCtrl
             ItemFKCtrl itemFKCtrl = loadProcessBase.GetComponent<ItemFKCtrl>();
@@ -443,7 +453,7 @@ namespace AssetImport
             {
                 itemFKCtrl.count = 0;
                 itemFKCtrl.listBones = new List<ItemFKCtrl.TargetInfo>();
-                ociitem.dynamicBones = Array.Empty<DynamicBone>();
+                ociitem.dynamicBones = new DynamicBone[0];
                 ociitem.listBones = new List<OCIChar.BoneInfo>();
 
             }
@@ -476,15 +486,17 @@ namespace AssetImport
                     ItemFKCtrl.TargetInfo info = new ItemFKCtrl.TargetInfo(go, oiboneInfo.changeAmount, isNew)
                         {
                             baseRot = bone.localEulerAngles,
+#if !KK
                             changeAmount =
                             {
                                 defRot = bone.localEulerAngles,
                                 isDefRot = true
                             }
+#endif
                         };
                     itemFKCtrl.listBones.Add(info);
                 }
-                ociitem.dynamicBones = Array.Empty<DynamicBone>();
+                ociitem.dynamicBones = new DynamicBone[0];
                 ociitem.ActiveFK(ociitem.isFK);
 
                 // dynamic bones
@@ -503,8 +515,8 @@ namespace AssetImport
                 {
                     ociitem.dynamicBones = dBones.ToArray();
                     ociitem.ActiveDynamicBone(true);
-                    DestroyImmediate(loadProcessBase.GetComponent<PoseController>());
-                    loadProcessBase.AddComponent<PoseController>();
+                    if (Hooks.IsOptionalIntegrationAvailable(Hooks.PoseEditorAssembly))
+                        Hooks.RunOptionalIntegration(Hooks.PoseEditorAssembly, "studio pose controller refresh", () => RefreshPoseController(loadProcessBase));
 
                     Logger.LogDebug($"Activated {ociitem.dynamicBones.Length} dynamic bone chains on {loadProcess.Import.SourceFileName}");
                 }

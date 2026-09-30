@@ -1,10 +1,8 @@
 ﻿using System.IO;
 using System.Linq;
-using ADV.Commands.Object;
 using UnityEngine;
 using KKAPI;
 using KKAPI.Maker;
-using Sirenix.Serialization.Utilities;
 using Main = AssetImport.AssetImport;
 // ReSharper disable UseObjectOrCollectionInitializer
 
@@ -149,7 +147,7 @@ namespace AssetImport
                 ScaleSelection++;
             }
             GUI.enabled = true;
-            if (FilePath.IsNullOrEmpty()) GUI.enabled = false;
+            if (string.IsNullOrEmpty(FilePath)) GUI.enabled = false;
             if (GUI.Button(new Rect(10, y+=25, 220, 30), "Import"))
             {
                 if (KoikatuAPI.GetCurrentGameMode() == GameMode.Studio)
@@ -222,7 +220,7 @@ namespace AssetImport
                 arrow.hover.textColor = new Color(1, 1, 0);
 
                 Rect scrollContentRect = new Rect(0, 0, 10, 30);
-                Main.currentLoadProcess.Import.BoneNodes.Where(node => node.UIActive).ForEach(_ => scrollContentRect.height += 22);
+                scrollContentRect.height += 22 * Main.currentLoadProcess.Import.BoneNodes.Count(node => node.UIActive);
 
                 ScrollPosition = GUI.BeginScrollView(new Rect(0, 50, 490, 500), ScrollPosition, scrollContentRect);
 
@@ -306,7 +304,7 @@ namespace AssetImport
                 foreach (Material mat in Main.currentLoadProcess.Import.MaterialTextures.Keys)
                 {
                     scrollContentRect.height += 30;
-                    Main.currentLoadProcess.Import.MaterialTextures[mat].Where(tPath => tPath.Type == Assimp.TextureType.Diffuse || tPath.Type == Assimp.TextureType.Normals).ForEach(_ => scrollContentRect.height += 30);
+                    scrollContentRect.height += 30 * Main.currentLoadProcess.Import.MaterialTextures[mat].Count(tPath => tPath.Type == Assimp.TextureType.Diffuse || tPath.Type == Assimp.TextureType.Normals);
                 }
 
                 ScrollPosition = GUI.BeginScrollView(new Rect(0, 110, 490, 440), ScrollPosition, scrollContentRect);
