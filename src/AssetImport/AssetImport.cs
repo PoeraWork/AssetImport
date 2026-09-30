@@ -27,7 +27,7 @@ namespace AssetImport
         public const string PluginName = "KKS_AssetImport";
 #endif
         public const string GUID = "org.njaecha.plugins.assetimport";
-        public const string Version = "4.1.0";
+        public const string Version = "4.1.1";
 
         internal new static ManualLogSource Logger;
         internal static AssetSceneController asc;
@@ -50,8 +50,8 @@ namespace AssetImport
         {
             Logger = base.Logger;
 #if KK
-            // Use the matching Assimp 5 library, isolated from the game's other importers.
-            string nativePath = Path.Combine(Path.GetDirectoryName(Info.Location),
+            // Match the original Packed ZIP layout; do not depend on the working directory.
+            string nativePath = Path.Combine(Paths.GameRootPath,
                 "runtimes/win-x64/native/assimp.dll");
             if (IntPtr.Size != 8 || !File.Exists(nativePath))
             {

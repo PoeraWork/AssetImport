@@ -8,7 +8,8 @@ import re
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-PLUGIN = "BepInEx/plugins/AssetImportKK/"
+PLUGIN = "BepInEx/plugins/AssetImport/"
+NATIVE = "runtimes/win-x64/native/assimp.dll"
 
 
 def write_zip(path, files):
@@ -26,13 +27,14 @@ def main():
     parser.add_argument("--output", type=Path, default=ROOT / "artifacts")
     parser.add_argument("--configuration", default="Release", choices=["Debug", "Release"])
     parser.add_argument("--source", action="store_true", help="Also create a source archive (no generated build references)")
+    parser.add_argument("--test-assets", action="store_true", help="Also create a separate optional test-assets archive")
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     project = ROOT / "src" / "AssetImport"
     build = project / "bin" / args.configuration / "net35"
     version = re.search(r'const string Version = "([^"]+)"', (project / "AssetImport.cs").read_text(encoding="utf-8-sig")).group(1)
-    names = ["KK_AssetImport.dll", "AssimpNet.dll", "LitJSON.dll", "runtimes/win-x64/native/assimp.dll"]
+    names = ["KK_AssetImport.dll", "AssimpNet.dll", "LitJSON.dll", NATIVE]
     for name in names:
         if not (build / name).is_file():
             raise SystemExit("Missing {}. First run dotnet build src/AssetImport/AssetImport.csproj -c {}".format(name, args.configuration))
@@ -40,12 +42,12 @@ def main():
     source_times.append((project / "AssetImport.csproj").stat().st_mtime)
     if max(source_times) > (build / "KK_AssetImport.dll").stat().st_mtime:
         raise SystemExit("The KK DLL is older than its sources. Rebuild before packaging.")
-    files = {PLUGIN + name: (build / name).read_bytes() for name in names}
-    for relative in ["docs/KK-TESTING.md", "docs/licenses/AssimpNet.txt", "docs/licenses/Assimp.txt", "docs/licenses/LitJson.txt"]:
-        files["AssetImportKK/" + relative.removeprefix("docs/")] = (ROOT / relative).read_bytes()
-    for fixture in sorted((ROOT / "tests" / "fixtures").rglob("*")):
-        if fixture.is_file() and not fixture.name.startswith("."):
-            files["AssetImportKK/TestAssets/" + fixture.relative_to(ROOT / "tests" / "fixtures").as_posix()] = fixture.read_bytes()
+    files = {(name if name == NATIVE else PLUGIN + name): (build / name).read_bytes() for name in names}
+    for name in ["AssimpNet.txt", "Assimp.txt", "LitJson.txt"]:
+        files[PLUGIN + "licenses/" + name] = (ROOT / "docs" / "licenses" / name).read_bytes()
+    # Windows Notepad-friendly instructions; testing and build metadata stay outside the install ZIP.
+    instructions = (ROOT / "docs" / "INSTALL-KK.txt").read_text(encoding="utf-8-sig")
+    files["安装说明.txt"] = instructions.replace("\n", "\r\n").encode("utf-8-sig")
     manifest = {
         "plugin": "KK_AssetImport", "version": version, "status": "preview; Windows game validation pending",
         "target": "Koikatsu / Unity 5.6 / .NET 3.5 / Windows x64",
@@ -53,10 +55,18 @@ def main():
         "requiredPlugins": {"BepInEx": "5.4.22+", "KKAPI": "1.45.1+", "KK_MaterialEditor": "5.0+", "LoadFileLimitedFix": "KK build"},
         "sha256": {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}
     }
-    files["AssetImportKK/manifest.json"] = (json.dumps(manifest, indent=2, ensure_ascii=False) + "\n").encode()
-    package = output / ("KK_AssetImport_" + version + "_preview.zip")
+    package = output / ("KK_AssetImportv" + version + "Packed.zip")
     write_zip(package, files)
+    package.with_suffix(".manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     created = [package]
+    if args.test_assets:
+        fixtures = {"Windows测试说明.md": (ROOT / "docs" / "KK-TESTING.md").read_bytes()}
+        for fixture in sorted((ROOT / "tests" / "fixtures").rglob("*")):
+            if fixture.is_file() and not fixture.name.startswith("."):
+                fixtures["TestAssets/" + fixture.relative_to(ROOT / "tests" / "fixtures").as_posix()] = fixture.read_bytes()
+        test_zip = output / ("KK_AssetImportv" + version + "TestAssets.zip")
+        write_zip(test_zip, fixtures)
+        created.append(test_zip)
     if args.source:
         sources = {}
         for path in ROOT.rglob("*"):

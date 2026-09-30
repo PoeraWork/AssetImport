@@ -15,3 +15,13 @@
 ## 尚未执行
 
 Windows KK/KKS 游戏运行、实际 Unity 渲染、完整 Harmony 安装、卡片/场景保存重载、可选插件组合均待游戏内测试。测试清单见 [KK-TESTING.md](KK-TESTING.md)。本记录不构成白模问题已修复的结论。
+
+## 4.1.1 安装包整理
+
+本次调整针对安装说明和目录布局；用户反馈是看不明白原预览包，并非已确认的加载失败。
+
+- 对照原作者 `AssetImportv4.0.1Packed.zip`，改为游戏根目录中的 `BepInEx/plugins/AssetImport/` 与 `runtimes/win-x64/native/assimp.dll`。KK 加载路径同步改为 `Paths.GameRootPath` 下的该文件。
+- KK net35、KKS net462 Release 重新编译通过，0 errors；仍有原来的 2 条文件对话框弃用警告。
+- 实际生成并解压 `KK_AssetImportv4.1.1Packed.zip`：顶层只有 `BepInEx`、`runtimes`、`安装说明.txt`，4 个运行 DLL 的位置、文件清单和 SHA-256 均通过检查。中文说明采用 UTF-8 BOM 与 CRLF。
+- 测试素材和手工验证说明拆入独立 `TestAssets.zip`；源码包包含新说明且排除了构建缓存。旧 `AssetImportKK` 目录的迁移步骤已写入安装说明，避免双份插件。
+- 前述几何、缓存、MaterialEditor 检查为 4.1.0 的运行记录；此次未更改这些功能，未重复执行。Windows 游戏测试状态仍为未执行。

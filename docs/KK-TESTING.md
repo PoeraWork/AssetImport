@@ -1,4 +1,4 @@
-# KK 预览版 4.1.0：安装与 Windows 测试
+# KK 预览版 4.1.1：Windows 测试
 
 此文档是**待执行的手工验证清单**，不表示游戏内测试已经通过。请使用备份卡片、场景或单独的测试存档。当前任务只验证 KK 移植，不包含 KKS 服装白模的复现或修复结论。
 
@@ -6,25 +6,27 @@
 
 准备 Windows x64 KK、BepInEx 5.4.22+（5.x）、KKAPI 1.45.1+、KK MaterialEditor 5.0+、LoadFileLimitedFix。LoadFileLimitedFix 可从 [IllusionFixes Releases](https://github.com/IllusionMods/IllusionFixes/releases) 的 KK 包获取。不要把 KKS 版依赖装入 KK。
 
-退出游戏后，将 KK 安装包解压至游戏根目录，检查目录结构：
+退出游戏后，将 `KK_AssetImportv4.1.1Packed.zip` 内的 `BepInEx` 和 `runtimes` 两个文件夹一起解压至游戏根目录（`Koikatu.exe` 所在处），合并同名文件夹。若安装过 4.1.0 预览版，先将旧 `BepInEx/plugins/AssetImportKK` 整个文件夹移出游戏目录，避免双份加载。检查目录结构：
 
 ```text
-BepInEx/plugins/AssetImportKK/
-├── KK_AssetImport.dll
-├── AssimpNet.dll
-├── LitJSON.dll
+游戏根目录/
+├── BepInEx/plugins/AssetImport/
+│   ├── KK_AssetImport.dll
+│   ├── AssimpNet.dll
+│   ├── LitJSON.dll
+│   └── licenses/
 └── runtimes/win-x64/native/assimp.dll
 ```
 
-随包还可能包含许可证和说明文件。首次测试暂不启用其他 Assimp 模型导入插件。若日志提示另一插件已经加载不同路径的 Assimp 库，退出游戏、调整插件组合后重启；AssetImport 会停止初始化，不会覆盖那个原生库。
+首次测试暂不启用其他 Assimp 模型导入插件。若日志提示另一插件已经加载不同路径的 Assimp 库，退出游戏、调整插件组合后重启；AssetImport 会停止初始化，不会替换已经加载的库。安装文件覆盖与运行时加载是两回事：根目录 `runtimes/win-x64/native/assimp.dll` 若供其他插件共用，应先保留其备份。
 
-启动 KK 角色编辑器和 Studio，分别确认日志加载 `KK_AssetImport 4.1.0`，左 Alt + I 能打开窗口。如未加载，先查看 `BepInEx/LogOutput.log` 的缺失依赖或原生库错误。
+启动 KK 角色编辑器和 Studio，分别确认日志加载 `KK_AssetImport 4.1.1`，左 Alt + I 能打开窗口。如未加载，先查看 `BepInEx/LogOutput.log` 的缺失依赖或原生库错误。
 
 ABMX 5.4、KKPE 2.21.5、DynamicBoneEditor 1.1 为可选兼容项，先完成基础导入，再按第 6 节组合测试。
 
 ## 2. 小模型与纹理
 
-仓库的 `tests/fixtures/`（安装包中的 `AssetImportKK/TestAssets/`）含 `textured-cube.obj`、同名 `.mtl` 和 `fixture.png`。保持三者放在同一文件夹。这是一个 1 单位边长的立方体，每面使用相同的四彩棋盘纹理。
+将单独的 `KK_AssetImportv4.1.1TestAssets.zip` 解压到任意方便的位置，内含本说明和 `TestAssets/`。`TestAssets/`（仓库中为 `tests/fixtures/`）含 `textured-cube.obj`、同名 `.mtl` 和 `fixture.png`；保持三者放在同一文件夹。这是一个 1 单位边长的立方体，每面使用相同的四彩棋盘纹理。测试素材不包含在插件安装包中。
 
 - [ ] **角色编辑器：**选择一个已有饰品槽位，打开导入窗口，选择 OBJ。建议缩放设为 0.1；这个模型没有骨骼或 BlendShape。
 - [ ] 在纹理预览页确认 Diffuse 路径指向 `fixture.png`；若临时导入路径无法找到纹理，用“Common”或文件按钮定位原始 fixture 文件夹，再点 Finish。
