@@ -1,8 +1,8 @@
-﻿KK AssetImport 4.1.3 双 MaterialEditor 环境测试指南
+﻿KK AssetImport 4.1.4 双 MaterialEditor 环境测试指南
 
 一、先选一套环境
 
-两套包都使用相同的 KK_AssetImport 4.1.3；分别搭配 ME 4.0.3 和 5.0。先测一套，结束并收集日志后再换另一套。建议先测 4.0.3 作为比较基线。
+两套包都使用相同的 KK_AssetImport 4.1.4；分别搭配 ME 4.0.3 和 5.0。先测一套，结束并收集日志后再换另一套。建议先测 4.0.3 作为比较基线。
 
 1. 完全退出 Koikatu 和 CharaStudio。备份当前插件、相关配置和用于测试的卡片/场景；优先在游戏副本中测试。
 2. 按测试包顶层安装说明安装选中的一个环境，保留包内完整目录结构。两个 ME 环境不能同时复制进游戏；仅把 DLL 改名仍可能重复加载。旧版 ME/AssetImport 如需移出，请放在游戏 BepInEx/plugins 目录以外的备份位置。
@@ -14,16 +14,16 @@
 
 可先双击测试包根目录 Check-Models.cmd。它需要 Windows 64 位和 .NET Framework 4.6.2 或更新版，用同款 AssimpNet/原生库检查 19 个样例，并分别比较直接文件导入与模拟插件 IO 路径。报告写入 Reports/ModelCheck_时间戳/ 下的 CSV、LOG、JSON。它不加载 MaterialEditor 或 Unity，所以预检通过不等于游戏内通过。预检失败也请保存报告；游戏内测试仍按对应条目记录。
 
-LWS 当前是已确认的已知限制，不是预期能成功的普通样例。AssetImport 4.1.3 的内存导入路径没有缓存 LWS 引用的 LWO；即使旁边保留 simple_cube.lwo，插件路径仍可能丢失关联。Assimp 会返回 SceneFlags.Incomplete 并生成 SkeletonMaterial 占位骨架（该例 108 顶点/36 三角形/4 骨骼），而真实目标是立方体（文件模式 24 顶点/12 三角形/0 骨骼）。预检应显示 FAIL（id=lws，mode=plugin-io），不能将“有几何返回”、占位骨架或文件模式成功填写为插件导入通过。未运行的结果仍填“未测”，实际遇到该现象填“失败/已知限制”并附报告。可直接导入配套 LWO 示例，单独验证立方体本体；这不算修复或通过 LWS。
+LWS 当前是已确认的已知限制，不是预期能成功的普通样例。AssetImport 4.1.4 的内存导入路径没有缓存 LWS 引用的 LWO；即使旁边保留 simple_cube.lwo，插件路径仍可能丢失关联。Assimp 会返回 SceneFlags.Incomplete 并生成 SkeletonMaterial 占位骨架（该例 108 顶点/36 三角形/4 骨骼），而真实目标是立方体（文件模式 24 顶点/12 三角形/0 骨骼）。预检应显示 FAIL（id=lws，mode=plugin-io），不能将“有几何返回”、占位骨架或文件模式成功填写为插件导入通过。未运行的结果仍填“未测”，实际遇到该现象填“失败/已知限制”并附报告。可直接导入配套 LWO 示例，单独验证立方体本体；这不算修复或通过 LWS。
 
 先从 OBJ / FBX / DAE / glTF 等常见样例各跑一例，再完成清单中其余格式。FBX ASCII 和二进制是两个独立测试。不要只移动入口模型文件；同目录的 MTL、PNG、BIN、配套 LWO/SMD 等文件须一起保留。导入文件以最终 demo 清单的 entry 为准，不要误选配套文件。
 
 Studio：启动 CharaStudio，建空场景，按默认 LeftAlt+I 打开 AssetImport，选择样例入口。无需预先建球体。
 Maker：启动 Koikatu 的角色编辑器，使用测试角色，进入饰品页；选择一个可替换的普通饰品并设置父节点，再按 LeftAlt+I 导入到当前槽位。只选空槽可能不足以导入。避免替换自己未备份的饰品。
 
-记录导入 Scale；从样例建议值开始，没有建议时先用 1.0。尺寸过大/过小可调整比例重新导入，并在结果表注明。基础样例用于静态几何；首轮关闭 Import Armature / Import Blendshapes（如果界面提供），并保持两环境其他选项一致。
+记录导入 Scale；从样例建议值开始，没有建议时先用 1.0。尺寸过大/过小可调整比例重新导入，并在结果表注明。基础样例用于静态几何；首轮关闭 Material per Renderer（它会跳过源材质与贴图），同时关闭 Import Armature / Import Blendshapes（如果界面提供），并保持两环境其他选项一致。
 
-点击 Import。若出现预载面板，逐项核对贴图路径；需要时切到 Textures 页，确认使用正确的配套贴图，点击 Finish。无贴图、无骨骼的文件可能直接完成，这是正常路径。若没有窗口先核对热键配置及启动日志。
+点击 Import。若出现预载面板，逐项核对贴图路径；4.1.4 会自动按模型目录解析相对路径，两个小房子的 checker.png 应显示有效且勾选；需要时切到 Textures 页，确认使用正确的配套贴图，点击 Finish。无贴图、无骨骼的文件可能直接完成，这是正常路径。若没有窗口先核对热键配置及启动日志。
 
 三、每例至少检查这些项目
 

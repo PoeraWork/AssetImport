@@ -1,4 +1,4 @@
-AssetImport 4.1.3 KK 预览版 — 安装说明
+AssetImport 4.1.4 KK 预览版 — 安装说明
 
 适用：Windows 64 位 Koikatsu（KK），不适用于 Koikatsu Sunshine（KKS）。
 前置：BepInEx 5.4.22+（5.x）、KKAPI 1.45.1+、KK MaterialEditor 4.0.3+、KK 版 LoadFileLimitedFix。
@@ -13,8 +13,8 @@ AssetImport 4.1.3 KK 预览版 — 安装说明
   runtimes/win-x64/native/assimp.dll
 不要只复制 DLL，也不要把压缩包放进 mods 文件夹。
 
-旧 4.1.0 / 4.1.1 包要求 MaterialEditor 5.0；使用 4.0.3 请换用本包。4.1.1 / 4.1.2 用户退出游戏后直接覆盖即可。
+旧 4.1.0 / 4.1.1 包要求 MaterialEditor 5.0；使用 4.0.3 请换用本包。4.1.1 / 4.1.2 / 4.1.3 用户退出游戏后直接覆盖即可。
 4.1.0 用户：退出游戏，将旧 BepInEx/plugins/AssetImportKK 整个文件夹移出游戏目录，再安装新包。
 若曾在 KK 中误装 KKS 版，先将那一版的 AssetImport 插件文件夹移出游戏目录；不要删除整个 BepInEx 或 runtimes 文件夹。
 KK 包的依赖与 KKS 包不同，无需补入原版的 IndexRange.dll、System.Resources.ResourceManager.dll。
-测试素材是单独的 KK_AssetImportv4.1.3TestAssets.zip，正常安装无需下载。若无法打开插件，请提供 BepInEx/LogOutput.log 或游戏根目录 output_log.txt。
+测试素材是单独的 KK_AssetImportv4.1.4TestAssets.zip，正常安装无需下载。若无法打开插件，请提供 BepInEx/LogOutput.log 或游戏根目录 output_log.txt。

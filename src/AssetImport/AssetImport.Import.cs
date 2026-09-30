@@ -28,7 +28,7 @@ namespace AssetImport
     /// Representation of an imported object in Unity.
     /// Also handles importing using AssimpNet.
     /// </summary>
-	public class Import
+	public partial class Import
 	{
 		private string _cPath;
 		private readonly Material _bMat;
@@ -154,6 +154,22 @@ namespace AssetImport
             }
         }
 
+        internal void ResolveTextureFiles(string modelPath)
+        {
+            // Only fresh disk imports call this. Card/scene textures are restored
+            // by MaterialEditor and must not depend on the original author's files.
+            if (PerRendererMaterials)
+                Logger.LogInfo("Material per Renderer is enabled: source materials/textures are not imported. Disable it to use the model's original materials.");
+            foreach (TexturePath texture in _tPaths)
+            {
+                texture.Path = TextureFileResolver.Resolve(texture.Path, modelPath);
+                if (texture.Type != TextureType.Diffuse && texture.Type != TextureType.Normals) continue;
+                if (texture.PathOkay()) Logger.LogInfo($"Texture ready [{texture.Material.name}/{texture.Type}]: {texture.Path}");
+                else Logger.LogWarning($"Texture unavailable [{texture.Material.name}/{texture.Type}]: {texture.Path}. Select a PNG/JPG/JPEG file in the preload window.");
+            }
+            _cPath = null;
+        }
+
 		public void Load()
 		{
             Logger.LogDebug($"Loading of {RamCacheUtility.GetFileName(SourceIdentifier)} started");
@@ -274,121 +290,6 @@ namespace AssetImport
             return uMatrix;
         }
 
-        private readonly List<string> _subobjectNameList = new List<string>();
-
-        private Material GetNewMaterialWithName(string name)
-        {
-            Material material = new Material(_bMat)
-            {
-                name = name
-            };
-            return material;
-        }
-
-        private GameObject BuildFromNode(Assimp.Node node)
-        {
-            GameObject nodeObject = new GameObject(node.Name);
-            
-            // since the new assimp version doesn't spawn $AssimpFbx$_Translation nodes, the second operant will always be true, defeating the purpose of this if
-            // lines kept for documentation purposes
-            /*
-            if (!DoFbxTranslation || !(node.Name.Contains("$AssimpFbx$_Translation") && _scene.RootNode.Equals(node.Parent)))
-            {
-                UnityEngine.Matrix4x4 unityMatrix = ConvertTransform(node.Transform, nodeObject.transform);
-            }
-            */
-            ConvertTransform(node.Transform, nodeObject.transform);
-
-            if (node.HasMeshes)
-            {
-                foreach(int meshIndex in node.MeshIndices)
-                {
-                    Assimp.Mesh mesh = _scene.Meshes[meshIndex];
-                    foreach (ConvertedMesh converted in _meshes[meshIndex])
-                    {
-                        Mesh uMesh = converted.Mesh;
-
-                        string meshName = mesh.Name;
-                        if (meshName.IsNullOrEmpty())
-                        {
-                            if (node.Name.IsNullOrEmpty())
-                            {
-                                meshName = node.MeshIndices.Count > 1 ? $"Unnamed_{meshIndex}" : $"Unnamed";
-                            }
-                            else
-                            {
-                                meshName = node.MeshIndices.Count > 1 ? $"{node.Name}_{meshIndex}" : node.Name;
-                            }
-                        }
-
-                        string materialName = _scene.Materials[mesh.MaterialIndex].Name;
-                        string subobjectName = !PerRendererMaterials ? $"{meshName}_{materialName}" : meshName;
-
-                        if (_subobjectNameList.Contains(subobjectName))
-                        {
-                            var counter = 1;
-                            while (_subobjectNameList.Contains($"{counter}_{subobjectName}"))
-                            {
-                                counter++;
-                            }
-                            subobjectName = $"{counter}_{subobjectName}";
-                        }
-                        _subobjectNameList.Add(subobjectName);
-
-                        // nameConvention to create unique name: meshName_materialName
-                        GameObject subObject = new GameObject(subobjectName);
-#if KK
-                        // Vertices are in the Assimp node's local space. Preserve
-                        // the identity local transform when adding a renderer.
-                        subObject.transform.SetParent(nodeObject.transform, false);
-#else
-                        subObject.transform.SetParent(nodeObject.transform, true);
-#endif
-                        // set layer to 10 for koi
-                        subObject.layer = 10;
-                    
-                        Renderer rend;
-                    
-                        if (mesh.HasBones && ImportBones)
-                        {
-                            rend = subObject.AddComponent<SkinnedMeshRenderer>();
-                            ((SkinnedMeshRenderer)rend).sharedMesh = uMesh;
-
-                            _processArmaturesLater.Add(new PendingArmature
-                            {
-                                Source = mesh,
-                                Renderer = (SkinnedMeshRenderer)rend,
-                                SourceVertices = converted.SourceVertices
-                            });
-                        }
-                        else if (mesh.HasMeshAnimationAttachments) // mesh doesn't have bones but has Blendshapes.
-                        {
-                            rend = subObject.AddComponent<SkinnedMeshRenderer>();
-                            ((SkinnedMeshRenderer)rend).sharedMesh = uMesh;
-                        }
-                        else
-                        {
-                            MeshFilter mFilter = subObject.AddComponent<MeshFilter>();
-                            mFilter.mesh = uMesh;
-                            rend = subObject.AddComponent<MeshRenderer>();
-                        }
-
-                        rend.name = subobjectName;
-                        Material uMaterial = PerRendererMaterials ? GetNewMaterialWithName(subobjectName) : _materials[mesh.MaterialIndex];
-                        rend.material = uMaterial;
-                        Renderers.Add(rend);
-                    }
-                }
-            }
-
-            if (!node.HasChildren) return nodeObject;
-            foreach (Node child in node.Children)
-            {
-                GameObject childObject = BuildFromNode(child);
-                childObject.transform.SetParent(nodeObject.transform, false);
-            }
-            return nodeObject;
-        }
 
 		private void ProcessMaterials()
 		{

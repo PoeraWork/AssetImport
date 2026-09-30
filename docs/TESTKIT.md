@@ -2,7 +2,7 @@
 
 `testkit/` 保存用户指南、19 个静态样例、参考图、日志收集器和待填写 CSV。它覆盖 AssetImport 文件选择器的 18 种扩展名，FBX ASCII / binary 分开测试。骨骼、动画、BlendShape、复杂 shader 与格式的全部历史版本不在这组基础 smoke test 的通过声明内。
 
-两套安装环境使用同一个 KK AssetImport 4.1.3，分别包含官方 KK MaterialEditor 4.0.3（v270）和 5.0（v271）完整小包。这使用户对照只改变 ME，不需要维护功能相同的两份 AssetImport 实现。ME 的 GPL 许可与对应版本源码随各自安装包提供。第三方模型来自 Assimp v5.0.1 的 `test/models`，保留许可和 IFC 额外署名；自建房屋、DXF、UV 测试图的来源见 `testkit/Sources`。
+两套安装环境使用同一个 KK AssetImport 4.1.4，分别包含官方 KK MaterialEditor 4.0.3（v270）和 5.0（v271）完整小包。这使用户对照只改变 ME，不需要维护功能相同的两份 AssetImport 实现。ME 的 GPL 许可与对应版本源码随各自安装包提供。第三方模型来自 Assimp v5.0.1 的 `test/models`，保留许可和 IFC 额外署名；自建房屋、DXF、UV 测试图的来源见 `testkit/Sources`。
 
 ## 构建
 
@@ -11,7 +11,7 @@
 ```sh
 dotnet build tools/AssetImport.DemoCheck/AssetImport.DemoCheck.csproj -c Release
 python3 scripts/package.py --output artifacts
-python3 scripts/package_testkit.py --plugin-package artifacts/KK_AssetImportv4.1.3Packed.zip --output artifacts
+python3 scripts/package_testkit.py --plugin-package artifacts/KK_AssetImportv4.1.4Packed.zip --output artifacts
 ```
 
 打包器复核插件 manifest、官方 ME 发布包与源码 SHA-256，并在 `.build-downloads` 缓存缺失的官方下载。源码版本锁定在 `scripts/testkit/me-sources.json`；二进制锁定在 `scripts/dependencies.json`。不打包游戏 DLL、本地日志、卡片或构建引用。Windows 用户只需解压总包、打开 `index.html`；不要把总包直接安装进游戏。

@@ -1,10 +1,12 @@
-# AssetImport — KK port preview 4.1.3
+# AssetImport — KK port preview 4.1.4
 
 AssetImport 将外部 3D 模型导入 Koikatsu（KK）或 Koikatsu Sunshine（KKS），用作角色饰品或 Studio 物体。本仓库基于 [Njaecha/AssetImport](https://github.com/Njaecha/AssetImport)，增加 KK 支持，并保留 KKS 构建目标。
 
-**KK 用户请下载 `KK_AssetImportv4.1.3Packed.zip`。** 这是供 Windows KK 使用的预览版，不适用于 KKS；源码包和测试素材包不用于安装插件。
+**KK 用户请下载 `KK_AssetImportv4.1.4Packed.zip`。** 这是供 Windows KK 使用的预览版，不适用于 KKS；源码包和测试素材包不用于安装插件。
 
-4.1.3 针对用户日志中的 `InvalidDataException` 类型加载失败修复 KK 节点转换；这会在 FBX 网格已经读出后中断导入。已装完整 4.1.1 / 4.1.2 的用户可用 `KK_AssetImportv4.1.3_DLL_Update.zip`，退出游戏后只覆盖其中 DLL，保留现有 ME 与运行库。实际游戏复测仍待回传。
+4.1.4 修复大网格拆分后材质编号顺移的问题：原零件拆成多块时保留同一材质/renderer 名称，避免加载 KKS 场景时树、飘带、风筝等贴图串位。另为新导入模型解析同目录/相对子目录的贴图，并修正安装包时间戳导致 BepInEx 缓存旧版本的问题，启动时记录真实 Runtime build。包含 4.1.3 的节点转换类型修复。
+
+已装完整 4.1.1 / 4.1.2 / 4.1.3 的用户可用 `KK_AssetImportv4.1.4_DLL_Update.zip`，退出游戏后只覆盖其中 DLL，保留 ME 与运行库。复测场景请重开原始 KKS 场景 PNG；在错位版本里重新保存过的场景可能已有错误编辑，不能自动修复这些记录。新导入房屋 demo 时关闭 Material per Renderer；该选项会跳过源材质/贴图。已完成针对原场景网格与材质名的回归检查，Windows 显示和保存重载仍待验证，不保证所有跨游戏 shader 与场景插件互通。
 
 ## 安装 KK 预览版
 
@@ -15,10 +17,10 @@ AssetImport 将外部 3D 模型导入 Koikatsu（KK）或 Koikatsu Sunshine（KK
 - KK MaterialEditor 4.0.3+。
 - LoadFileLimitedFix（IllusionFixes 的 KK 版本）。
 
-**使用 MaterialEditor 4.0.3 的用户请换用本次 4.1.3 包。** 旧的 4.1.0 / 4.1.1 包要求 MaterialEditor 5.0；最低要求继续保持 4.0.3（从 4.1.2 起支持）。MaterialEditor 4.0.3 来自 [KK_Plugins 官方 v270 发布](https://github.com/IllusionMods/KK_Plugins/releases/tag/v270)。
+**使用 MaterialEditor 4.0.3 的用户请换用本次 4.1.4 包。** 旧的 4.1.0 / 4.1.1 包要求 MaterialEditor 5.0；最低要求继续保持 4.0.3（从 4.1.2 起支持）。MaterialEditor 4.0.3 来自 [KK_Plugins 官方 v270 发布](https://github.com/IllusionMods/KK_Plugins/releases/tag/v270)。
 
 1. 退出游戏，打开游戏根目录，即 `Koikatu.exe` 所在的文件夹。
-2. 解压 `KK_AssetImportv4.1.3Packed.zip`，把里面的 **`BepInEx` 和 `runtimes` 两个文件夹一起**放入游戏根目录，合并同名文件夹并覆盖本插件的同名文件。不要只复制 DLL，也不要把 ZIP 放进 `mods`。
+2. 解压 `KK_AssetImportv4.1.4Packed.zip`，把里面的 **`BepInEx` 和 `runtimes` 两个文件夹一起**放入游戏根目录，合并同名文件夹并覆盖本插件的同名文件。不要只复制 DLL，也不要把 ZIP 放进 `mods`。
 3. 启动角色编辑器或 Studio，按 **左 Alt + I** 打开导入窗口。角色编辑器中先选一个已有饰品，再将模型导入该槽位。
 
 安装后的目录与原项目打包方式一致：
@@ -36,7 +38,7 @@ AssetImport 将外部 3D 模型导入 Koikatsu（KK）或 Koikatsu Sunshine（KK
 
 **从 4.1.0 预览版升级：**先退出游戏，将旧的 `BepInEx/plugins/AssetImportKK` 整个文件夹移出游戏目录，再安装新包，避免同时加载两份插件。仅在 `plugins` 内改文件夹名不能停用旧版。如果曾在 KK 中误装 KKS 版，先将那一版的 `AssetImport` 插件文件夹移出游戏目录；不要删除整个 `BepInEx` 或 `runtimes` 文件夹。
 
-**从 4.1.1 / 4.1.2 升级：**退出游戏后，按上面的安装步骤直接覆盖即可，目录结构相同。
+**从 4.1.1 / 4.1.2 / 4.1.3 升级：**退出游戏后，按上面的安装步骤直接覆盖即可，目录结构相同。
 
 KK 包使用的模型解析库与原 KKS 包不同，所以没有 `IndexRange.dll` 和 `System.Resources.ResourceManager.dll`，也不需要从 KKS 包补入它们。简短说明见 [安装说明](docs/INSTALL-KK.txt)，安装包根目录也附有 `安装说明.txt`。
 
@@ -44,13 +46,13 @@ ABMX 5.4、KKPE 2.21.5、DynamicBoneEditor 1.1 属于可选兼容项。安装它
 
 ## Windows 游戏内验证
 
-完整对照包为 `KK_AssetImport4.1.3_ME403_ME500_TestKit.zip`：解压后打开 `index.html`，选择随包的 ME 4.0.3 或 5.0 安装环境，再测试 19 个模型（覆盖文件选择器全部 18 种扩展名，FBX 分 ASCII / binary）。两套使用同一个 AssetImport DLL，便于隔离 ME 版本差异。包内有参考图、76 项结果表、模型预检和日志收集脚本；ME 官方许可和对应源码随安装包提供。参考图为离线渲染，不是游戏测试通过的截图。构建步骤见 [测试包维护说明](docs/TESTKIT.md)。
+完整对照包为 `KK_AssetImport4.1.4_ME403_ME500_TestKit.zip`：解压后打开 `index.html`，选择随包的 ME 4.0.3 或 5.0 安装环境，再测试 19 个模型（覆盖文件选择器全部 18 种扩展名，FBX 分 ASCII / binary）。两套使用同一个 AssetImport DLL，便于隔离 ME 版本差异。包内有参考图、76 项结果表、模型预检和日志收集脚本；ME 官方许可和对应源码随安装包提供。参考图为离线渲染，不是游戏测试通过的截图。构建步骤见 [测试包维护说明](docs/TESTKIT.md)。
 
-**已知限制：**4.1.3 的 LWS 内存导入未缓存配套 LWO，可能返回占位骨架而不是场景几何。预检会把此项标为失败；直接读取 LWO 成功不代表 LWS 通过。原生解析预检的其余 37 项通过也不替代 Windows 游戏内显示、ME 编辑和保存重载测试。
+**已知限制：**4.1.4 的 LWS 内存导入未缓存配套 LWO，可能返回占位骨架而不是场景几何。预检会把此项标为失败；直接读取 LWO 成功不代表 LWS 通过。原生解析预检的其余 37 项通过也不替代 Windows 游戏内显示、ME 编辑和保存重载测试。
 
-测试素材单独放在 `KK_AssetImportv4.1.3TestAssets.zip`，内含 `TestAssets/` 和 `Windows测试说明.md`，可解压到任意方便的位置。正常安装插件不需要这个包。
+测试素材单独放在 `KK_AssetImportv4.1.4TestAssets.zip`，内含 `TestAssets/` 和 `Windows测试说明.md`，可解压到任意方便的位置。正常安装插件不需要这个包。
 
-4.1.3 基于 MaterialEditor 4.0.3 编译，并保留 5.0 的兼容回归检查。Windows 游戏内运行仍待验证，清单见 [Windows 测试说明](docs/KK-TESTING.md)。目前没有 KKS 服装白模已解决的实机验证结论，也不承诺 KK/KKS 角色卡、服装卡或场景可以互通。
+4.1.4 基于 MaterialEditor 4.0.3 编译，并保留 5.0 的兼容回归检查。Windows 游戏内运行仍待验证，清单见 [Windows 测试说明](docs/KK-TESTING.md)。目前没有 KKS 服装白模已解决的实机验证结论，也不承诺 KK/KKS 角色卡、服装卡或场景可以互通。
 
 ## 在 macOS 上构建
 
@@ -82,10 +84,12 @@ python3 scripts/package.py --output artifacts
 ```sh
 dotnet run --project tests/AssetImport.Cache.Tests -c Release
 dotnet run --project tests/AssetImport.Geometry.Tests -c Release
+dotnet run --project tests/AssetImport.Hierarchy.Tests -c Release
+dotnet run --project tests/AssetImport.Textures.Tests -c Release
 dotnet run --project tests/AssetImport.Compatibility.Tests -c Release
 ```
 
-这些检查覆盖缓存、几何转换和真实 MaterialEditor DLL 的 IL 布局；兼容性测试调用生产补丁逻辑并执行隔离的指令片段。它们不运行游戏，不能验证 Unity 渲染、游戏保存恢复或整个 Harmony 运行环境。
+这些检查覆盖缓存、几何转换、生产层级构建的拆分材质绑定、贴图路径和真实 MaterialEditor DLL 的 IL 布局；兼容性测试调用生产补丁逻辑并执行隔离的指令片段。它们不运行游戏，不能验证 Unity 渲染、游戏保存恢复或整个 Harmony 运行环境。
 
 ## KK 适配差异
 

@@ -3,8 +3,10 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import time
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,10 +15,13 @@ NATIVE = "runtimes/win-x64/native/assimp.dll"
 
 
 def write_zip(path, files):
-    # Stable ordering and timestamps make identical builds produce identical ZIPs.
+    # BepInEx invalidates plugin metadata using only the DLL's modification time.
+    # Never reuse a fixed timestamp across releases. Reproducible release builds
+    # can set SOURCE_DATE_EPOCH to their own release/build timestamp.
+    timestamp = time.gmtime(int(os.environ.get("SOURCE_DATE_EPOCH", time.time())))[:6]
     with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in sorted(files.items()):
-            info = zipfile.ZipInfo(name, (2026, 9, 30, 0, 0, 0))
+            info = zipfile.ZipInfo(name, timestamp)
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             archive.writestr(info, data)
@@ -28,7 +33,7 @@ def main():
     parser.add_argument("--configuration", default="Release", choices=["Debug", "Release"])
     parser.add_argument("--source", action="store_true", help="Also create a source archive (no generated build references)")
     parser.add_argument("--test-assets", action="store_true", help="Also create a separate optional test-assets archive")
-    parser.add_argument("--dll-update", action="store_true", help="Also package only the plugin DLL for existing full 4.1.1/4.1.2 installs")
+    parser.add_argument("--dll-update", action="store_true", help="Also package only the plugin DLL for existing full 4.1.1/4.1.2/4.1.3 installs")
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -62,15 +67,17 @@ def main():
     created = [package]
     if args.dll_update:
         update_instructions = (
-            "KK AssetImport " + version + " — 已安装 4.1.1 / 4.1.2 用户的小更新包\n\n"
+            "KK AssetImport " + version + " — 已安装 4.1.1 / 4.1.2 / 4.1.3 用户的小更新包\n\n"
             "退出 KK 和 Studio，把本包 BepInEx 文件夹复制到 Koikatu.exe 所在的游戏目录并覆盖。\n"
             "实际替换：BepInEx/plugins/AssetImport/KK_AssetImport.dll。\n"
             "不要把新 DLL 与旧 DLL 并排放，也不要只把旧 DLL 改名留在 plugins 里。\n"
             "保留现有 AssimpNet、LitJSON、runtimes 和 ME；无需更换 ME 5.0 或重新下载 demo。\n"
-            "此包仅用于已装完整 4.1.1 / 4.1.2 的 KK 环境，首次安装请用 Packed 完整包。\n\n"
-            "修复目标：日志中 InvalidDataException 类型无法加载导致的节点转换中断。\n"
+            "此包仅用于已装完整 4.1.1 / 4.1.2 / 4.1.3 的 KK 环境，首次安装请用 Packed 完整包。\n\n"
+            "修复大网格拆分后材质编号顺移（树误用飘带贴图、后续零件贴图串位），并自动按模型目录查找外置贴图。\n"
             "修复已通过编译、几何及 DLL 兼容回归；游戏内显示仍需复测。\n"
-            "重新启动 Studio，导入原来的两个 FBX 小房子；日志启动段应显示 KK_AssetImport " + version + "。\n"
+            "重新启动 Studio，直接加载原始 KKS 场景 PNG，对比树、飘带、风筝和花瓣；请用原始文件，不用在旧版错位后重新保存的副本。\n"
+            "另测小房子：关闭 Material per Renderer，重新导入两个 FBX，预载窗口确认 checker.png 已勾选后点 Finish。\n"
+            "日志应显示 Runtime build " + version + "。\n"
             "若仍失败，发游戏根目录 output_log.txt 或 BepInEx/LogOutput.log。\n"
         )
         update = output / ("KK_AssetImportv" + version + "_DLL_Update.zip")
