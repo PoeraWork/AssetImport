@@ -1,5 +1,18 @@
 [
   {
+    "archive": "KK_Plugins_v270.zip",
+    "url": "https://github.com/IllusionMods/KK_Plugins/releases/download/v270/KK_Plugins_2026-06-05.zip",
+    "sha256": "502f59a91dfefe76186e77846ee4e5bbac6a84e4a568f7bf057a8012981afc5d",
+    "files": [
+      {
+        "inner_archive": "KK_MaterialEditor_v4.0.3.zip",
+        "member": "BepInEx/plugins/KK_Plugins/KK_MaterialEditor.dll",
+        "target": "KK_MaterialEditor.dll",
+        "sha256": "51b2189d5a6b985d69afa436f3776b6e51dccfa61f812a20cac7414653f6bad2"
+      }
+    ]
+  },
+  {
     "archive": "KK_Plugins_v271.zip",
     "url": "https://github.com/IllusionMods/KK_Plugins/releases/download/v271/KK_Plugins_2026-09-10.zip",
     "sha256": "8d07cb7cd8bff3d4d2b768a729385a33d9ceb00ef265b28810de3ec31c0fe728",
@@ -7,7 +20,7 @@
       {
         "inner_archive": "KK_MaterialEditor_v5.0.zip",
         "member": "BepInEx/plugins/KK_Plugins/KK_MaterialEditor.dll",
-        "target": "KK_MaterialEditor.dll",
+        "target": "KK_MaterialEditor_5.0.dll",
         "sha256": "03a848eb008133c911c3bf8093ca766ff000586cd832aa2994ea46370a2c93f3"
       },
       {

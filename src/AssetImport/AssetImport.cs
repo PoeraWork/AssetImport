@@ -16,18 +16,21 @@ namespace AssetImport
 {
     [BepInPlugin(GUID, PluginName, Version)]
     [BepInDependency(KoikatuAPI.GUID, KoikatuAPI.VersionConst)]
-    [BepInDependency(KK_Plugins.MaterialEditor.MaterialEditorPlugin.PluginGUID, KK_Plugins.MaterialEditor.MaterialEditorPlugin.PluginVersion)]
+    [BepInDependency(KK_Plugins.MaterialEditor.MaterialEditorPlugin.PluginGUID, MinimumMaterialEditorVersion)]
     [BepInDependency(KK_Plugins.DynamicBoneEditor.Plugin.PluginGUID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("LoadFileLmitedFix")]
     public class AssetImport : BaseUnityPlugin
     {
 #if KK
         public const string PluginName = "KK_AssetImport";
+        // Keep the supported minimum independent of future build-reference upgrades.
+        internal const string MinimumMaterialEditorVersion = "4.0.3";
 #else
         public const string PluginName = "KKS_AssetImport";
+        internal const string MinimumMaterialEditorVersion = "3.13.5";
 #endif
         public const string GUID = "org.njaecha.plugins.assetimport";
-        public const string Version = "4.1.1";
+        public const string Version = "4.1.2";
 
         internal new static ManualLogSource Logger;
         internal static AssetSceneController asc;

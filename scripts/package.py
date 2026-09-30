@@ -52,7 +52,7 @@ def main():
         "plugin": "KK_AssetImport", "version": version, "status": "preview; Windows game validation pending",
         "target": "Koikatsu / Unity 5.6 / .NET 3.5 / Windows x64",
         "dependencies": {"AssimpNet": "5.0.0-beta1", "native Assimp": "5.0.1", "LitJSON": "0.19.0"},
-        "requiredPlugins": {"BepInEx": "5.4.22+", "KKAPI": "1.45.1+", "KK_MaterialEditor": "5.0+", "LoadFileLimitedFix": "KK build"},
+        "requiredPlugins": {"BepInEx": "5.4.22+", "KKAPI": "1.45.1+", "KK_MaterialEditor": "4.0.3+", "LoadFileLimitedFix": "KK build"},
         "sha256": {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}
     }
     package = output / ("KK_AssetImportv" + version + "Packed.zip")

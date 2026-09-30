@@ -1,8 +1,8 @@
-# AssetImport — KK port preview 4.1.1
+# AssetImport — KK port preview 4.1.2
 
 AssetImport 将外部 3D 模型导入 Koikatsu（KK）或 Koikatsu Sunshine（KKS），用作角色饰品或 Studio 物体。本仓库基于 [Njaecha/AssetImport](https://github.com/Njaecha/AssetImport)，增加 KK 支持，并保留 KKS 构建目标。
 
-**KK 用户请下载 `KK_AssetImportv4.1.1Packed.zip`。** 这是供 Windows KK 使用的预览版，不适用于 KKS；源码包和测试素材包不用于安装插件。
+**KK 用户请下载 `KK_AssetImportv4.1.2Packed.zip`。** 这是供 Windows KK 使用的预览版，不适用于 KKS；源码包和测试素材包不用于安装插件。
 
 ## 安装 KK 预览版
 
@@ -10,11 +10,13 @@ AssetImport 将外部 3D 模型导入 Koikatsu（KK）或 Koikatsu Sunshine（KK
 
 - BepInEx 5.4.22 或更新的 5.x 版本。
 - KKAPI 1.45.1+。
-- KK MaterialEditor 5.0+。
+- KK MaterialEditor 4.0.3+。
 - LoadFileLimitedFix（IllusionFixes 的 KK 版本）。
 
+**使用 MaterialEditor 4.0.3 的用户请换用本次 4.1.2 包。** 旧的 4.1.0 / 4.1.1 包要求 MaterialEditor 5.0；4.1.2 将最低要求降为 4.0.3。MaterialEditor 4.0.3 来自 [KK_Plugins 官方 v270 发布](https://github.com/IllusionMods/KK_Plugins/releases/tag/v270)。
+
 1. 退出游戏，打开游戏根目录，即 `Koikatu.exe` 所在的文件夹。
-2. 解压 `KK_AssetImportv4.1.1Packed.zip`，把里面的 **`BepInEx` 和 `runtimes` 两个文件夹一起**放入游戏根目录，合并同名文件夹并覆盖本插件的同名文件。不要只复制 DLL，也不要把 ZIP 放进 `mods`。
+2. 解压 `KK_AssetImportv4.1.2Packed.zip`，把里面的 **`BepInEx` 和 `runtimes` 两个文件夹一起**放入游戏根目录，合并同名文件夹并覆盖本插件的同名文件。不要只复制 DLL，也不要把 ZIP 放进 `mods`。
 3. 启动角色编辑器或 Studio，按 **左 Alt + I** 打开导入窗口。角色编辑器中先选一个已有饰品，再将模型导入该槽位。
 
 安装后的目录与原项目打包方式一致：
@@ -32,15 +34,17 @@ AssetImport 将外部 3D 模型导入 Koikatsu（KK）或 Koikatsu Sunshine（KK
 
 **从 4.1.0 预览版升级：**先退出游戏，将旧的 `BepInEx/plugins/AssetImportKK` 整个文件夹移出游戏目录，再安装新包，避免同时加载两份插件。仅在 `plugins` 内改文件夹名不能停用旧版。如果曾在 KK 中误装 KKS 版，先将那一版的 `AssetImport` 插件文件夹移出游戏目录；不要删除整个 `BepInEx` 或 `runtimes` 文件夹。
 
+**从 4.1.1 升级：**退出游戏后，按上面的安装步骤直接覆盖即可，目录结构相同。
+
 KK 包使用的模型解析库与原 KKS 包不同，所以没有 `IndexRange.dll` 和 `System.Resources.ResourceManager.dll`，也不需要从 KKS 包补入它们。简短说明见 [安装说明](docs/INSTALL-KK.txt)，安装包根目录也附有 `安装说明.txt`。
 
 ABMX 5.4、KKPE 2.21.5、DynamicBoneEditor 1.1 属于可选兼容项。安装它们时使用 KK 版本，分别测试后再组合使用。安装包不包含这些插件或游戏 DLL。
 
 ## Windows 游戏内验证
 
-测试素材单独放在 `KK_AssetImportv4.1.1TestAssets.zip`，内含 `TestAssets/` 和 `Windows测试说明.md`，可解压到任意方便的位置。正常安装插件不需要这个包。
+测试素材单独放在 `KK_AssetImportv4.1.2TestAssets.zip`，内含 `TestAssets/` 和 `Windows测试说明.md`，可解压到任意方便的位置。正常安装插件不需要这个包。
 
-自动化检查和编译已通过，实际游戏运行仍需验证，清单见 [Windows 测试说明](docs/KK-TESTING.md)。目前没有 KKS 服装白模已解决的实机验证结论，也不承诺 KK/KKS 角色卡、服装卡或场景可以互通。
+4.1.2 基于 MaterialEditor 4.0.3 编译，并保留 5.0 的兼容回归检查。Windows 游戏内运行仍待验证，清单见 [Windows 测试说明](docs/KK-TESTING.md)。目前没有 KKS 服装白模已解决的实机验证结论，也不承诺 KK/KKS 角色卡、服装卡或场景可以互通。
 
 ## 在 macOS 上构建
 

@@ -25,3 +25,11 @@ Windows KK/KKS 游戏运行、实际 Unity 渲染、完整 Harmony 安装、卡�
 - 实际生成并解压 `KK_AssetImportv4.1.1Packed.zip`：顶层只有 `BepInEx`、`runtimes`、`安装说明.txt`，4 个运行 DLL 的位置、文件清单和 SHA-256 均通过检查。中文说明采用 UTF-8 BOM 与 CRLF。
 - 测试素材和手工验证说明拆入独立 `TestAssets.zip`；源码包包含新说明且排除了构建缓存。旧 `AssetImportKK` 目录的迁移步骤已写入安装说明，避免双份插件。
 - 前述几何、缓存、MaterialEditor 检查为 4.1.0 的运行记录；此次未更改这些功能，未重复执行。Windows 游戏测试状态仍为未执行。
+
+## 4.1.2：MaterialEditor 最低要求降至 4.0.3
+
+- 使用官方 [KK_Plugins v270](https://github.com/IllusionMods/KK_Plugins/releases/tag/v270) 内的 KK MaterialEditor 4.0.3 作为编译引用；发行 ZIP 与 DLL 的 SHA-256 均锁定在 `scripts/dependencies.json`。v271 的 5.0 DLL 保留为单独测试引用。
+- KK 的 `BepInDependency` 最低版本显式固定为 `4.0.3`，不再随引用库的 `PluginVersion` 自动提高；KKS 仍为 `3.13.5`。KK net35 与 KKS net462 Release 构建通过，0 errors、2 条既有文件对话框弃用警告。
+- 扩展兼容检查读取真实编译产物：KK 的 MaterialEditor AssemblyRef 为 `4.0.3.0`，依赖属性为 `4.0.3`。对 4.0.3、5.0、KKS 3.13.5 均验证了 3 个类型引用、2 个纹理导入方法的完整签名和可见性，以及内联枚举值。
+- 三版本的真实 `LoadData` 状态机分别为 `<LoadData>d__35`、`<LoadData>d__146`、`<LoadData>d__30`；各 5 个隔离执行用例、Hook 目标签名及未知布局回退均通过。测试构建与运行无警告。
+- 安装说明与清单最低要求同步为 4.0.3；继续使用原项目式 Packed 目录。上述验证不运行 Windows 游戏，也不覆盖实际 Mono 程序集绑定、Unity 渲染或卡片/场景保存恢复，实机测试仍待执行。
