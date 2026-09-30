@@ -26,4 +26,6 @@ It also checks the actual hook target signatures, the iterator's captured contro
 
 The real instruction stream is adapted to inert reflection fixtures and passed into the production patcher. The resulting guard/callback/anchor fragment is emitted and executed under .NET 8 for all body/accessory flag combinations. The assertions check the captured receiver, flag values, callback order, unchanged body condition, and incoming branch label transfer. Unknown call anchors, branch destinations, and captured receiver layouts must preserve the original instructions and labels.
 
+The built KK plugin is also checked for CLR 2 core references and absence of `System.IO.InvalidDataException`, which fails to load in the reported Unity 5.6 environment before node transform conversion can complete. This regression fails against the old 4.1.2 DLL and passes after the 4.1.3 fix; it is not a general verification of every Unity framework type.
+
 Game, built AssetImport, and MaterialEditor assemblies are inspected only as metadata; only the linked patcher and inert probes execute. This checks the binary API and cross-version patch contracts, including the emitted dependency minimum; it does not replace Windows/Unity/Mono testing of assembly binding or full character, coordinate, and Studio loading.

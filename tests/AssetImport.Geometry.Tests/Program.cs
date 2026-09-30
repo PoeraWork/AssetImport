@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 using AssetImport;
@@ -236,9 +235,9 @@ internal static class Program
         Throws<ArgumentException>(() => LegacyMeshGeometry.Partition(3, new[] { 0, 1, 3 }));
         Throws<ArgumentException>(() => LegacyMeshGeometry.Partition(3, new[] { 0, -1, 2 }));
         Throws<ArgumentOutOfRangeException>(() => LegacyMeshGeometry.Partition(3, new int[0], 2));
-        Throws<InvalidDataException>(() => LegacyMeshGeometry.RemapDeltas(new float[4], new float[3], 4, new[] { 1 }, (a, b) => a - b));
+        Throws<ArgumentException>(() => LegacyMeshGeometry.RemapDeltas(new float[4], new float[3], 4, new[] { 1 }, (a, b) => a - b));
         Throws<ArgumentException>(() => LegacyMeshGeometry.LimitBoneInfluences(new[] { new BoneInfluence(0, float.NaN) }));
         Throws<ArgumentException>(() => LegacyMeshGeometry.LimitBoneInfluences(new[] { new BoneInfluence(0, -1) }));
-        Throws<InvalidDataException>(() => LegacyMeshGeometry.DecomposeBasis(float.NaN, 0, 0, 0, 1, 0, 0, 0, 1));
+        Throws<ArgumentException>(() => LegacyMeshGeometry.DecomposeBasis(float.NaN, 0, 0, 0, 1, 0, 0, 0, 1));
     }
 }

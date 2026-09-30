@@ -23,6 +23,7 @@ def main():
     parser.add_argument('--configuration', default='Release', choices=['Debug', 'Release'])
     parser.add_argument('--source', action='store_true', help='Also create a source archive (no generated build references)')
     parser.add_argument('--test-assets', action='store_true', help='Also create a separate optional test-assets archive')
+    parser.add_argument('--dll-update', action='store_true', help='Also package only the plugin DLL for existing full 4.1.1/4.1.2 installs')
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -47,6 +48,11 @@ def main():
     write_zip(package, files)
     package.with_suffix('.manifest.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     created = [package]
+    if args.dll_update:
+        update_instructions = 'AssetImport\nClose the game and Studio before installing. Copy the complete BepInEx and runtimes directories to the matching game root. Open AssetImport with Left Alt + I.\n'
+        update = output / ('KK_AssetImportv' + version + '_DLL_Update.zip')
+        write_zip(update, {PLUGIN + 'KK_AssetImport.dll': files[PLUGIN + 'KK_AssetImport.dll'], '更新说明.txt': update_instructions.replace('\n', '\r\n').encode('utf-8-sig')})
+        created.append(update)
     if args.test_assets:
         fixtures = {'Windows测试说明.md': b'AssetImport\nClose the game and Studio before installing. Copy the complete BepInEx and runtimes directories to the matching game root. Open AssetImport with Left Alt + I.\n'}
         for fixture in sorted((ROOT / 'tests' / 'fixtures').rglob('*')):

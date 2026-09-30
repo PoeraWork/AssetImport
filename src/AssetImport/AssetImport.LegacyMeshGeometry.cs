@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace AssetImport
 {
@@ -71,7 +70,9 @@ namespace AssetImport
             double sx = x.Length, sy = y.Length, sz = z.Length;
             if (double.IsNaN(sx + sy + sz) || double.IsInfinity(sx + sy + sz) ||
                 sx > float.MaxValue || sy > float.MaxValue || sz > float.MaxValue)
-                throw new InvalidDataException("Node transform contains an invalid or unrepresentable scale.");
+                // Use a CLR 2 core exception: KK's Unity/Mono profile cannot load
+                // InvalidDataException, even in an untaken validation branch.
+                throw new ArgumentException("Node transform contains an invalid or unrepresentable scale.");
             if (BasisVector.Dot(x, BasisVector.Cross(y, z)) < 0) sz = -sz;
             x = x.Normalized();
             y = y.Normalized();
@@ -219,7 +220,7 @@ namespace AssetImport
             if (sourceVertices == null) throw new ArgumentNullException("sourceVertices");
             if (subtract == null) throw new ArgumentNullException("subtract");
             if (target.Count != 0 && (target.Count != vertexCount || basis.Count != vertexCount))
-                throw new InvalidDataException("BlendShape channel length does not match the base mesh.");
+                throw new ArgumentException("BlendShape channel length does not match the base mesh.", "target");
             var result = new TResult[sourceVertices.Length];
             if (target.Count == 0) return result;
             for (int i = 0; i < result.Length; i++)
