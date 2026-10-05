@@ -15,8 +15,10 @@ using Mesh = UnityEngine.Mesh;
 using IllusionUtility.GetUtility;
 #if KK
 using Matrix4x4 = Assimp.Matrix4x4;
+using AssimpVector = Assimp.Vector3D;
 #else
 using Matrix4x4 = System.Numerics.Matrix4x4;
+using AssimpVector = System.Numerics.Vector3;
 #endif
 using BoneInfluence = AssetImport.LegacyMeshGeometry.BoneInfluence;
 
@@ -66,11 +68,14 @@ namespace AssetImport
         public bool HasBones => Bones.Count > 0;
         public bool HasTextures => _tPaths.Count > 0;
         public bool IsLoaded { get; private set; }
+        internal string LoadError { get; private set; }
+        internal bool IsPmx { get; private set; }
+        private PmxModel _pmx;
 
 		public readonly bool ImportBones;
         public readonly bool PerRendererMaterials;
         public readonly bool LoadBlendshapes;
-        
+
         private static readonly Stopwatch Stopwatch = new Stopwatch();
         private static readonly int MeshAPositions = Shader.PropertyToID("meshA_Positions");
         private static readonly int MeshBPositions = Shader.PropertyToID("meshB_Positions");
@@ -87,7 +92,7 @@ namespace AssetImport
 			ImportBones = importArmature;
             PerRendererMaterials = perRendererMaterials;
             LoadBlendshapes = loadBlendshapes;
-            
+
 			SourceIdentifier = identifierHash;
 			if (!baseMat) baseMat = new Material(Shader.Find("Standard"));
 			_bMat = baseMat;
@@ -165,54 +170,79 @@ namespace AssetImport
                 texture.Path = TextureFileResolver.Resolve(texture.Path, modelPath);
                 if (texture.Type != TextureType.Diffuse && texture.Type != TextureType.Normals) continue;
                 if (texture.PathOkay()) Logger.LogInfo($"Texture ready [{texture.Material.name}/{texture.Type}]: {texture.Path}");
-                else Logger.LogWarning($"Texture unavailable [{texture.Material.name}/{texture.Type}]: {texture.Path}. Select a PNG/JPG/JPEG file in the preload window.");
+                else Logger.LogWarning($"Texture unavailable [{texture.Material.name}/{texture.Type}]: {texture.Path}. Select a PNG/JPG/JPEG/TGA/BMP/DDS file in the preload window.");
             }
             _cPath = null;
         }
 
 		public void Load()
 		{
+            LoadError = null;
             Logger.LogDebug($"Loading of {RamCacheUtility.GetFileName(SourceIdentifier)} started");
-			
-            AssimpContext imp = new AssimpContext();
-            imp.SetConfig(new Assimp.Configs.RemoveEmptyBonesConfig(false));
-            
+
             List<string> extraFiles = RamCacheUtility.GetFileAdditionalFileHashes(SourceIdentifier);
             string temp = Path.GetTempPath();
             string folder = "AssetImport_" + Guid.NewGuid().ToString("N");
-            
-            if (!extraFiles.IsNullOrEmpty())
+            IsPmx = string.Equals(Path.GetExtension(SourceFileName), ".pmx", StringComparison.OrdinalIgnoreCase);
+            if (IsPmx)
             {
                 try
                 {
-                    Logger.LogInfo($"File has additional files. Because of a limitation of the assimp wrapper the files have to be written to disk in order to be loaded!");
-                    Directory.CreateDirectory(Path.Combine(temp, folder));
-                    File.WriteAllBytes(Path.Combine(Path.Combine(temp, folder), RamCacheUtility.GetFileName(SourceIdentifier)), RamCacheUtility.GetFileBlob(SourceIdentifier));
-                    extraFiles.ForEach(file => File.WriteAllBytes(Path.Combine(Path.Combine(temp, folder), RamCacheUtility.GetFileName(file)), RamCacheUtility.GetFileBlob(file)));
-
-                    // load asset from file on disk to be able to load extra files.
-                    _scene = imp.ImportFile(Path.Combine(Path.Combine(temp, folder), RamCacheUtility.GetFileName(SourceIdentifier)),
-                        PostProcessSteps.MakeLeftHanded | PostProcessSteps.Triangulate);
+                    _pmx = PmxReader.Read(RamCacheUtility.GetFileBlob(SourceIdentifier));
+                    _scene = PmxSceneBuilder.Build(_pmx, LoadBlendshapes);
+                    if (_pmx.UnusedNormalsRepaired > 0)
+                        Logger.LogWarning($"PMX unused normals repaired: {_pmx.UnusedNormalsRepaired} invalid normals on vertices not referenced by any triangle. Rendered geometry and valid source normals are unchanged.");
+                    Logger.LogInfo($"PMX 2.0: {_pmx.Vertices.Length} vertices, {_pmx.Bones.Length} bones, {_pmx.Materials.Length} materials; unit scale {PmxSceneBuilder.UnitScale}.");
+                    Logger.LogWarning($"PMX preview: {_pmx.SdefVertices} SDEF vertices use linear skinning. IK ({_pmx.IkBones}) and append transforms ({_pmx.GrantBones}) require an MMDD mapping; rigid bodies ({_pmx.RigidBodies}) and joints ({_pmx.Joints}) are not simulated. Toon/sphere and bone/UV/material morphs are not imported.");
                 }
-                catch(IOException e)
+                catch (Exception e)
                 {
-                    Logger.LogError($"I/O error when trying to write the file: {e.Message}");
+                    LoadError = "PMX import failed: " + e.Message;
+                    Logger.LogError(LoadError);
                     return;
                 }
             }
             else
             {
-                // load asset from stream
-                string filename = RamCacheUtility.GetFileName(SourceIdentifier).ToLower();
-                string fileHint = filename.Substring(filename.LastIndexOf(".") + 1);
-			    _scene = imp.ImportFileFromStream(RamCacheUtility.GetFileStream(SourceIdentifier), 
-                    PostProcessSteps.MakeLeftHanded | PostProcessSteps.Triangulate, 
-                    fileHint);
+                AssimpContext imp = new AssimpContext();
+                imp.SetConfig(new Assimp.Configs.RemoveEmptyBonesConfig(false));
+
+                if (!extraFiles.IsNullOrEmpty())
+                {
+                    try
+                    {
+                        Logger.LogInfo($"File has additional files. Because of a limitation of the assimp wrapper the files have to be written to disk in order to be loaded!");
+                        Directory.CreateDirectory(Path.Combine(temp, folder));
+                        File.WriteAllBytes(Path.Combine(Path.Combine(temp, folder), RamCacheUtility.GetFileName(SourceIdentifier)), RamCacheUtility.GetFileBlob(SourceIdentifier));
+                        extraFiles.ForEach(file => File.WriteAllBytes(Path.Combine(Path.Combine(temp, folder), RamCacheUtility.GetFileName(file)), RamCacheUtility.GetFileBlob(file)));
+
+                        // load asset from file on disk to be able to load extra files.
+                        _scene = imp.ImportFile(Path.Combine(Path.Combine(temp, folder), RamCacheUtility.GetFileName(SourceIdentifier)),
+                            PostProcessSteps.MakeLeftHanded | PostProcessSteps.Triangulate);
+                    }
+                    catch(IOException e)
+                    {
+                        LoadError = $"I/O error when trying to write the file: {e.Message}";
+                        Logger.LogError(LoadError);
+                        return;
+                    }
+                }
+                else
+                {
+                    // load asset from stream
+                    string filename = RamCacheUtility.GetFileName(SourceIdentifier).ToLower();
+                    string fileHint = filename.Substring(filename.LastIndexOf(".") + 1);
+                    _scene = imp.ImportFileFromStream(RamCacheUtility.GetFileStream(SourceIdentifier),
+                        PostProcessSteps.MakeLeftHanded | PostProcessSteps.Triangulate,
+                        fileHint);
+                }
+
             }
-            
+
             if (_scene == null)
 			{
-				Logger.LogError("Assimp Import failed, aborting load process");
+                LoadError = "Assimp Import failed, aborting load process";
+                Logger.LogError(LoadError);
 				return;
 			}
 
@@ -221,6 +251,12 @@ namespace AssetImport
             ProcessMeshes(); // convert meshes
 			GameObject = BuildFromNode(_scene.RootNode); // convert SceneStructure & assign meshes and materials
             ProcessArmatures(); // convert armature for meshes with bones
+            if (IsPmx && ImportBones)
+                for (int i = 0; i < _pmx.Bones.Length; i++)
+                {
+                    Transform bone = GameObject.transform.FindLoop(PmxModel.BoneName(i, _pmx.Bones[i].Name)).transform;
+                    if (!Bones.Contains(bone)) Bones.Add(bone);
+                }
             BuildBoneNodeTree(GameObject, 0, null);
             IsLoaded = true;
 
@@ -237,8 +273,8 @@ namespace AssetImport
                 }
             }
         }
-        
-        
+
+
         private static void RestartStopwatch()
         {
             Stopwatch.Reset();
@@ -261,7 +297,7 @@ namespace AssetImport
 #endif
             return matrix;
         }
-        
+
 
 		private static UnityEngine.Matrix4x4 ConvertTransform(Matrix4x4 aTransform, Transform uTransform)
 		{
@@ -286,7 +322,7 @@ namespace AssetImport
             uTransform.localRotation = uMatrix.rotation;
 #endif
             uTransform.localPosition = uMatrix.GetColumn(3);
-            
+
             return uMatrix;
         }
 
@@ -301,6 +337,8 @@ namespace AssetImport
                 {
                     name = material.Name
                 };
+                if (IsPmx && material.IsTwoSided && uMaterial.HasProperty("_Cull"))
+                    uMaterial.SetInt("_Cull", 0);
                 // Albedo
                 if (material.HasColorDiffuse)
                 {
@@ -449,7 +487,7 @@ namespace AssetImport
                     Logger.LogDebug($"{mesh.FaceCount} Faces Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
                 }
 
-                // Uv (texture coordinate) 
+                // Uv (texture coordinate)
                 if (mesh.HasTextureCoords(0))
                 {
                     RestartStopwatch();
@@ -514,8 +552,8 @@ namespace AssetImport
 
                 if (mesh.HasMeshAnimationAttachments && LoadBlendshapes)
                 {
-                    Logger.LogDebug("Converting Mesh Animation Attachments >>>");
-                    ProcessBlendshapes(mesh, uMesh);
+                    if (IsPmx) ProcessBlendshapesCpu(mesh, uMesh, Enumerable.Range(0, mesh.VertexCount).ToArray());
+                    else ProcessBlendshapes(mesh, uMesh);
                 }
 
                 _meshes.Add(new List<ConvertedMesh> { new ConvertedMesh { Mesh = uMesh, SourceVertices = null } });
@@ -529,7 +567,9 @@ namespace AssetImport
             return LegacyMeshGeometry.Remap(source, sourceVertices).Select(v => new Vector2(v.X, v.Y)).ToArray();
         }
 
-        private static Vector3[] MorphDeltas(IList<Assimp.Vector3D> basis, IList<Assimp.Vector3D> target,
+#endif
+
+        private static Vector3[] MorphDeltas(IList<AssimpVector> basis, IList<AssimpVector> target,
             int vertexCount, int[] sourceVertices)
         {
             return LegacyMeshGeometry.RemapDeltas(basis, target, vertexCount, sourceVertices,
@@ -556,7 +596,7 @@ namespace AssetImport
                     MorphDeltas(sourceMesh.Tangents, attachment.Tangents, sourceMesh.VertexCount, sourceVertices));
             }
         }
-#else
+#if !KK
         [SuppressMessage("ReSharper", "InconsistentNaming")]
         private static void ProcessBlendshapes(Assimp.Mesh sourceMesh, Mesh targetMesh)
         {
@@ -573,7 +613,7 @@ namespace AssetImport
             int kernelPosAndNorm = shader.FindKernel("CSPosAndNorm");
             int kernelPosAndTan = shader.FindKernel("CSPosAndTan");
             int kernelPos = shader.FindKernel("CSPos");
-            
+
             // set MeshA Position buffers
             ComputeBuffer meshA_Positions = new ComputeBuffer(vertexCount, sizeof(float) * 3);
             meshA_Positions.SetData(sourceMesh.Vertices.ToArray());
@@ -581,12 +621,12 @@ namespace AssetImport
             meshA_Normals.SetData(sourceMesh.Normals.ToArray());
             ComputeBuffer meshA_Tangents = new ComputeBuffer(vertexCount, sizeof(float) * 3);
             meshA_Tangents.SetData(sourceMesh.Tangents.ToArray());
-            
+
             // Set MeshB buffers
             ComputeBuffer meshB_Positions = new ComputeBuffer(vertexCount, sizeof(float) * 3);
             ComputeBuffer meshB_Normals = new ComputeBuffer(vertexCount, sizeof(float) * 3);
             ComputeBuffer meshB_Tangents = new ComputeBuffer(vertexCount, sizeof(float) * 3);
-            
+
             // Set Output buffers
             ComputeBuffer delta_Positions = new ComputeBuffer(vertexCount, sizeof(float) * 3);
             ComputeBuffer delta_Normals = new ComputeBuffer(vertexCount, sizeof(float) * 3);
@@ -628,23 +668,23 @@ namespace AssetImport
                 shader.SetBuffer(kernelPos, MeshBPositions, meshB_Positions);
                 shader.SetBuffer(kernelPos, DeltaPositions, delta_Positions);
             }
-            
+
             double total = 0;
             for(int index = 0; index < sourceMesh.MeshAnimationAttachmentCount; index++)
             {
                 MeshAnimationAttachment meshAnimation = sourceMesh.MeshAnimationAttachments[index];
-                
+
                 RestartStopwatch();
-                
+
                 bool HasTangents = meshAnimation.Tangents.Count > 0;
                 bool HasNormals = meshAnimation.Normals.Count > 0;
-                
+
                 var vertDeltas = new Vector3[vertexCount];
                 var normalsDeltas = new Vector3[vertexCount];
                 var tangentsDeltas = new Vector3[vertexCount];
 
                 int kernelIndex = meshAnimation.HasNormals && HasTangents ? kernelAll : HasTangents ? kernelPosAndTan : meshAnimation.HasNormals ? kernelPosAndNorm : kernelPos;
-                
+
                 // Set Data
                 // Positions
                 meshB_Positions.SetData(meshAnimation.Vertices.ToArray());
@@ -654,20 +694,20 @@ namespace AssetImport
 
                 // Tangents
                 if (HasTangents) meshB_Tangents.SetData(meshAnimation.Tangents.ToArray());
-                
+
                 // Dispatch
                 shader.Dispatch(kernelIndex, threadGroups, 1, 1);
-                
+
                 delta_Positions.GetData(vertDeltas);
                 if (HasNormals) delta_Normals.GetData(normalsDeltas);
                 if (HasTangents) delta_Tangents.GetData(tangentsDeltas);
-                
+
                 targetMesh.AddBlendShapeFrame(meshAnimation.Name, meshAnimation.Weight * 100, vertDeltas, normalsDeltas, tangentsDeltas);
-                
+
                 Stopwatch.Stop();
                 total += Stopwatch.Elapsed.TotalMilliseconds;
                 Logger.LogDebug($"  >>> Blendshape {index+1}/{sourceMesh.MeshAnimationAttachmentCount} Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
-                
+
             }
             // Cleanup
             meshA_Positions.Release();
@@ -679,7 +719,7 @@ namespace AssetImport
             meshA_Tangents.Release();
             meshB_Tangents.Release();
             delta_Tangents.Release();
-            
+
             Logger.LogDebug($"Blendshape processing completed in {total} ms");
         }
 
@@ -703,7 +743,7 @@ namespace AssetImport
             Vector4 c2 = m.GetColumn(2);
             float s0 = c0.magnitude, s1 = c1.magnitude, s2 = c2.magnitude;
             // Threshold to avoid stripping scale from columns that are essentially unit length (floating point noise).
-            bool passedThreshold = Mathf.Abs(s0 - 1f) > 0.001f || Mathf.Abs(s1 - 1f) > 0.001f || Mathf.Abs(s2 - 1f) > 0.001f; 
+            bool passedThreshold = Mathf.Abs(s0 - 1f) > 0.001f || Mathf.Abs(s1 - 1f) > 0.001f || Mathf.Abs(s2 - 1f) > 0.001f;
             if (passedThreshold)
             {
                 Vector4 translation = m.GetColumn(3);
@@ -776,7 +816,7 @@ namespace AssetImport
             if (unweightedVertexCount > 0)
                 Logger.LogWarning($"{name}: source contains {unweightedVertexCount} vertices without bone weights.");
 #else
-            // normalize vertex weights if necessary 
+            // normalize vertex weights if necessary
             foreach (int vertexID in helper.Keys)
             {
                 float totalWeight = helper[vertexID].Sum(tu => tu.Weight);

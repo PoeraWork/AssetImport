@@ -408,4 +408,10 @@ FodyWeavers.xsd
 /.build-downloads/
 /src/Custom Dependencies/KK/*.dll
 **/dotnet-home/
+
+# Local toolchains, caches and private model/research data.
 /.local/
+.DS_Store
+
+# PMX author reference documents are retained for local reading only.
+/docs/reference/pmx/local-original/

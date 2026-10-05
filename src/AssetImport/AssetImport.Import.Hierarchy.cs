@@ -110,6 +110,14 @@ namespace AssetImport
                             rend = subObject.AddComponent<MeshRenderer>();
                         }
 
+                        // Runtime imports have no precomputed animation bounds.
+                        // MMDD, FK and DynamicBone can move vertices beyond the
+                        // bind-pose bounds, including while a chunk is offscreen.
+                        // Let Unity update each skinned chunk's bounds every frame
+                        // instead of culling it against an outdated pose.
+                        var skinnedRenderer = rend as SkinnedMeshRenderer;
+                        if (skinnedRenderer != null) skinnedRenderer.updateWhenOffscreen = true;
+
                         rend.name = subobjectName;
                         rend.material = uMaterial;
                         Renderers.Add(rend);

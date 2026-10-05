@@ -11,6 +11,18 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = 'BepInEx/plugins/AssetImport/'
 NATIVE = 'runtimes/win-x64/native/assimp.dll'
 
+def version_output(base, version):
+    base = Path(base).resolve()
+    return base if base.name == version else base / version
+
+def source_files():
+    excluded = {'.git', 'bin', 'obj', 'artifacts', '.local', '.build-downloads', 'dotnet-home', '__pycache__', 'local-original'}
+    for directory, folders, files in os.walk(ROOT):
+        folders[:] = [name for name in folders if name not in excluded]
+        for name in files:
+            if name != '.DS_Store':
+                yield (Path(directory) / name)
+
 def write_zip(path, files):
     timestamp = time.gmtime(int(os.environ.get('SOURCE_DATE_EPOCH', time.time())))[:6]
     with zipfile.ZipFile(path, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
@@ -22,23 +34,24 @@ def write_zip(path, files):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output', type=Path, default=ROOT / 'artifacts')
+    parser.add_argument('--output', type=Path, default=ROOT / 'artifacts', help='Artifact root; packages are placed in its version subdirectory')
     parser.add_argument('--configuration', default='Release', choices=['Debug', 'Release'])
     parser.add_argument('--source', action='store_true', help='Also create a source archive (no generated build references)')
     parser.add_argument('--test-assets', action='store_true', help='Also create a separate optional test-assets archive')
-    parser.add_argument('--dll-update', action='store_true', help='Also package only the plugin DLL for existing full 4.1.1/4.1.2/4.1.3 installs')
+    parser.add_argument('--dll-update', action='store_true', help='Also package only the plugin DLL for existing full 4.1.x / 4.2.x installs')
     args = parser.parse_args()
-    output = args.output.resolve()
-    output.mkdir(parents=True, exist_ok=True)
     project = ROOT / 'src' / 'AssetImport'
     build = project / 'bin' / args.configuration / 'net35'
     version = re.search('const string Version = "([^"]+)"', (project / 'AssetImport.cs').read_text(encoding='utf-8-sig')).group(1)
+    output = version_output(args.output, version)
+    output.mkdir(parents=True, exist_ok=True)
     names = ['KK_AssetImport.dll', 'AssimpNet.dll', 'LitJSON.dll', NATIVE]
     for name in names:
         if not (build / name).is_file():
             raise SystemExit('Missing {}. First run dotnet build src/AssetImport/AssetImport.csproj -c {}'.format(name, args.configuration))
     source_times = [p.stat().st_mtime for p in project.rglob('*.cs') if 'obj' not in p.parts and 'bin' not in p.parts]
     source_times.append((project / 'AssetImport.csproj').stat().st_mtime)
+    source_times.append((ROOT / 'scripts/mmdd/item_morph_functions.py').stat().st_mtime)
     if max(source_times) > (build / 'KK_AssetImport.dll').stat().st_mtime:
         raise SystemExit('The KK DLL is older than its sources. Rebuild before packaging.')
     files = {name if name == NATIVE else PLUGIN + name: (build / name).read_bytes() for name in names}
@@ -66,10 +79,8 @@ def main():
         created.append(test_zip)
     if args.source:
         sources = {}
-        for path in ROOT.rglob('*'):
+        for path in source_files():
             relative = path.relative_to(ROOT)
-            if not path.is_file() or any((part in {'.git', 'bin', 'obj', 'artifacts', '.build-downloads', 'dotnet-home', '__pycache__'} for part in relative.parts)):
-                continue
             if output == path.parent or output in path.parents:
                 continue
             if relative.parts[:3] == ('src', 'Custom Dependencies', 'KK') and path.suffix == '.dll':

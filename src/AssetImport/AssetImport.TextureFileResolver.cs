@@ -30,7 +30,10 @@ namespace AssetImport
             string extension = Path.GetExtension(path);
             return string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(extension, ".jpg", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(extension, ".jpeg", StringComparison.OrdinalIgnoreCase);
+                string.Equals(extension, ".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(extension, ".tga", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(extension, ".bmp", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(extension, ".dds", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

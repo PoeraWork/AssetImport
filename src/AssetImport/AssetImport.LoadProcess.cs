@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Studio;
 
 namespace AssetImport
@@ -21,6 +21,8 @@ namespace AssetImport
             this.Import = import;
             this.Scale = scale;
             this.Kind = kind;
+            if (kind == LoadProcessKind.Normal)
+                import.PrepareNewPmxPhysics(AssetUI.AutoSelectPmxPhysics, AssetUI.EnablePhysicsAfterImport, AssetUI.UsePmxPhysicsPreset, AssetUI.PmxHairCollisionAssist);
         }
         public LoadProcess(GameObject baseGameObject, AccessoryHelper accessory, Import import, Vector3 scale, LoadProcessKind kind)
         {
@@ -29,6 +31,8 @@ namespace AssetImport
             this.Import = import;
             this.Scale = scale;
             this.Kind = kind;
+            if (kind == LoadProcessKind.Normal)
+                import.PrepareNewPmxPhysics(AssetUI.AutoSelectPmxPhysics, AssetUI.EnablePhysicsAfterImport, AssetUI.UsePmxPhysicsPreset, AssetUI.PmxHairCollisionAssist);
         }
 
         public enum LoadProcessKind

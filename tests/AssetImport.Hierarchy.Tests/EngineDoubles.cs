@@ -31,7 +31,11 @@ namespace UnityEngine
     }
     public class MeshRenderer : Renderer { }
     public class MeshFilter : Renderer { public Mesh mesh; }
-    public class SkinnedMeshRenderer : Renderer { public Mesh sharedMesh; }
+    public class SkinnedMeshRenderer : Renderer
+    {
+        public Mesh sharedMesh;
+        public bool updateWhenOffscreen;
+    }
 }
 namespace Assimp
 {

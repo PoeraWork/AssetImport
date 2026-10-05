@@ -30,7 +30,7 @@ namespace AssetImport
         internal const string MinimumMaterialEditorVersion = "3.13.5";
 #endif
         public const string GUID = "org.njaecha.plugins.assetimport";
-        public const string Version = "4.1.4";
+        public const string Version = "4.2.8";
 
         internal new static ManualLogSource Logger;
         internal static AssetSceneController asc;
@@ -41,6 +41,8 @@ namespace AssetImport
         internal static ConfigEntry<KeyboardShortcut> hotkey;
         internal static ConfigEntry<string> defaultDir;
         internal static ConfigEntry<bool> dumpAssets;
+        internal static ConfigEntry<bool> pmxBodyCollisions;
+        internal static ConfigEntry<string> mmddLibraryPath;
 
         // current import
         internal static LoadProcess currentLoadProcess;
@@ -85,6 +87,10 @@ namespace AssetImport
             hotkey = Config.Bind("_General_", "Hotkey", defaultShortcut, "Press this key to open the UI");
             defaultDir = Config.Bind("_General_", "Default Directory", Paths.GameRootPath, "The default directory of the file dialogue.");
             dumpAssets = Config.Bind("Backend", "Dump Assets", false, "Dumps assets to /UserData/AssetImport/ when loading a card with assets.");
+            pmxBodyCollisions = Config.Bind("PMX", "Enable Body Collisions", true,
+                "Build DynamicBone body colliders from PMX static rigid bodies. Reload the scene/model after changing this setting. Uses PMX collision masks; this is not full MMD rigid-body/joint physics.");
+            mmddLibraryPath = Config.Bind("PMX", "MMDD Library Path", "",
+                "Optional MMDD Lib folder. Leave empty to discover a unique MMDD installation under BepInEx/plugins. Relative paths start at the game root. Re-export PMX Auto after changing this setting.");
 
             UI = this.GetOrAddComponent<AssetUI>();
 

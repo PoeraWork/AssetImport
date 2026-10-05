@@ -20,6 +20,7 @@ internal static class Program
             SameContentsReuseFirstFilename,
             SavedFilesRestoreWithoutSourceFiles,
             GltfBuffersRestoreWithoutSourceFiles,
+            PmxBlobRestoresWithoutOriginalDirectory,
             MissingFilesAndUnknownHashesFailCleanly
         };
         foreach (var test in tests)
@@ -110,6 +111,23 @@ internal static class Program
         string bufferHash = RamCacheUtility.GetFileAdditionalFileHashes(hash).Single();
         Equal("mesh.bin", RamCacheUtility.GetFileName(bufferHash), "restored glTF buffer filename");
         Bytes(buffer, RamCacheUtility.GetFileBlob(bufferHash), "restored glTF buffer contents");
+    }
+
+    private static void PmxBlobRestoresWithoutOriginalDirectory(string directory)
+    {
+        // Cache stores opaque bytes. The PMX project separately parses an actual
+        // PMX blob; here check that the upper-case extension survives scene data.
+        byte[] pmx = Encoding.UTF8.GetBytes("PMX original cache fixture");
+        string file = Path.Combine(directory, "モデル.Pmx");
+        File.WriteAllBytes(file, pmx);
+        string hash = RamCacheUtility.ToCache(file);
+        AssetFile saved = Snapshot(hash);
+        Directory.Delete(directory, true);
+        RamCacheUtility.ClearCache();
+        RamCacheUtility.ToCache(saved);
+        Equal("モデル.Pmx", RamCacheUtility.GetFileName(hash), "PMX extension/name retained");
+        Bytes(pmx, RamCacheUtility.GetFileBlob(hash), "PMX cached source independent of original file");
+        Equal(null, RamCacheUtility.GetFileAdditionalFileHashes(hash), "PMX geometry does not depend on sidecar files");
     }
 
     private static void MissingFilesAndUnknownHashesFailCleanly(string directory)

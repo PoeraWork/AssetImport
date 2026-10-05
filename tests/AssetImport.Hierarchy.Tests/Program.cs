@@ -33,7 +33,66 @@ internal static class Program
         ReportedSceneBindings(parts);
         SharedSourceMaterials();
         RepeatedNodeInstancesAndNames();
-        Console.WriteLine($"PASS: production BuildFromNode preserves split material/renderer identities, later mesh bindings, source materials and instanced nodes ({checks} checks; engine doubles, no Unity rendering).");
+        AnimatedRendererBounds();
+        BranchedDynamicBoneSelection();
+        Console.WriteLine($"PASS: production BuildFromNode preserves split material/renderer identities, later mesh bindings, source materials, instanced nodes and animated bounds updates ({checks} checks; engine doubles, no Unity rendering).");
+    }
+
+    private static void AnimatedRendererBounds()
+    {
+        var scene = new Assimp.Scene();
+        scene.Materials.Add(new Assimp.Material { Name = "m" });
+        scene.Meshes.Add(new Assimp.Mesh { Name = "Body", HasBones = true });
+        scene.Meshes.Add(new Assimp.Mesh { Name = "Face", HasMeshAnimationAttachments = true });
+        scene.Meshes.Add(new Assimp.Mesh { Name = "Prop" });
+        var root = new Assimp.Node { Name = "Root" };
+        root.Children.Add(new Assimp.Node { Name = "Actor1", MeshIndices = new() { 0, 1, 2 } });
+        root.Children.Add(new Assimp.Node { Name = "Actor2", MeshIndices = new() { 0, 1, 2 } });
+        // Two chunks per source mesh and two instances: bounds must update on
+        // every animated renderer, not just the first material or first actor.
+        var parts = new List<List<LegacyMeshGeometry.MeshPart>>
+            { Partition(70002), Partition(70002), Partition(70002) };
+        for (int pass = 0; pass < 2; pass++)
+        {
+            var import = new Import(scene, parts, true);
+            import.Build(root);
+            var animated = import.Renderers.OfType<SkinnedMeshRenderer>().ToArray();
+            Check(animated.Length == 8, "Bones and morph-only instances must retain all skinned chunks");
+            foreach (var renderer in animated)
+                Check(renderer.updateWhenOffscreen,
+                    "Runtime animated renderer must recalculate its bounds even when offscreen: " + renderer.name);
+            Check(import.Renderers.Count(r => r is MeshRenderer) == 4,
+                "Static instances must keep normal MeshRenderer culling");
+            Check(import.PendingArmatureCount == 4, "Bounds setup must not change bone/morph-only armature ownership");
+        }
+        // The second import uses the same path as source-cache reconstruction;
+        // engine doubles assert setup only, not Unity's culling implementation.
+    }
+
+    private static void BranchedDynamicBoneSelection()
+    {
+        var root = new BoneNode(new GameObject("root"));
+        var left = new BoneNode(new GameObject("left"), root);
+        var right = new BoneNode(new GameObject("right"), root);
+        var tip = new BoneNode(new GameObject("tip"), right);
+        right.SetDynamic(true);
+        Check(root.DynamicBoneInChildren(), "Dynamic roots on the second branch must be found");
+        root.SetDynamic(true);
+        Check(!root.IsDynamicRoot && right.IsDynamicRoot, "Parent must not overlap an existing root on any branch");
+        left.SetDynamic(true);
+        Check(left.IsDynamicRoot && right.IsDynamicRoot, "Independent branches may both simulate");
+        left.SetDynamic(false);
+        right.SetDynamic(false);
+        Check(!tip.IsDynamic && !root.DynamicBoneInChildren(), "Clearing child roots resets descendants");
+        root.SetDynamic(true);
+        Check(root.IsDynamicRoot && left.IsDynamic && right.IsDynamic && tip.IsDynamic, "Parent root covers every branch");
+        Check(root.DynamicChainLength == 4, "Chain count must cover the full subtree");
+        tip.SetDynamic(true);
+        Check(!tip.IsDynamicRoot, "A descendant must not become a competing root");
+        root.SetDynamic(false);
+        Check(!root.IsDynamic && !left.IsDynamic && !right.IsDynamic && !tip.IsDynamic, "Disabling parent clears every branch");
+        right.SetDynamic(true);
+        Check(right.IsDynamicRoot && tip.IsDynamic, "Subchain can be selected after its parent is disabled");
     }
 
     private static void ReportedSceneBindings(List<List<LegacyMeshGeometry.MeshPart>> parts)

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import urllib.request
 import zipfile
-from package import ROOT, NATIVE, PLUGIN, write_zip
+from package import ROOT, NATIVE, PLUGIN, write_zip, version_output
 from prepare_dependencies import checked
 
 def fetch(entry, cache):
@@ -32,13 +32,14 @@ def zip_bytes(files):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plugin-package', type=Path, required=True, help='KK_AssetImportvX.Y.ZPacked.zip produced by scripts/package.py')
-    parser.add_argument('--output', type=Path, default=ROOT / 'artifacts')
+    parser.add_argument('--output', type=Path, default=ROOT / 'artifacts', help='Artifact root; the test kit goes into its version subdirectory')
     parser.add_argument('--cache', type=Path, default=ROOT / '.build-downloads')
     args = parser.parse_args()
-    args.output.mkdir(parents=True, exist_ok=True)
     args.cache.mkdir(parents=True, exist_ok=True)
     package_manifest = json.loads(args.plugin_package.with_suffix('.manifest.json').read_text())
     version = package_manifest['version']
+    args.output = version_output(args.output, version)
+    args.output.mkdir(parents=True, exist_ok=True)
     plugin = read_zip(args.plugin_package.read_bytes())
     if set(plugin) != set(package_manifest['sha256']):
         raise ValueError('Plugin package and manifest have different contents')

@@ -32,7 +32,8 @@ try
     texture.Use = false; texture.Path = texture.Path;
     Check(!texture.Use, "UI redraw must retain a deliberate unchecked state");
     Check(TextureFileResolver.IsSupportedImage("x.JpEg") && TextureFileResolver.IsSupportedImage("x.JPG"), "JPEG/uppercase extensions");
-    Check(!TextureFileResolver.IsSupportedImage("x.tga"), "Do not claim unsupported TGA decoding");
+    Check(TextureFileResolver.IsSupportedImage("x.tga"), "TGA selection enabled with managed decoder");
+    Check(TextureFileResolver.IsSupportedImage("x.BMP") && TextureFileResolver.IsSupportedImage("x.dds"), "BMP/DDS selection enabled with managed decoders");
     Console.WriteLine($"PASS: {checks} production texture path/selection checks; no image decoding or Unity runtime.");
 }
 finally { Environment.CurrentDirectory = oldWorkingDirectory; Directory.Delete(temp, true); }
