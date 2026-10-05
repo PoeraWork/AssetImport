@@ -24,6 +24,7 @@ internal static class CubeLutChecks
                 try { CubeLut.Read(new StringReader(invalid)); check(false,"invalid LUT accepted"); }
                 catch(FormatException) { check(true,"invalid or incomplete LUT rejected before import"); }
             }
+            CheckOptimizedInterpolation(check);
             var lut=CubeLut.Read(new StringReader(identity)); AssetUI.ImportColorLut=lut;
             var import=new Import(new PmxModel { Bones=Array.Empty<PmxModel.Bone>() },false);
             var normal=new LoadProcess(null,(Studio.OCIItem)null,import,new UnityEngine.Vector3(),LoadProcess.LoadProcessKind.Normal);
@@ -34,5 +35,39 @@ internal static class CubeLutChecks
                 check(new LoadProcess(null,(Studio.OCIItem)null,import,new UnityEngine.Vector3(),kind).ColorLut==null,"saved/copy texture never converted twice: "+kind);
         }
         finally { CultureInfo.CurrentCulture=oldCulture; AssetUI.ImportColorLut=null; }
+    }
+
+    private static void CheckOptimizedInterpolation(Action<bool,string> check)
+    {
+        // Retain the old nested-loop reference to catch channel strides, domain
+        // lookup errors and changes to rounding at arbitrary interpolation points.
+        var random = new Random(8452);
+        foreach (int size in new[] { 3, 7, 16 })
+        {
+            var values = Enumerable.Range(0,size*size*size*3).Select(_=>(float)(random.NextDouble()*2-.5)).ToArray();
+            float[] min = { -.2f, .1f, .25f }, max = { .8f, 1.1f, .75f };
+            string Number(float value) => value.ToString("R",CultureInfo.InvariantCulture);
+            var text = new System.Text.StringBuilder($"LUT_3D_SIZE {size}\nDOMAIN_MIN {string.Join(" ",min.Select(Number))}\nDOMAIN_MAX {string.Join(" ",max.Select(Number))}\n");
+            for(int i=0;i<values.Length;i+=3)text.AppendLine(string.Join(" ",values.Skip(i).Take(3).Select(Number)));
+            var source = new byte[65536*4]; random.NextBytes(source);
+            var expected = (byte[])source.Clone();
+            for (int p=0;p<expected.Length;p+=4)
+            {
+                float Coord(int axis) => Math.Max(0,Math.Min(1,(source[p+axis]/255f-min[axis])/(max[axis]-min[axis])))*(size-1);
+                float r=Coord(0),g=Coord(1),b=Coord(2);
+                int x=Math.Min((int)r,size-2),y=Math.Min((int)g,size-2),z=Math.Min((int)b,size-2);
+                r-=x;g-=y;b-=z;
+                for(int c=0;c<3;c++)
+                {
+                    double result=0;
+                    for(int dz=0;dz<2;dz++)for(int dy=0;dy<2;dy++)for(int dx=0;dx<2;dx++)
+                        result+=values[(((z+dz)*size+y+dy)*size+x+dx)*3+c]*(dx==0?1-r:r)*(dy==0?1-g:g)*(dz==0?1-b:b);
+                    expected[p+c]=(byte)Math.Max(0,Math.Min(255,Math.Round(result*255)));
+                }
+            }
+            var lut=CubeLut.Read(new StringReader(text.ToString()));
+            lut.Apply(source);
+            check(source.SequenceEqual(expected),"optimized interpolation exactly matches reference, including alpha/domain/clamp/rounding: size "+size);
+        }
     }
 }

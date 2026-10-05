@@ -10,6 +10,8 @@ namespace AssetImport
     {
         private int size;
         private float[] values;
+        private readonly int[][] offsets = new int[3][];
+        private readonly float[][] fractions = new float[3][];
         private readonly float[] min = { 0, 0, 0 }, max = { 1, 1, 1 };
 
         internal static CubeLut Read(TextReader reader)
@@ -48,6 +50,19 @@ namespace AssetImport
             for (int i = 0; i < 3; i++)
                 if (lut.max[i] <= lut.min[i] || float.IsInfinity(lut.max[i] - lut.min[i]))
                     throw new FormatException("LUT domain must have finite positive width.");
+            for (int axis = 0; axis < 3; axis++)
+            {
+                lut.offsets[axis] = new int[256];
+                lut.fractions[axis] = new float[256];
+                int stride = axis == 0 ? 3 : axis == 1 ? lut.size * 3 : lut.size * lut.size * 3;
+                for (int value = 0; value < 256; value++)
+                {
+                    float coordinate = lut.Coordinate((byte)value, axis);
+                    int cell = Math.Min((int)coordinate, lut.size - 2);
+                    lut.offsets[axis][value] = cell * stride;
+                    lut.fractions[axis][value] = coordinate - cell;
+                }
+            }
             return lut;
         }
 
@@ -64,24 +79,37 @@ namespace AssetImport
             return Math.Max(0, Math.Min(1, (value / 255f - min[axis]) / (max[axis] - min[axis]))) * (size - 1);
         }
 
-        internal void Apply(byte[] rgba)
+        internal void Apply(byte[] rgba, Action checkCancellation = null)
         {
             if (rgba == null || rgba.Length % 4 != 0) throw new ArgumentException("Expected RGBA pixels.");
-            for (int p = 0; p < rgba.Length; p += 4)
+            int greenStep = size * 3, blueStep = size * size * 3;
+            for (int start = 0; start < rgba.Length;)
             {
-                float r = Coordinate(rgba[p], 0), g = Coordinate(rgba[p + 1], 1), b = Coordinate(rgba[p + 2], 2);
-                int x = Math.Min((int)r, size - 2), y = Math.Min((int)g, size - 2), z = Math.Min((int)b, size - 2);
-                r -= x; g -= y; b -= z;
-                for (int channel = 0; channel < 3; channel++)
+                if (checkCancellation != null) checkCancellation();
+                int end = start + Math.Min(65536, rgba.Length - start);
+                for (int p = start; p < end; p += 4)
                 {
-                    double result = 0;
-                    for (int dz = 0; dz < 2; dz++)
-                    for (int dy = 0; dy < 2; dy++)
-                    for (int dx = 0; dx < 2; dx++)
-                        result += values[(((z + dz) * size + y + dy) * size + x + dx) * 3 + channel]
-                            * (dx == 0 ? 1 - r : r) * (dy == 0 ? 1 - g : g) * (dz == 0 ? 1 - b : b);
-                    rgba[p + channel] = (byte)Math.Max(0, Math.Min(255, Math.Round(result * 255)));
+                    byte red = rgba[p], green = rgba[p + 1], blue = rgba[p + 2];
+                    float r = fractions[0][red], g = fractions[1][green], b = fractions[2][blue];
+                    float nr = 1 - r, ng = 1 - g, nb = 1 - b;
+                    int cell = offsets[0][red] + offsets[1][green] + offsets[2][blue];
+                    for (int channel = 0; channel < 3; channel++)
+                    {
+                        int index = cell + channel;
+                        // Preserve the previous float-product and double-sum order so
+                        // optimization does not move byte rounding boundaries.
+                        double result = values[index] * nr * ng * nb;
+                        result += values[index + 3] * r * ng * nb;
+                        result += values[index + greenStep] * nr * g * nb;
+                        result += values[index + greenStep + 3] * r * g * nb;
+                        result += values[index + blueStep] * nr * ng * b;
+                        result += values[index + blueStep + 3] * r * ng * b;
+                        result += values[index + blueStep + greenStep] * nr * g * b;
+                        result += values[index + blueStep + greenStep + 3] * r * g * b;
+                        rgba[p + channel] = (byte)Math.Max(0, Math.Min(255, Math.Round(result * 255)));
+                    }
                 }
+                start = end;
             }
         }
     }

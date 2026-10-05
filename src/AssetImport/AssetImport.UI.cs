@@ -300,6 +300,17 @@ namespace AssetImport
                 y += (int)height;
             }
 
+            if (!string.IsNullOrEmpty(ImportTextureData.Status))
+            {
+                var textureStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
+                string status = ImportTextureData.PendingImports > 1
+                    ? ImportTextureData.PendingImports + " imports pending. " + ImportTextureData.Status
+                    : ImportTextureData.Status;
+                float height = textureStyle.CalcHeight(new GUIContent(status), 220);
+                GUI.Label(new Rect(10, y += 32, 220, height), status, textureStyle);
+                y += (int)height;
+            }
+
             var mode = KoikatuAPI.GetCurrentGameMode();
             AssetCharaController character = mode == GameMode.Maker
                 ? MakerAPI.GetCharacterControl()?.gameObject.GetComponentInChildren<AssetCharaController>() : null;

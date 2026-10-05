@@ -1012,41 +1012,6 @@ namespace AssetImport
                 }
             }
 
-            if (loadProcess.Kind == LoadProcess.LoadProcessKind.Normal)
-            {
-                var textureData = new ImportTextureData(loadProcess.ColorLut);
-                foreach (Material mat in import.MaterialTextures.Keys)
-                {
-                    foreach (TexturePath p in import.MaterialTextures[mat])
-                    {
-                        if (!p.Use || !p.PathOkay()) continue;
-                        byte[] data;
-                        try { data = textureData.Read(p); }
-                        catch (Exception e) { Logger.LogWarning("Texture conversion failed: " + p.Path + ": " + e.Message); continue; }
-                        var prop = "";
-                        switch (p.Type)
-                        {
-                            case Assimp.TextureType.Diffuse:
-                                prop = "MainTex";
-                                break;
-                            case Assimp.TextureType.Normals:
-                                prop = "NormalMap";
-                                break;
-                            default:
-                                break;
-                        }
-                        ChaControl.gameObject.GetComponent<KK_Plugins.MaterialEditor.MaterialEditorCharaController>()?.SetMaterialTexture(
-                            accessory.Slot,
-                            KK_Plugins.MaterialEditor.MaterialEditorCharaController.ObjectType.Accessory,
-                            p.Material,
-                            prop,
-                            data,
-                            importObject);
-                        Logger.LogDebug($"Set Texture on {p.Material.name} - {prop}");
-                    }
-                }
-            }
-
             if (!loadProcess.Import.IsPmx) importObject.transform.localRotation *= Quaternion.Euler(new Vector3(0, 180, 0));
 
             if (loadProcess.Kind == LoadProcess.LoadProcessKind.Normal)
@@ -1075,7 +1040,28 @@ namespace AssetImport
 
             ChaControl.ChangeAccessoryColor(accessory.Slot);
 
-            Logger.LogInfo($"Asset [{loadProcess.Import.SourceFileName}] was loaded successfully");
+            if (loadProcess.Kind == LoadProcess.LoadProcessKind.Normal)
+            {
+                int coordinate = ChaControl.fileStatus.coordinateType;
+                Logger.LogInfo("Importing textures in background; wait for completion before saving.");
+                // Keep polling target validity even when this character is destroyed/disabled.
+                Main.instance.StartCoroutine(new ImportTextureData(loadProcess.ColorLut).ApplyAsync(
+                    import.MaterialTextures.Values.SelectMany(paths => paths).ToArray(),
+                    () => this && ChaControl && loadProcessBase && importObject &&
+                        ChaControl.fileStatus.coordinateType == coordinate &&
+                        ChaControl.GetAccessoryComponent(accessory.Slot) == accessory.Accessory,
+                    (path, bytes) =>
+                    {
+                        if (!path.Material) return;
+                        string property = path.Type == Assimp.TextureType.Normals ? "NormalMap" : "MainTex";
+                        ChaControl.gameObject.GetComponent<KK_Plugins.MaterialEditor.MaterialEditorCharaController>()?.SetMaterialTexture(
+                            accessory.Slot, KK_Plugins.MaterialEditor.MaterialEditorCharaController.ObjectType.Accessory,
+                            path.Material, property, bytes, importObject);
+                    },
+                    message => Logger.LogWarning(message),
+                    () => Logger.LogInfo($"Asset [{import.SourceFileName}] loaded; texture processing finished.")));
+            }
+            else Logger.LogInfo($"Asset [{import.SourceFileName}] was loaded successfully");
         }
     }
 }

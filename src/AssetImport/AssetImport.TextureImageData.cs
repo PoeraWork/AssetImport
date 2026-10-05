@@ -8,16 +8,21 @@ namespace AssetImport
         internal static byte[] Read(string path)
         {
             byte[] data=File.ReadAllBytes(path);
-            TgaDecoder.Image decoded;
+            TgaDecoder.Image decoded = Decode(path, data);
+            // ME receives PNG and stores it in the scene/card. No ME patch required.
+            return decoded == null ? data : TgaDecoder.EncodePng(decoded);
+        }
+
+        // Managed decoders can feed color conversion directly, without a PNG/Unity round trip.
+        internal static TgaDecoder.Image Decode(string path, byte[] data)
+        {
             switch (Path.GetExtension(path).ToLowerInvariant())
             {
-                case ".tga": decoded = TgaDecoder.Decode(data); break;
-                case ".bmp": decoded = BmpDecoder.Decode(data); break;
-                case ".dds": decoded = DdsDecoder.Decode(data); break;
-                default: return data;
+                case ".tga": return TgaDecoder.Decode(data);
+                case ".bmp": return BmpDecoder.Decode(data);
+                case ".dds": return DdsDecoder.Decode(data);
+                default: return null;
             }
-            // ME receives PNG and stores it in the scene/card. No ME patch required.
-            return TgaDecoder.EncodePng(decoded);
         }
     }
 }

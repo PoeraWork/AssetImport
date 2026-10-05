@@ -606,35 +606,6 @@ namespace AssetImport
 
             // ==== finish ====
 
-            if (loadProcess.Kind == LoadProcess.LoadProcessKind.Normal)
-            {
-                var textureData = new ImportTextureData(loadProcess.ColorLut);
-                foreach (Material mat in import.MaterialTextures.Keys)
-                {
-                    foreach (TexturePath p in import.MaterialTextures[mat])
-                    {
-                        if (!p.Use || !p.PathOkay()) continue;
-                        byte[] data;
-                        try { data = textureData.Read(p); }
-                        catch (Exception e) { Logger.LogWarning("Texture conversion failed: " + p.Path + ": " + e.Message); continue; }
-                        var prop = "";
-                        switch (p.Type)
-                        {
-                            case Assimp.TextureType.Diffuse:
-                                prop = "MainTex";
-                                break;
-                            case Assimp.TextureType.Normals:
-                                prop = "NormalMap";
-                                break;
-                            default:
-                                break;
-                        }
-                        Singleton<KK_Plugins.MaterialEditor.SceneController>.Instance.SetMaterialTexture(ociitem.itemInfo.dicKey, p.Material, prop, data);
-                        Logger.LogDebug($"Set Texture on {p.Material.name} - {prop}");
-                    }
-                }
-            }
-
             if (!loadProcess.Import.IsPmx) importGameObject.transform.localRotation *= Quaternion.Euler(new Vector3(0, 180, 0));
 
             ociitem.treeNodeObject.textName = loadProcess.Import.SourceFileName;
@@ -663,7 +634,24 @@ namespace AssetImport
             }
 
             import.ExportMmddMapping();
-            Logger.LogInfo($"Asset [{loadProcess.Import.SourceFileName}] was loaded successfully");
+            if (loadProcess.Kind == LoadProcess.LoadProcessKind.Normal)
+            {
+                Logger.LogInfo("Importing textures in background; wait for completion before saving.");
+                // The plugin survives scene/controller destruction so cancellation is polled.
+                Main.instance.StartCoroutine(new ImportTextureData(loadProcess.ColorLut).ApplyAsync(
+                    import.MaterialTextures.Values.SelectMany(paths => paths).ToArray(),
+                    () => this && loadProcessBase && importGameObject,
+                    (path, bytes) =>
+                    {
+                        if (!path.Material) return;
+                        string property = path.Type == Assimp.TextureType.Normals ? "NormalMap" : "MainTex";
+                        Singleton<KK_Plugins.MaterialEditor.SceneController>.Instance.SetMaterialTexture(
+                            ociitem.itemInfo.dicKey, path.Material, property, bytes);
+                    },
+                    message => Logger.LogWarning(message),
+                    () => Logger.LogInfo($"Asset [{import.SourceFileName}] loaded; texture processing finished.")));
+            }
+            else Logger.LogInfo($"Asset [{import.SourceFileName}] was loaded successfully");
 
             return ociitem;
         }
