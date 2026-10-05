@@ -109,71 +109,162 @@ def _install_runtime():
         # pass through the original callable.
         solve._assetimport_limits_version = 3
         vmdlib.VmdLib.mmdIKSolver = staticmethod(solve)
-    _install_position_grants(vmdlib.MotionController)
+    _install_pmx_schedule(vmdlib.MotionController)
 
 
-def _has_position_grant(controller, name):
-    if not name.startswith('assetimport_pmx_'):
-        return False
-    definition = controller.boneDefineMap[name]
-    return definition.isTrack and 'p' in definition.trackData[0]
+def _apply_grant(transform, source, rest, mode, rate):
+    from UnityEngine import Quaternion, Vector3
+    if 'r' in mode:
+        transform.localRotation = transform.localRotation * Quaternion.SlerpUnclamped(
+            Quaternion.identity, source.localRotation, rate)
+    if 'p' in mode:
+        # PMX inherits the animated offset, including earlier grants, without
+        # the source's rest position. The bound rest includes import/item scale.
+        position, delta = transform.localPosition, source.localPosition - rest
+        transform.localPosition = Vector3(position.x + delta.x * rate,
+                                          position.y + delta.y * rate,
+                                          position.z + delta.z * rate)
 
 
-def _remove_grant_rest_offset(controller, name):
-    # MMDD tracks a source's complete local position. PMX non-local grants use
-    # its animated offset (including earlier grants), excluding the rest pose.
-    # Use the bound controller's base position: it includes import/item scale.
-    from UnityEngine import Vector3
-    mode, rate, source = controller.boneDefineMap[name].trackData
-    rest = controller.boneDefineMap[source].adjustment.basePosition
-    transform = controller.getDummyBones(name).transform
-    position = transform.localPosition
-    transform.localPosition = Vector3(position.x - rest.x * rate,
-                                      position.y - rest.y * rate,
-                                      position.z - rest.z * rate)
-
-
-class _PositionGrantStep(object):
-    # MMDD's indexed loop has an existing per-entry callback slot (solveFunc).
-    # Insert a correction immediately after the follower, before descendants or
-    # chained grants. Keep MMDD's native utility and the bone's own IK untouched.
+class _PmxGrantStep(object):
+    # Use MMDD's indexed callback slot for the PMX grant, then a separate entry
+    # for IK. A VMD IK-off key must not turn off the grant itself.
     needGetFrame = needPosition = needRotation = needTrackRot = needTrackPos = False
     needIK = ikDefaultEnable = True
     ikSolverIndex = (None, None, None)
 
     def __init__(self, controller, name):
-        self.controller, self.name = controller, name
-        self.bonename = name + '__position_rest'
+        self.bonename = name + '__pmx_grant'
+        self.mode, self.rate, source = controller.boneDefineMap[name].trackData
+        self.transform = controller.getDummyBones(name).transform
+        self.source = controller.getDummyBones(source).transform
+        self.rest = controller.boneDefineMap[source].adjustment.basePosition
 
     def solveFunc(self):
-        _remove_grant_rest_offset(self.controller, self.name)
+        _apply_grant(self.transform, self.source, self.rest, self.mode, self.rate)
 
 
-def _install_position_grants(controller_type):
-    # IronPython 2 exposes class methods as unbound method objects. Inspect the
-    # underlying function so repeated extension loads keep the hook idempotent.
-    original_track = getattr(controller_type.processTrack, 'im_func', controller_type.processTrack)
-    if not getattr(original_track, '_assetimport_position_grants', False):
+class _PmxIkStep(object):
+    needGetFrame = needPosition = needRotation = needTrackRot = needTrackPos = False
+    needIK = True
+
+    def __init__(self, controller, name):
+        self.bonename = name + '__pmx_ik'
+        # Keep the list itself: MMDD fills its visibility slot after building
+        # the bone index, when it imports the VMD IK/show keyframes.
+        self.ikSolverIndex = controller.ikSolverIndex[name]
+        self.ikDefaultEnable = self.ikSolverIndex[0].defaultEnable
+        self.solveFunc = self.ikSolverIndex[3]
+
+
+class _PmxRestStep(object):
+    needGetFrame = needTrackRot = needTrackPos = needIK = False
+
+    def __init__(self, controller, name):
+        from UnityEngine import Quaternion
+        definition = controller.boneDefineMap[name]
+        self.bonename = name
+        self.transform = controller.getDummyBones(name).transform
+        self.needRotation, self.needPosition = definition.rotatable, definition.movable
+        self.wRotation = definition.adjustment.GetAdjustedRotation(Quaternion.identity)
+        self.wPosition = definition.adjustment.basePosition
+        self.poseData = controller.poseData[name]
+
+
+def _schedule_pmx(controller):
+    ranks = dict((name, i) for i, name in enumerate(controller.boneNameList))
+    owned = set(name for name in controller.boneNameList
+                if name.startswith('assetimport_pmx_') and controller.boneDefineMap[name].enable)
+    if not owned:
+        return
+    # An older per-model extension may already wrap the index builder. Its
+    # position correction is replaced by the complete grant, not run twice.
+    original = [entry for entry in controller.workBoneIndexBuffer
+                if not (entry.bonename.endswith('__position_rest') and
+                        entry.bonename[:-len('__position_rest')] in owned)]
+    indexed = set(entry.bonename for entry in original)
+    missing = [name for name in controller.boneNameList if name in owned and name not in indexed]
+    result = []
+
+    def append(entry):
+        result.append(entry)
+        name = entry.bonename
+        if name not in owned:
+            return
+        definition = controller.boneDefineMap[name]
+        entry.needTrackRot = entry.needTrackPos = entry.needIK = False
+        if definition.isTrack:
+            result.append(_PmxGrantStep(controller, name))
+        if definition.isIK and controller.ikSolverIndex[name][0].enable:
+            result.append(_PmxIkStep(controller, name))
+
+    # Retain the mapping order and any unrelated extension entries. Include
+    # unkeyed PMX bones so their IK runs and prior-frame IK rotations reset.
+    cursor = 0
+    for entry in original:
+        rank = ranks.get(entry.bonename, -1)
+        while cursor < len(missing) and ranks[missing[cursor]] < rank:
+            append(_PmxRestStep(controller, missing[cursor]))
+            cursor += 1
+        append(entry)
+    for name in missing[cursor:]:
+        append(_PmxRestStep(controller, name))
+    controller.workBoneIndexBuffer = result
+
+
+def _install_pmx_schedule(controller_type):
+    # IronPython 2 exposes unbound method objects rather than plain functions.
+    def function(method):
+        return getattr(method, 'im_func', method)
+
+    original_ik = function(controller_type.processIK)
+    original_track = function(controller_type.processTrack)
+    if not getattr(original_track, '_assetimport_schedule_version', 0):
         def process_track(controller, name):
-            result = original_track(controller, name)
-            if _has_position_grant(controller, name):
-                _remove_grant_rest_offset(controller, name)
-            return result
+            if not name.startswith('assetimport_pmx_'):
+                return original_track(controller, name)
+            _PmxGrantStep(controller, name).solveFunc()
+            deferred = getattr(controller, '_assetimport_deferred_ik', None)
+            if deferred is not None and name in deferred:
+                deferred.remove(name)
+                original_ik(controller, name)
+        # Retain the previous marker so old extensions loaded later cannot
+        # wrap this method with the obsolete rest-offset correction.
         process_track._assetimport_position_grants = True
+        process_track._assetimport_schedule_version = 1
         controller_type.processTrack = process_track
 
-    original_build = getattr(controller_type.buildWorkBoneIndex, 'im_func', controller_type.buildWorkBoneIndex)
-    if not getattr(original_build, '_assetimport_position_grants', False):
+    if not getattr(original_ik, '_assetimport_schedule_version', 0):
+        def process_ik(controller, name):
+            deferred = getattr(controller, '_assetimport_deferred_ik', None)
+            if (deferred is not None and name.startswith('assetimport_pmx_') and
+                    controller.boneDefineMap[name].isTrack):
+                deferred.add(name)
+                return
+            return original_ik(controller, name)
+        process_ik._assetimport_schedule_version = 1
+        controller_type.processIK = process_ik
+
+    original_pose = function(controller_type.updatePose)
+    if not getattr(original_pose, '_assetimport_schedule_version', 0):
+        def update_pose(controller):
+            previous = getattr(controller, '_assetimport_deferred_ik', None)
+            controller._assetimport_deferred_ik = set()
+            try:
+                return original_pose(controller)
+            finally:
+                controller._assetimport_deferred_ik = previous
+        update_pose._assetimport_schedule_version = 1
+        controller_type.updatePose = update_pose
+
+    original_build = function(controller_type.buildWorkBoneIndex)
+    if not getattr(original_build, '_assetimport_schedule_version', 0):
         def build_index(controller):
             result = original_build(controller)
-            entries = []
-            for entry in controller.workBoneIndexBuffer:
-                entries.append(entry)
-                if _has_position_grant(controller, entry.bonename):
-                    entries.append(_PositionGrantStep(controller, entry.bonename))
-            controller.workBoneIndexBuffer = entries
+            _schedule_pmx(controller)
             return result
         build_index._assetimport_position_grants = True
+        build_index._assetimport_schedule_version = 1
         controller_type.buildWorkBoneIndex = build_index
 
 

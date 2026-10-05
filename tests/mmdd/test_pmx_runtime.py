@@ -112,7 +112,8 @@ class RuntimeChecks(unittest.TestCase):
         lib = type('VmdLib', (), {'rotateVectorFromTo': staticmethod(from_to),
                                  'mmdIKSolver': staticmethod(lambda *args: self.stock_calls.append(args))})
         sys.modules['UnityEngine'] = types.SimpleNamespace(Vector3=Vector, Quaternion=Quaternion)
-        controller = type('MotionController', (), {'processTrack': lambda *a: None, 'buildWorkBoneIndex': lambda *a: None})
+        controller = type('MotionController', (), {'processTrack': lambda *a: None, 'buildWorkBoneIndex': lambda *a: None,
+                                                 'processIK': lambda *a: None, 'updatePose': lambda *a: None})
         sys.modules['vmdlib'] = types.SimpleNamespace(VmdLib=lib, MotionController=controller)
         self.library = types.SimpleNamespace(getMethod=lambda *args: None, _userFuncs={})
         sys.modules['mmddmorphfuncext'] = self.library

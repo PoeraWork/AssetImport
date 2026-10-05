@@ -18,6 +18,52 @@ from check_pmx_motion import controller
 
 @unittest.skipUnless((LIB / 'vmdlib.py').is_file(), 'Official MMDD Lib required for playback checks')
 class HingePlaybackChecks(unittest.TestCase):
+    def test_unkeyed_ik_and_appended_goal_reach_target_without_frame_history(self):
+        previous = {name: sys.modules.get(name) for name in ('UnityEngine','vmdlib','mmddmorphfuncext')}
+        try:
+            for keyed in (False,True):
+                for appended in (False,True):
+                    for scale in (.0832,1,3):
+                        with self.subTest(keyed=keyed,appended=appended,scale=scale):
+                            names = ['joint','hinge','tip','goal','source']
+                            bones = [dict(index=i,name=names[i],parent=p,position=position,flags=6,layer=0)
+                                     for i,(p,position) in enumerate([
+                                         (-1,[0,2,0]),(0,[0,1,0]),(1,[0,0,0]),(-1,[0,.8,-.6]),(-1,[0,0,0])])]
+                            bones[3]['layer'] = 1
+                            bones[3]['ik'] = dict(target=2,iterations=64,angle=math.radians(30),
+                                links=[dict(bone=1,min=[-math.pi,0,0],max=[math.radians(.5),0,0]),dict(bone=0)])
+                            if appended:
+                                bones[3]['grant'] = dict(parent=4,weight=1,rotation=False,position=True,local=False)
+                            def key(frame,z=0):
+                                return types.SimpleNamespace(frameNo=frame,position=Vector(0,0,z),rotation=Quaternion(),
+                                    xCurve=[0,0,1,1],yCurve=[0,0,1,1],zCurve=[0,0,1,1],rCurve=[0,0,1,1])
+                            motion = {'source':[key(0,-.4),key(10,.2)]}
+                            if keyed: motion['goal'] = [key(0)]
+                            c,mapping = controller(dict(bones=bones,morphs=[],rigid_bodies=[]),motion,LIB,
+                                                   ROOT/'scripts/mmdd/item_morph_functions.py',scale)
+                            mapped = {d['vmdName']:d['name'] for d in mapping['bones']}
+                            transform = lambda name: c.getDummyBones(mapped[name]).transform
+                            snapshots = {}
+                            for frame in (0,10,5,0,5,10):
+                                c.setFrame(frame)
+                                self.assertLess((transform('tip').position-transform('goal').position).sqrMagnitude,1e-10)
+                                if frame in snapshots:
+                                    self.assertLess(Quaternion.Angle(transform('hinge').localRotation,snapshots[frame]),1e-4)
+                                snapshots[frame] = transform('hinge').localRotation
+                            # Disabling IK must still reset unkeyed links and apply the goal's grant.
+                            slot = c.ikSolverIndex[mapped['goal']]
+                            slot[2] = types.SimpleNamespace(enable=True,tempRequest=None,length=1,valueList=[False])
+                            c.setFrame(0)
+                            self.assertLess(Quaternion.Angle(transform('hinge').localRotation,Quaternion()),1e-4)
+                            self.assertGreater((transform('tip').position-transform('goal').position).sqrMagnitude,.1*scale*scale)
+                            slot[2] = None
+                            c.updatePose()
+                            self.assertLess((transform('tip').position-transform('goal').position).sqrMagnitude,1e-10)
+        finally:
+            for name,module in previous.items():
+                if module is None: sys.modules.pop(name,None)
+                else: sys.modules[name] = module
+
     def test_turning_crouch_does_not_snap_to_the_opposite_knee_stop(self):
         previous = {name: sys.modules.get(name) for name in ('UnityEngine','vmdlib','mmddmorphfuncext')}
         try:

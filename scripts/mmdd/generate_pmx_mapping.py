@@ -213,7 +213,7 @@ def create(model, label, renderer_report=None, dynamic_roots=()):
               'excluded_from_mmdd': [target(by_id[i]) for i in sorted(excluded)],
               'physics_chain_roots': [target(b) for b in dynamic_roots],
               'unit_scale': .0832, 'import_scale_required': 1, 'mmdd_axis_scale_required': .0832,
-              'warnings': warnings + ['Requires the AssetImport MMDD runtime extension for position grants and non-knee per-axis IK limits',
+              'warnings': warnings + ['Requires the AssetImport MMDD runtime extension for append transforms, unkeyed IK and per-axis IK limits',
                            'PMX rigid bodies/joints not simulated']}
     return result, report
 
@@ -232,7 +232,7 @@ if __name__ == '__main__':
     mapping, report = create(m, a.label, renderers)
     report['source_sha256'] = hashlib.sha256(data).hexdigest()
     a.output.parent.mkdir(parents=True, exist_ok=True)
-    if mapping['morphs'] or report['ik_solvers'] or report['position_grants']:
+    if mapping['morphs'] or report['ik_solvers'] or report['position_grants'] or report['rotation_grants']:
         ext_dir = a.morph_extension_dir or a.output.parent
         ext_dir.mkdir(parents=True, exist_ok=True)
         ext_name = 'MmddExtMorphFunc_AssetImport_Pmx_' + report['source_sha256'][:12] + '.py'
