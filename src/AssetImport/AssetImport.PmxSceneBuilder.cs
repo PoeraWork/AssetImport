@@ -41,8 +41,8 @@ namespace AssetImport
                 nodes[i].Transform=Translation(Convert(pos,true));
                 (b.Parent>=0 ? nodes[b.Parent] : scene.RootNode).Children.Add(nodes[i]);
             }
-            var morphData=new Dictionary<int,PmxModel.V3>[model.Morphs.Length];
-            if (morphs) for (int i=0;i<morphData.Length;i++) morphData[i]=FlattenMorph(model,i,new HashSet<int>(),morphData);
+            model.MorphWarnings.Clear();
+            var morphData=morphs ? FlattenMorphs(model) : new Dictionary<int,PmxModel.V3>[model.Morphs.Length];
             int indexStart=0;
             for (int mi=0;mi<model.Materials.Length;mi++)
             {
@@ -105,29 +105,74 @@ namespace AssetImport
             }
             return scene;
         }
-        private static Dictionary<int,PmxModel.V3> FlattenMorph(PmxModel model,int index,HashSet<int> visiting,Dictionary<int,PmxModel.V3>[] cache)
+        internal static void RefreshMorphWarnings(PmxModel model)
         {
-            if (cache[index]!=null) return cache[index];
-            if (!visiting.Add(index)) throw new System.FormatException("PMX: cyclic group morph");
-            var morph=model.Morphs[index]; Dictionary<int,PmxModel.V3> result=null;
-            if (morph.Type==1) result=morph.Deltas;
-            else if (morph.Type==0)
+            // Repair reads saved PMX bytes without rebuilding meshes. Recover the
+            // same omission diagnostics so the new report does not hide them.
+            model.MorphWarnings.Clear();
+            FlattenMorphs(model);
+        }
+        // Resolve a dependency graph, not recursive traversal. This also makes deep
+        // acyclic groups safe and memoizes unsupported results. Cycles and all their
+        // dependent groups stay unresolved; independent vertex/group morphs survive.
+        private static Dictionary<int,PmxModel.V3>[] FlattenMorphs(PmxModel model)
+        {
+            int count=model.Morphs.Length;
+            var cache=new Dictionary<int,PmxModel.V3>[count];
+            var remaining=new int[count];
+            var parents=new List<int>[count];
+            for (int i=0;i<count;i++) parents[i]=new List<int>();
+            for (int i=0;i<count;i++)
             {
-                result=new Dictionary<int,PmxModel.V3>();
-                foreach (var group in morph.Groups)
+                if (model.Morphs[i].Type!=0) continue;
+                var unique=new HashSet<int>();
+                foreach (var group in model.Morphs[i].Groups)
                 {
                     if (group.Value==0) continue;
-                    var child=FlattenMorph(model,group.Key,visiting,cache);
-                    // Do not silently import only one part of a mixed morph.
-                    if (child==null) { result=null; break; }
-                    foreach (var delta in child)
-                    {
-                        PmxModel.V3 old; result.TryGetValue(delta.Key,out old);
-                        result[delta.Key]=PmxModel.V3.Add(old,PmxModel.V3.Mul(delta.Value,group.Value));
-                    }
+                    if (group.Key<0 || group.Key>=count) throw new FormatException("PMX: invalid group morph index");
+                    if (unique.Add(group.Key)) { remaining[i]++; parents[group.Key].Add(i); }
                 }
             }
-            visiting.Remove(index); cache[index]=result; return result;
+            var ready=new Queue<int>();
+            for (int i=0;i<count;i++) if (remaining[i]==0) ready.Enqueue(i);
+            while (ready.Count>0)
+            {
+                int index=ready.Dequeue();
+                var morph=model.Morphs[index];
+                if (morph.Type==1) cache[index]=morph.Deltas;
+                else if (morph.Type==0)
+                {
+                    var result=new Dictionary<int,PmxModel.V3>();
+                    string reason=null;
+                    foreach (var group in morph.Groups)
+                    {
+                        if (group.Value==0) continue;
+                        var child=cache[group.Key];
+                        // An incomplete group must not appear to be a working morph.
+                        if (child==null) { reason="depends on unsupported/omitted morph #"+group.Key; break; }
+                        foreach (var delta in child)
+                        {
+                            PmxModel.V3 old; result.TryGetValue(delta.Key,out old);
+                            var value=PmxModel.V3.Add(old,PmxModel.V3.Mul(delta.Value,group.Value));
+                            if (!Finite(value.X) || !Finite(value.Y) || !Finite(value.Z))
+                            { reason="non-finite combined vertex offset"; break; }
+                            result[delta.Key]=value;
+                        }
+                        if (reason!=null) break;
+                    }
+                    if (reason==null) cache[index]=result;
+                    else MorphWarning(model,index,reason);
+                }
+                foreach (int parent in parents[index]) if (--remaining[parent]==0) ready.Enqueue(parent);
+            }
+            for (int i=0;i<count;i++)
+                if (remaining[i]>0) MorphWarning(model,i,"cyclic group reference or dependency on a cycle");
+            return cache;
+        }
+        private static bool Finite(float value) { return !float.IsNaN(value) && !float.IsInfinity(value); }
+        private static void MorphWarning(PmxModel model,int index,string reason)
+        {
+            model.MorphWarnings.Add("Skipped group morph #"+index+" '"+model.Morphs[index].Name+"': "+reason);
         }
     }
 }

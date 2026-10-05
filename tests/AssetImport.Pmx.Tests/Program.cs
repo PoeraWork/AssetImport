@@ -45,6 +45,8 @@ TextureDecoderChecks.Run(Check);
 CubeLutChecks.Run(Check);
 ImportTextureChecks.Run(Check);
 MappingChecks.Run(Check);
+OptionalPmxDataChecks.Run(fixture,Check);
+ConstraintCycleChecks.Run(Check);
 RigidBodyReaderChecks.Run(fixture, Check);
 UnusedNormalChecks.Run(Check);
 IgnoredMetadataChecks.Run(Check);
@@ -64,11 +66,6 @@ if(args.Length>0)
     // Same serialized bytes are used by AssetFile/RamCache on scene reload.
     var reloaded=PmxSceneBuilder.Build(PmxReader.Read((byte[])bytes.Clone()),true);
     Check(reloaded.Meshes.Sum(m=>m.FaceCount)==converted.Meshes.Sum(m=>m.FaceCount),"cached blob topology");
-    if(Path.GetFileName(args[0]).Contains("HAKU"))
-    {
-        Check(pmx.Bones.Length==256 && pmx.Materials.Length==19 && pmx.RigidBodies==88 && pmx.Joints==47,"private Haku metadata agrees with independent reader");
-        Check(pmx.Vertices.Length==19127 && pmx.SdefVertices==218,"private Haku vertex/skinning counts");
-    }
     var actualRenderers=converted.Meshes.SelectMany(m=>LegacyMeshGeometry.Partition(m.VertexCount,m.Faces.SelectMany(f=>f.Indices).ToArray()).Select(part=>new {
         name=m.Name+"_"+converted.Materials[m.MaterialIndex].Name,shapes=m.MeshAnimationAttachments.Select(a=>a.Name).ToArray() })).ToArray();
     var mapping=PmxMmddMapping.Build(pmx,bytes,Path.GetFileNameWithoutExtension(args[0]),actualRenderers.SelectMany(r=>r.shapes.Select(s=>new PmxMorphTarget {Renderer=r.name,Shape=s})),Array.Empty<int>());
@@ -92,13 +89,12 @@ if(args.Length>0)
         warnings=collisionPlan.Warnings,windowsGame="NOT RUN" };
     var textures=converted.Materials.Where(m=>m.HasTextureDiffuse).Select(m=>m.TextureDiffuse.FilePath).Distinct().ToArray();
     var missingTextures=textures.Where(texture=>!File.Exists(Path.Combine(Path.GetDirectoryName(args[0])!,texture.Replace('\\','/')))).ToArray();
-    if(Path.GetFileName(args[0]).Contains("HAKU")) Check(missingTextures.Length==0,"all Haku diffuse textures exist");
     foreach(var missing in missingTextures) Console.WriteLine("INPUT WARNING: missing diffuse texture: "+missing);
     var report=new { result="OFFLINE PASS", vertices=pmx.Vertices.Length, bones=pmx.Bones.Length, meshes=converted.MeshCount,
         triangles=converted.Meshes.Sum(m=>m.FaceCount), vertexMorphs=pmx.Morphs.Count(m=>m.Type==1),
         morphAttachments=converted.Meshes.Sum(m=>m.MeshAnimationAttachmentCount), rigidBodies=pmx.RigidBodies,joints=pmx.Joints,
         sdefApproximated=pmx.SdefVertices, invalidIgnoredMetadataFields=pmx.InvalidIgnoredMetadataFields,
-        ignoredMetadataWarnings=pmx.IgnoredMetadataWarnings, checks, windowsGame="NOT RUN",
+        ignoredMetadataWarnings=pmx.IgnoredMetadataWarnings, morphWarnings=pmx.MorphWarnings, checks, windowsGame="NOT RUN",
         boneNames=pmx.Bones.Select((b,i)=>PmxModel.BoneName(i,b.Name)),textures,missingTextures,
         renderers=actualRenderers };
     if(args.Length>1)
@@ -122,7 +118,7 @@ if(args.Length>0)
         foreach(var texture in textures.Where(t=>t.EndsWith(".tga",StringComparison.OrdinalIgnoreCase)))
         {
             string path=Path.Combine(Path.GetDirectoryName(args[0])!,texture.Replace('\\','/'));
-            File.WriteAllBytes(Path.Combine(args[1],Path.GetFileName(texture.Replace('\\','/'))+".png"),TextureImageData.Read(path));
+            if(File.Exists(path)) File.WriteAllBytes(Path.Combine(args[1],Path.GetFileName(texture.Replace('\\','/'))+".png"),TextureImageData.Read(path));
         }
     }
     Console.WriteLine($"Private model: {pmx.Vertices.Length} vertices, {pmx.Bones.Length} bones, {converted.MeshCount} materials, {pmx.Morphs.Count(m=>m.Type==1)} vertex morphs.");

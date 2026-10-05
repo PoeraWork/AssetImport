@@ -97,6 +97,11 @@ def from_to(a, b):
 
 
 class RuntimeChecks(unittest.TestCase):
+    def test_inactive_solver_never_reads_or_changes_transforms(self):
+        # Missing transform attributes make unintended access fail immediately.
+        for iterations, step, chain in ((0, 20, [object()]), (5, 0, [object()]), (5, 20, [])):
+            self.runtime._solve_pmx_ik(object(), object(), chain, iterations, step, [None])
+
     def setUp(self):
         self.modules = dict(sys.modules)
         Vector.right, Vector.up = Vector(1, 0, 0), Vector(0, 1, 0)

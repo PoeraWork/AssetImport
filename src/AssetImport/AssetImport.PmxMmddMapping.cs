@@ -31,12 +31,12 @@ namespace AssetImport
         }
         // The runtime extension applies PMX per-axis limits only to our bones.
         private static string Key(int i) { return "assetimport_pmx_" + i.ToString("D4"); }
-        private static bool HasGrant(PmxModel.Bone b) { return (b.Flags & 0x300) != 0 && b.GrantParent >= 0 && b.GrantWeight != 0; }
         internal static PmxMmddResult Build(PmxModel model, byte[] source, string label, IEnumerable<PmxMorphTarget> morphTargets,
             IEnumerable<int> dynamicRoots)
         {
             // Keep physics out of MMDD's transform writes. Include user-selected
             // roots as well as PMX physics metadata so editors cannot fight MMDD.
+            var plan = PmxAnimationPlan.Build(model);
             var excluded = new HashSet<int>(model.PhysicsBones);
             excluded.UnionWith(dynamicRoots);
             // Append followers of a PMX-simulated bone cannot be evaluated by
@@ -49,38 +49,56 @@ namespace AssetImport
                 for (int i = 0; i < model.Bones.Length; i++)
                 {
                     var b = model.Bones[i];
-                    if (excluded.Contains(b.Parent) || (HasGrant(b) && excluded.Contains(b.GrantParent)) ||
-                        ((b.Flags & 0x20) != 0 && (excluded.Contains(b.IkTarget) || b.IkLinks.Any(l => excluded.Contains(l.Bone)))))
+                    if (excluded.Contains(b.Parent) || (plan.Grant[i] && excluded.Contains(b.GrantParent)) ||
+                        (plan.Ik[i] && (excluded.Contains(b.IkTarget) || b.IkLinks.Any(l => excluded.Contains(l.Bone)))))
                         expanded |= excluded.Add(i);
                 }
             } while (expanded);
             var physicsAppend = Enumerable.Range(0, model.Bones.Length)
-                .Where(i => HasGrant(model.Bones[i]) && excluded.Contains(model.Bones[i].GrantParent)).ToArray();
+                .Where(i => plan.Grant[i] && excluded.Contains(model.Bones[i].GrantParent)).ToArray();
             var pending = new HashSet<int>(Enumerable.Range(0, model.Bones.Length).Where(i => !excluded.Contains(i)));
             var dependencies = new Dictionary<int, HashSet<int>>();
             var names = new HashSet<string>(StringComparer.Ordinal);
-            var warnings = new List<string>();
+            var warnings = new List<string>(model.MorphWarnings);
+            var inactiveIk = new List<object>();
+            var disabledConstraints = new List<object>();
             foreach (int i in physicsAppend)
                 warnings.Add("Physics append follower excluded from MMDD (Dynamic Bone does not simulate PMX append grants): " + model.Bones[i].Name);
             foreach (int i in pending)
             {
                 var b = model.Bones[i]; var dep = new HashSet<int>();
+                string inactiveReason = plan.InactiveIk[i];
+                if (inactiveReason != null)
+                {
+                    warnings.Add("Inactive IK solver omitted; bone retained: " + PmxModel.BoneName(i, b.Name) + " (" + inactiveReason + ").");
+                    inactiveIk.Add(Obj("index", i, "name", b.Name, "reason", inactiveReason,
+                        "iterations", b.IkIterations, "step_angle_radians", b.IkAngle, "link_count", b.IkLinks.Count));
+                }
+                foreach (bool grant in new[] { true, false })
+                {
+                    string reason = grant ? plan.GrantWarning[i] : plan.IkWarning[i];
+                    if (reason == null) continue;
+                    string operation = grant ? "append" : "IK";
+                    warnings.Add("Disabled cyclic " + operation + "; bone retained: " + PmxModel.BoneName(i, b.Name));
+                    disabledConstraints.Add(Obj("index", i, "name", b.Name, "operation", operation, "reason", reason));
+                }
                 if (string.IsNullOrEmpty(b.Name) || !names.Add(b.Name))
                     throw new FormatException("MMDD auto mapping needs unique nonempty motion bone names: " + b.Name);
                 if ((b.Flags & 0x2000) != 0) throw new FormatException("MMDD auto mapping does not support PMX external-parent transforms: " + b.Name);
                 if (b.Parent >= 0) dep.Add(b.Parent);
                 if ((b.Flags & 0x300) != 0 && b.GrantParent == -1)
                     warnings.Add("Ignored append flag without a source bone: " + b.Name);
-                if (HasGrant(b))
+                if (plan.Grant[i])
                 {
                     if ((b.Flags & 0x80) != 0)
                         throw new FormatException("MMDD auto mapping does not support local append transforms: " + b.Name);
                     dep.Add(b.GrantParent);
                 }
-                if ((b.Flags & 0x20) != 0)
+                if (plan.Ik[i])
                 {
                     if (b.IkTarget < 0 || b.IkIterations < 1 || b.IkIterations > 10000 || b.IkAngle <= 0 || b.IkLinks.Count == 0)
-                        throw new FormatException("Invalid/unsupported PMX IK: " + b.Name);
+                        throw new FormatException("Invalid/unsupported active PMX IK: " + PmxModel.BoneName(i, b.Name) +
+                            "; target=" + b.IkTarget + ", iterations=" + b.IkIterations + ", angle=" + b.IkAngle + ", links=" + b.IkLinks.Count);
                     dep.Add(b.IkTarget); foreach (var l in b.IkLinks) dep.Add(l.Bone);
                     foreach (var l in b.IkLinks.Where(l => l.Limited))
                         if (l.Min.X > l.Max.X || l.Min.Y > l.Max.Y || l.Min.Z > l.Max.Z)
@@ -107,7 +125,7 @@ namespace AssetImport
                     "weightBone", target, "weightSyncMode", "GLOBAL",
                     "adjustment", Obj("rotAdjAuto", false, "rotAxisAuto", false));
                 if (b.Parent >= 0) d["parent"] = Key(b.Parent);
-                if (HasGrant(b))
+                if (plan.Grant[i])
                 {
                     bool rotation = (b.Flags & 0x100) != 0, position = (b.Flags & 0x200) != 0;
                     d["isTrack"] = true;
@@ -122,7 +140,7 @@ namespace AssetImport
                     var axis = new[] { -b.FixedAxis.X, b.FixedAxis.Y, -b.FixedAxis.Z };
                     d["isLimitAxis"] = true; d["limitAxisData"] = new[] { axis, axis };
                 }
-                if ((b.Flags & 0x20) != 0)
+                if (plan.Ik[i])
                 {
                     var links = new List<string> { Key(b.IkTarget) }; var limits = new List<object>();
                     foreach (var l in b.IkLinks)
@@ -158,12 +176,13 @@ namespace AssetImport
             }
             string id = Hash(source).Substring(0, 12);
             // Physics-root and BlendShape selections need independent definitions.
-            string variant = Hash(Encoding.UTF8.GetBytes("runtime-v4\n" + string.Join(",", excluded.OrderBy(i => i).Select(i => i.ToString()).ToArray()) + "\n" + JsonMapper.ToJson(targets))).Substring(0, 8);
+            string variant = Hash(Encoding.UTF8.GetBytes("runtime-v4\nconstraint-policy-v2\n" + string.Join(",", excluded.OrderBy(i => i).Select(i => i.ToString()).ToArray()) + "\n" + JsonMapper.ToJson(targets))).Substring(0, 8);
             id += "_" + variant;
             var mapping = Obj("general", Obj("description", label + " / AssetImport PMX Auto / " + id,
                 "boneType", "ITEM", "enableAutoRotAdj", false, "overwriteDefaultBlend", false), "bones", definitions, "morphs", morphs);
             var report = Obj("mapped_bones", definitions.Count, "ik_solvers", ikCount, "mapped_morphs", morphs.Count,
-                "position_grants", ordered.Count(i => HasGrant(model.Bones[i]) && (model.Bones[i].Flags & 0x200) != 0),
+                "inactive_ik", inactiveIk, "disabled_constraints", disabledConstraints, "morph_warnings", model.MorphWarnings,
+                "position_grants", ordered.Count(i => plan.Grant[i] && (model.Bones[i].Flags & 0x200) != 0),
                 "source_sha256", Hash(source), "model_id", id, "morph_targets", targets, "warnings", warnings,
                 "morph_extension", "MmddExtMorphFunc_AssetImport_Pmx_" + id + ".py",
                 "excluded_from_mmdd", excluded.OrderBy(i => i).Select(i => PmxModel.BoneName(i, model.Bones[i].Name)).ToArray(),

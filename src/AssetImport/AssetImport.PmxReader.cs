@@ -68,6 +68,7 @@ namespace AssetImport
         internal RigidBody[] RigidBodyData;
         internal readonly HashSet<int> PhysicsBones = new HashSet<int>();
         internal readonly List<string> IgnoredMetadataWarnings = new List<string>();
+        internal readonly List<string> MorphWarnings = new List<string>();
         internal int InvalidIgnoredMetadataFields;
         internal int SdefVertices, RigidBodies, Joints, IkBones, GrantBones, UnusedNormalsRepaired, InvalidRigidBodyPositions;
         internal static string BoneName(int index, string name) { return "PMX_" + index.ToString("D4") + "_" + name; }

@@ -38,7 +38,12 @@ namespace AssetImport
         // renderer/physics selection. No new meshes, FK entries or materials.
         internal static string RepairMmddMapping(string sourceIdentifier, IEnumerable<SkinnedMeshRenderer> renderers, IEnumerable<string> roots)
         {
-            try { return ExportMmddMapping(sourceIdentifier, PmxReader.Read(RamCacheUtility.GetFileBlob(sourceIdentifier)), renderers, roots); }
+            try
+            {
+                var model = PmxReader.Read(RamCacheUtility.GetFileBlob(sourceIdentifier));
+                PmxSceneBuilder.RefreshMorphWarnings(model);
+                return ExportMmddMapping(sourceIdentifier, model, renderers, roots);
+            }
             catch (Exception e) { return MmddExportFailure(e); }
         }
 
@@ -95,6 +100,8 @@ namespace AssetImport
                         + "\nBackup: " + directory + "\nCopy JSON to MMDD Lib/mmdd and PY to Lib, or set the path and repair again.";
                     Logger.LogWarning(status);
                 }
+                if (result.Warnings.Length > 0)
+                    status += "\nWarnings: " + result.Warnings.Length + ". Details in the PMX mapping report/log.";
                 return status;
             }
             catch (Exception e)

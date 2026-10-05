@@ -193,6 +193,8 @@ def _clamp_angle(angle, bounds):
 def _solve_pmx_ik(bone, target, chain, iterations, step, limits):
     # Scoped CCD for non-knee PMX constraints. MMDD's stock MMD solver treats
     # every limited link as a positive-X knee, including two-axis toe joints.
+    if iterations <= 0 or step <= 0 or not chain:
+        return
     from UnityEngine import Quaternion, Vector3
     from vmdlib import VmdLib
     goal = bone.transform.position

@@ -28,7 +28,9 @@ internal static class MappingChecks
         var selectedSource=Build(new[]{2});
         check(selectedSource.BoneCount==3 && selectedSource.Warnings.Any(w=>w.Contains("Physics append follower")),"selected physics grant source excludes follower just like intrinsic physics");
         model.Bones[2].Flags|=0x100; model.Bones[2].GrantParent=1; model.Bones[2].GrantWeight=1;
-        Reject(()=>Build(Array.Empty<int>()),"cyclic append dependency");
+        var cyclic=Build(Array.Empty<int>());
+        check(cyclic.BoneCount==5 && cyclic.Warnings.Count(w=>w.Contains("Disabled cyclic append"))==2,
+            "cyclic append operations are isolated while all ordinary bone transforms remain");
         model.Bones[2].Flags=2;model.Bones[2].Name="root";
         Reject(()=>Build(Array.Empty<int>()),"ambiguous original motion names");
         model.Bones[2].Name="source"; model.Bones[1].Flags|=0x200;

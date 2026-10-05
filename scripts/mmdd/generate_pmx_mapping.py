@@ -31,15 +31,83 @@ def morph_targets(mapping, renderer_report):
     return targets
 
 
+def inactive_ik_reason(bone):
+    ik = bone.get('ik')
+    if ik is None:
+        return None
+    if ik['iterations'] == 0:
+        return 'zero iterations'
+    if ik['angle'] == 0:
+        return 'zero step angle'
+    if not ik['links']:
+        return 'empty chain'
+    return None
+
+
+def has_active_ik(bone):
+    return 'ik' in bone and inactive_ik_reason(bone) is None
+
+
+def animation_plan(bones):
+    by_id = {b['index']: b for b in bones}
+    grants = {i for i, b in by_id.items() if b.get('grant', {}).get('parent', -1) >= 0
+              and b.get('grant', {}).get('weight', 0) != 0}
+    iks = {i for i, b in by_id.items() if has_active_ik(b)}
+    edges = {i: {b['parent']} if b['parent'] in by_id else set() for i, b in by_id.items()}
+    reverse = {i: set() for i in by_id}
+    for i, b in by_id.items():
+        if i in grants:
+            edges[i].add(b['grant']['parent'])
+        if i in iks:
+            edges[i] |= {b['ik']['target']} | {link['bone'] for link in b['ik']['links']}
+        edges[i] &= by_id.keys()
+        for dependency in edges[i]:
+            reverse[dependency].add(i)
+    visited, order = set(), []
+    for root in by_id:
+        stack = [(root, False)]
+        while stack:
+            node, finished = stack.pop()
+            if finished:
+                order.append(node)
+            elif node not in visited:
+                visited.add(node)
+                stack.append((node, True))
+                stack.extend((child, False) for child in edges[node] if child not in visited)
+    component = {}
+    for root in reversed(order):
+        if root in component:
+            continue
+        stack = [root]
+        component[root] = root
+        while stack:
+            for parent in reverse[stack.pop()]:
+                if parent not in component:
+                    component[parent] = root
+                    stack.append(parent)
+    disabled = []
+    for i, b in by_id.items():
+        operations = [('append', grants, [b['grant']['parent']])] if i in grants else []
+        if i in iks:
+            operations.append(('IK', iks, [b['ik']['target']] + [link['bone'] for link in b['ik']['links']]))
+        for operation, enabled, dependencies in operations:
+            if any(dependency in component and component[i] == component[dependency] for dependency in dependencies):
+                enabled.remove(i)
+                disabled.append({'index': i, 'name': b['name'], 'operation': operation,
+                                 'reason': 'cyclic ' + operation + ' dependency'})
+    return grants, iks, disabled
+
+
 def create(model, label, renderer_report=None, dynamic_roots=()):
     bones = model['bones']
     by_id = {b['index']: b for b in bones}
+    active_grants, active_ik, disabled_constraints = animation_plan(bones)
     physics = {r['bone'] for r in model['rigid_bodies'] if r['mode'] > 0 and r['bone'] >= 0}
     excluded = set(physics) | set(dynamic_roots)
     while True:
         more = {b['index'] for b in bones if b['parent'] in excluded
-                or (b.get('grant', {}).get('weight', 0) != 0 and b.get('grant', {}).get('parent', -1) in excluded)
-                or ('ik' in b and ({b['ik']['target']} | {l['bone'] for l in b['ik']['links']}) & excluded)}
+                or (b['index'] in active_grants and b['grant']['parent'] in excluded)
+                or (b['index'] in active_ik and ({b['ik']['target']} | {l['bone'] for l in b['ik']['links']}) & excluded)}
         if more.issubset(excluded):
             break
         excluded |= more
@@ -48,20 +116,26 @@ def create(model, label, renderer_report=None, dynamic_roots=()):
     warnings = ['Ignored append flag without a source bone: ' + b['name'] for b in bones
                 if 'grant' in b and b['grant']['parent'] == -1 and b['index'] in included]
     warnings += ['Physics append follower excluded from MMDD: ' + b['name'] for b in bones
-                 if b.get('grant', {}).get('weight', 0) != 0 and b.get('grant', {}).get('parent', -1) in excluded]
+                 if b['index'] in active_grants and b['grant']['parent'] in excluded]
     for i in included:
         b = by_id[i]
         dep = {b['parent']} if b['parent'] >= 0 else set()
-        if 'grant' in b and b['grant']['parent'] >= 0 and b['grant']['weight'] != 0:
+        if i in active_grants:
             g = b['grant']
             if g['local']:
                 raise ValueError('Unsupported local grant: ' + b['name'])
             dep.add(g['parent'])
-        if 'ik' in b:
+        if i in active_ik:
+            ik = b['ik']
+            if ik['target'] < 0 or not 1 <= ik['iterations'] <= 10000 or not math.isfinite(ik['angle']) or ik['angle'] <= 0:
+                raise ValueError('Invalid/unsupported active PMX IK: ' + target(b))
             dep |= {b['ik']['target']} | {l['bone'] for l in b['ik']['links']}
         if not dep.issubset(included):
             raise ValueError('Animation depends on an excluded physics bone: ' + b['name'])
         dependencies[i] = dep
+    disabled_constraints = [item for item in disabled_constraints if item['index'] in included]
+    warnings += ['Disabled cyclic ' + item['operation'] + '; bone retained: ' + target(by_id[item['index']])
+                 for item in disabled_constraints]
     ordered = []
     while len(ordered) != len(included):
         ready = sorted((i for i in included - set(ordered) if dependencies[i].issubset(ordered)), key=lambda i: (by_id[i]['layer'], i))
@@ -69,6 +143,12 @@ def create(model, label, renderer_report=None, dynamic_roots=()):
         # Preserve PMX order among ready operations, especially IK before D-bone grants.
         ordered.append(ready[0])
     def key(i):return 'assetimport_pmx_%04d' % i
+    inactive_ik = [{'index': i, 'name': by_id[i]['name'], 'reason': inactive_ik_reason(by_id[i]),
+                    'iterations': by_id[i]['ik']['iterations'], 'step_angle_radians': by_id[i]['ik']['angle'],
+                    'link_count': len(by_id[i]['ik']['links'])}
+                   for i in ordered if inactive_ik_reason(by_id[i]) is not None]
+    warnings += ['Inactive IK solver omitted; bone retained: ' + target(by_id[item['index']]) +
+                 ' (' + item['reason'] + ').' for item in inactive_ik]
     definitions = []
     ik_count = 0
     for i in ordered:
@@ -80,7 +160,7 @@ def create(model, label, renderer_report=None, dynamic_roots=()):
              'weightBone': target(b), 'weightSyncMode': 'GLOBAL',
              'adjustment': {'rotAdjAuto': False, 'rotAxisAuto': False}}
         if b['parent'] >= 0:d['parent'] = key(b['parent'])
-        if 'grant' in b and b['grant']['parent'] >= 0 and b['grant']['weight'] != 0:
+        if i in active_grants:
             g = b['grant']
             mode = ('r' if g['rotation'] else '') + ('p' if g['position'] else '')
             d.update(isTrack=True, trackData=[mode, g['weight'], key(g['parent'])])
@@ -91,7 +171,7 @@ def create(model, label, renderer_report=None, dynamic_roots=()):
             # Both vectors are in the converted (-X,Y,-Z) coordinate system.
             axis = [-axis[0], axis[1], -axis[2]]
             d.update(isLimitAxis=True, limitAxisData=[axis, axis])
-        if 'ik' in b:
+        if i in active_ik:
             ik = b['ik']
             # The AssetImport runtime extension applies per-axis limits to
             # these explicitly namespaced bones; stock MMDD only limits knees.
@@ -129,7 +209,7 @@ def create(model, label, renderer_report=None, dynamic_roots=()):
     report = {'label': label, 'mapped_bones': len(definitions),
               'rotation_grants': sum(d.get('isTrack', False) and 'r' in d['trackData'][0] for d in definitions),
               'position_grants': sum(d.get('isTrack', False) and 'p' in d['trackData'][0] for d in definitions),
-              'ik_solvers': ik_count, 'mapped_morphs': len(morphs),
+              'ik_solvers': ik_count, 'inactive_ik': inactive_ik, 'disabled_constraints': disabled_constraints, 'mapped_morphs': len(morphs),
               'excluded_from_mmdd': [target(by_id[i]) for i in sorted(excluded)],
               'physics_chain_roots': [target(b) for b in dynamic_roots],
               'unit_scale': .0832, 'import_scale_required': 1, 'mmdd_axis_scale_required': .0832,

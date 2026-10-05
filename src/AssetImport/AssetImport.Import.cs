@@ -190,6 +190,9 @@ namespace AssetImport
                 {
                     _pmx = PmxReader.Read(RamCacheUtility.GetFileBlob(SourceIdentifier));
                     _scene = PmxSceneBuilder.Build(_pmx, LoadBlendshapes);
+                    if (_pmx.MorphWarnings.Count > 0)
+                        Logger.LogWarning("PMX optional morphs omitted (" + _pmx.MorphWarnings.Count +
+                            "; first 16): " + string.Join("; ", _pmx.MorphWarnings.Take(16).ToArray()));
                     if (_pmx.UnusedNormalsRepaired > 0)
                         Logger.LogWarning($"PMX unused normals repaired: {_pmx.UnusedNormalsRepaired} invalid normals on vertices not referenced by any triangle. Rendered geometry and valid source normals are unchanged.");
                     if (_pmx.InvalidRigidBodyPositions > 0)

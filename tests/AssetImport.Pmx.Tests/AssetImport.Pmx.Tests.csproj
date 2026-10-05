@@ -18,6 +18,7 @@
     <Compile Include="../../src/AssetImport/AssetImport.BmpDecoder.cs" Link="BmpDecoder.cs" />
     <Compile Include="../../src/AssetImport/AssetImport.DdsDecoder.cs" Link="DdsDecoder.cs" />
     <Compile Include="../../src/AssetImport/AssetImport.PmxMmddMapping.cs" Link="PmxMmddMapping.cs" />
+    <Compile Include="../../src/AssetImport/AssetImport.PmxAnimationPlan.cs" Link="PmxAnimationPlan.cs" />
     <Compile Include="../../src/AssetImport/AssetImport.PmxCollisionPlan.cs" Link="PmxCollisionPlan.cs" />
     <Compile Include="../../src/AssetImport/AssetImport.PmxPhysicsRootSuggestions.cs" Link="PmxPhysicsRootSuggestions.cs" />
     <Compile Include="../../src/AssetImport/AssetImport.Import.PmxCollisions.cs" Link="Import.PmxCollisions.cs" />
