@@ -43,6 +43,7 @@ namespace AssetImport
         internal static ConfigEntry<bool> dumpAssets;
         internal static ConfigEntry<bool> pmxBodyCollisions;
         internal static ConfigEntry<string> mmddLibraryPath;
+        internal static ConfigEntry<string> colorLutPath;
 
         // current import
         internal static LoadProcess currentLoadProcess;
@@ -94,6 +95,9 @@ namespace AssetImport
             mmddLibraryPath = Config.Bind("PMX", "MMDD Library Path", "",
                 "Optional MMDD Lib folder. Leave empty to discover a unique MMDD installation under BepInEx/plugins. Relative paths start at the game root. Re-export PMX Auto after changing this setting.");
 
+            colorLutPath = Config.Bind("Textures", "KK Color LUT", Path.Combine(Paths.GameRootPath, "UserData/AssetImport/PS转KK色.cube"),
+                "PS-to-KK 3D .cube LUT used only when Convert diffuse to KK color is checked. Original texture files are never overwritten.");
+            Import.InstallMmddRuntime();
             UI = this.GetOrAddComponent<AssetUI>();
 
             // custom controllers and hooks

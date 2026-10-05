@@ -22,6 +22,7 @@ def main():
         subprocess.run([args.dotnet, "run", "--project", str(project), *common], cwd=ROOT, check=True)
     subprocess.run([sys.executable, "scripts/check_import_failure.py", "--dotnet", args.dotnet], cwd=ROOT, check=True)
     subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests/packaging", "-v"], cwd=ROOT, check=True)
+    subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests/mmdd", "-v"], cwd=ROOT, check=True)
     print("Portable checks passed. Windows game validation is separate.")
 
 

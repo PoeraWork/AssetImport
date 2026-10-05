@@ -608,13 +608,14 @@ namespace AssetImport
 
             if (loadProcess.Kind == LoadProcess.LoadProcessKind.Normal)
             {
+                var textureData = new ImportTextureData(loadProcess.ColorLut);
                 foreach (Material mat in import.MaterialTextures.Keys)
                 {
                     foreach (TexturePath p in import.MaterialTextures[mat])
                     {
                         if (!p.Use || !p.PathOkay()) continue;
                         byte[] data;
-                        try { data = TextureImageData.Read(p.Path); }
+                        try { data = textureData.Read(p); }
                         catch (Exception e) { Logger.LogWarning("Texture conversion failed: " + p.Path + ": " + e.Message); continue; }
                         var prop = "";
                         switch (p.Type)

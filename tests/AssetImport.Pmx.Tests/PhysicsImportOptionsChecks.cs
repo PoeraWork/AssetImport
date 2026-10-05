@@ -91,6 +91,7 @@ namespace AssetImport
     public class AccessoryHelper { }
     internal static class AssetUI
     {
+        internal static CubeLut ImportColorLut;
         internal static bool AutoSelectPmxPhysics = true;
         internal static bool EnablePhysicsAfterImport = true;
         internal static bool UsePmxPhysicsPreset = true;

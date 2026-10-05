@@ -26,11 +26,27 @@ internal static class MappingChecks
         void Reject(Action action,string reason) {try {action();throw new Exception("Accepted "+reason);}catch(FormatException){check(true,reason);}}
         Reject(()=>Build(new[]{0}),"all bones selected as physics");
         Reject(()=>Build(new[]{2}),"grant depends on a physics bone");
-        model.Bones[2].Flags|=0x100; model.Bones[2].GrantParent=1;
+        model.Bones[2].Flags|=0x100; model.Bones[2].GrantParent=1; model.Bones[2].GrantWeight=1;
         Reject(()=>Build(Array.Empty<int>()),"cyclic append dependency");
         model.Bones[2].Flags=2;model.Bones[2].Name="root";
         Reject(()=>Build(Array.Empty<int>()),"ambiguous original motion names");
         model.Bones[2].Name="source"; model.Bones[1].Flags|=0x200;
         Reject(()=>Build(Array.Empty<int>()),"unsupported position append");
+        model.Bones[1].GrantParent=-1;
+        var orphan=JsonDocument.Parse(Build(Array.Empty<int>()).MappingJson).RootElement.GetProperty("bones");
+        check(!orphan.EnumerateArray().Single(b=>b.GetProperty("vmdName").GetString()=="append").TryGetProperty("isTrack",out _),"missing append source is a no-op, no pmx_-001 dependency");
+        model.Bones[1].GrantParent=2;model.Bones[1].GrantWeight=0;
+        check(Build(new[]{2}).BoneCount==4,"zero-weight append has no dependency on excluded source");
+        model.Bones[1].Flags=0x22;model.Bones[1].IkTarget=2;model.Bones[1].IkIterations=3;model.Bones[1].IkAngle=1;
+        model.Bones[1].IkLinks.Add(new PmxModel.IkLink {Bone=0,Limited=true,Min=new PmxModel.V3(-.35f,-1.05f,0),Max=new PmxModel.V3(.61f,1.05f,0)});
+        var toe=JsonDocument.Parse(Build(Array.Empty<int>()).MappingJson).RootElement.GetProperty("bones").EnumerateArray().Single(b=>b.GetProperty("vmdName").GetString()=="append");
+        var limits=toe.GetProperty("ikSolverSetting").GetProperty("limits")[0];
+        check(toe.GetProperty("name").GetString()!.StartsWith("assetimport_pmx_") && limits[0][0].GetDouble()<0 && limits[0][1].GetDouble()>0 && limits[1][1].GetDouble()>60 && limits[2][1].GetDouble()==0,"toe IK retains signed X/Y ranges and locked Z for scoped runtime solver");
+        model.Bones[1].IkLinks[0].Max.X=-1;
+        Reject(()=>Build(Array.Empty<int>()),"inverted IK limits");
+        model.Bones[1].Flags=0x102;model.Bones[1].GrantParent=2;model.Bones[1].GrantWeight=.6f;
+        model.PhysicsBones.Add(2);
+        var physicsFollower=Build(Array.Empty<int>());
+        check(physicsFollower.BoneCount==3 && physicsFollower.Warnings.Any(w=>w.Contains("Physics append follower")),"intrinsic physics grant follower is excluded with diagnostics, unrelated animation still exports");
     }
 }

@@ -192,6 +192,8 @@ namespace AssetImport
                     _scene = PmxSceneBuilder.Build(_pmx, LoadBlendshapes);
                     if (_pmx.UnusedNormalsRepaired > 0)
                         Logger.LogWarning($"PMX unused normals repaired: {_pmx.UnusedNormalsRepaired} invalid normals on vertices not referenced by any triangle. Rendered geometry and valid source normals are unchanged.");
+                    if (_pmx.InvalidRigidBodyPositions > 0)
+                        Logger.LogWarning($"PMX has {_pmx.InvalidRigidBodyPositions} rigid bodies with non-finite positions. Invalid collision obstacles are skipped; mesh and animation data are preserved.");
                     Logger.LogInfo($"PMX 2.0: {_pmx.Vertices.Length} vertices, {_pmx.Bones.Length} bones, {_pmx.Materials.Length} materials; unit scale {PmxSceneBuilder.UnitScale}.");
                     Logger.LogWarning($"PMX preview: {_pmx.SdefVertices} SDEF vertices use linear skinning. IK ({_pmx.IkBones}) and append transforms ({_pmx.GrantBones}) require an MMDD mapping; rigid bodies ({_pmx.RigidBodies}) and joints ({_pmx.Joints}) are not simulated. Toon/sphere and bone/UV/material morphs are not imported.");
                 }

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build an MMDD 3.0 ITEM mapping for AssetImport 4.2 direct PMX import.
 
-Input is a local PMX, never bundled. Handles rotation grants and ordinary MMD
-leg/toe IK. Physics descendants are deliberately left to Dynamic Bone. Generic
+Input is a local PMX, never bundled. Handles rotation grants and per-axis IK
+through the AssetImport runtime extension. Physics descendants are left to Dynamic Bone. Generic
 position grants / external-parent transforms need a dedicated implementation.
 """
 import argparse
@@ -37,7 +37,7 @@ def create(model, label, renderer_report=None):
     physics = {r['bone'] for r in model['rigid_bodies'] if r['mode'] > 0 and r['bone'] >= 0}
     excluded = set(physics)
     while True:
-        more = {b['index'] for b in bones if b['parent'] in excluded}
+        more = {b['index'] for b in bones if b['parent'] in excluded or (b.get('grant', {}).get('weight', 0) != 0 and b.get('grant', {}).get('parent', -1) in excluded)}
         if more.issubset(excluded):
             break
         excluded |= more
@@ -52,11 +52,14 @@ def create(model, label, renderer_report=None):
         excluded |= more
     included = set(by_id) - excluded
     dependencies = {}
-    warnings = []
+    warnings = ['Ignored append flag without a source bone: ' + b['name'] for b in bones
+                if 'grant' in b and b['grant']['parent'] == -1 and b['index'] in included]
+    warnings += ['Physics append follower excluded from MMDD: ' + b['name'] for b in bones
+                 if b.get('grant', {}).get('weight', 0) != 0 and b.get('grant', {}).get('parent', -1) in excluded]
     for i in included:
         b = by_id[i]
         dep = {b['parent']} if b['parent'] >= 0 else set()
-        if 'grant' in b:
+        if 'grant' in b and b['grant']['parent'] >= 0 and b['grant']['weight'] != 0:
             g = b['grant']
             if g['position'] or g['local']:
                 raise ValueError('Unsupported position/local grant: ' + b['name'])
@@ -68,11 +71,11 @@ def create(model, label, renderer_report=None):
         dependencies[i] = dep
     ordered = []
     while len(ordered) != len(included):
-        ready = sorted(i for i in included - set(ordered) if dependencies[i].issubset(ordered))
+        ready = sorted((i for i in included - set(ordered) if dependencies[i].issubset(ordered)), key=lambda i: (by_id[i]['layer'], i))
         if not ready:raise ValueError('Cyclic animation dependencies')
         # Preserve PMX order among ready operations, especially IK before D-bone grants.
         ordered.append(ready[0])
-    def key(i):return 'pmx_%04d' % i
+    def key(i):return 'assetimport_pmx_%04d' % i
     definitions = []
     ik_count = 0
     for i in ordered:
@@ -84,7 +87,7 @@ def create(model, label, renderer_report=None):
              'weightBone': target(b), 'weightSyncMode': 'GLOBAL',
              'adjustment': {'rotAdjAuto': False, 'rotAxisAuto': False}}
         if b['parent'] >= 0:d['parent'] = key(b['parent'])
-        if 'grant' in b:
+        if 'grant' in b and b['grant']['parent'] >= 0 and b['grant']['weight'] != 0:
             g = b['grant']
             d.update(isTrack=True, trackData=['r', g['weight'], key(g['parent'])], rotatable=True)
         if 'fixed_axis' in b:
@@ -94,12 +97,11 @@ def create(model, label, renderer_report=None):
             d.update(isLimitAxis=True, limitAxisData=[axis, axis])
         if 'ik' in b:
             ik = b['ik']
-            # MMDD 3's limited MMD solver implements a knee hinge, not general
-            # per-axis PMX constraints. Refuse unrelated limited chains.
-            limited = [l for l in ik['links'] if 'min' in l]
-            if limited and not (len(ik['links']) == 2 and len(limited) == 1 and
-                                'ひざ' in by_id[limited[0]['bone']]['name']):
-                raise ValueError('Non-leg limited PMX IK requires a custom solver: ' + name)
+            # The AssetImport runtime extension applies per-axis limits to
+            # these explicitly namespaced bones; stock MMDD only limits knees.
+            for link in ik['links']:
+                if 'min' in link and any(a > b for a, b in zip(link['min'], link['max'])):
+                    raise ValueError('Inverted PMX IK limits: ' + name)
             limits = []
             for link in ik['links']:
                 if 'min' not in link:limits.append(None)
@@ -133,7 +135,7 @@ def create(model, label, renderer_report=None):
               'excluded_from_mmdd': [target(by_id[i]) for i in sorted(excluded)],
               'physics_chain_roots': [target(b) for b in dynamic_roots],
               'unit_scale': .0832, 'import_scale_required': 1, 'mmdd_axis_scale_required': .0832,
-              'warnings': ['MMDD leg limits are its own knee hinge; not full PMX IK equivalence',
+              'warnings': warnings + ['Requires the AssetImport MMDD runtime extension for non-knee per-axis IK limits',
                            'PMX rigid bodies/joints not simulated']}
     return result, report
 
@@ -152,11 +154,11 @@ if __name__ == '__main__':
     mapping, report = create(m, a.label, renderers)
     report['source_sha256'] = hashlib.sha256(data).hexdigest()
     a.output.parent.mkdir(parents=True, exist_ok=True)
-    if mapping['morphs']:
+    if mapping['morphs'] or report['ik_solvers']:
         ext_dir = a.morph_extension_dir or a.output.parent
         ext_dir.mkdir(parents=True, exist_ok=True)
         ext_name = 'MmddExtMorphFunc_AssetImport_Pmx_' + report['source_sha256'][:12] + '.py'
-        targets = morph_targets(mapping, renderers)
+        targets = morph_targets(mapping, renderers) if renderers else {}
         template = Path(__file__).with_name('item_morph_functions.py').read_text(encoding='utf-8')
         (ext_dir / ext_name).write_text(template + '\n\n_register(' + json.dumps(targets, ensure_ascii=True, indent=2) + ')\n', encoding='utf-8')
         report['morph_extension'] = ext_name

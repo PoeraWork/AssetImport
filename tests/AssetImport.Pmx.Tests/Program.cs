@@ -12,6 +12,13 @@ if(args.Length>0 && args[0]=="--geometry-only")
 {
     GeometryProbe.Run(args.Skip(1).ToArray()); return;
 }
+if(args.Length>0 && args[0]=="--lut")
+{
+    using var reader = File.OpenText(args[1]); var lut = CubeLut.Read(reader);
+    byte[] pixels = {0,0,0,7,255,255,255,64}; lut.Apply(pixels);
+    if (!pixels.SequenceEqual(new byte[]{66,82,66,7,249,249,249,64})) throw new Exception("User PS-to-KK LUT endpoints changed: " + string.Join(",",pixels));
+    Console.WriteLine("PASS: supplied PS-to-KK LUT, endpoints and alpha."); return;
+}
 int checks=0;
 void Check(bool value,string message) { checks++; if(!value) throw new Exception(message); }
 void Reject(byte[] data,string label) { try { PmxReader.Read(data); throw new Exception("Accepted "+label); } catch(FormatException) { checks++; } }
@@ -35,6 +42,8 @@ Reject(Fixture(true),"cyclic bone hierarchy");
 Check(PmxReader.Read(Fixture(false,true)).Bones[0].Name=="親", "UTF-16 text");
 TgaTests();
 TextureDecoderChecks.Run(Check);
+CubeLutChecks.Run(Check);
+ImportTextureChecks.Run(Check);
 MappingChecks.Run(Check);
 RigidBodyReaderChecks.Run(fixture, Check);
 UnusedNormalChecks.Run(Check);
@@ -94,7 +103,7 @@ if(args.Length>0)
     {
         Directory.CreateDirectory(args[1]);
         File.WriteAllText(Path.Combine(args[1],"pmx-validation.json"),JsonSerializer.Serialize(report,new JsonSerializerOptions { WriteIndented=true }));
-        File.WriteAllText(Path.Combine(args[1],"collision-validation.json"),JsonSerializer.Serialize(collisionReport,new JsonSerializerOptions { WriteIndented=true }));
+        File.WriteAllText(Path.Combine(args[1],"collision-validation.json"),JsonSerializer.Serialize(collisionReport,new JsonSerializerOptions { WriteIndented=true, NumberHandling=System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals }));
         File.WriteAllText(Path.Combine(args[1],"physics-root-suggestions.json"),JsonSerializer.Serialize(new {
             hairRoots=suggestedRoots.HairRoots,
             physicsRoots=suggestedRoots.PhysicsRoots,

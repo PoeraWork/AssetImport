@@ -67,7 +67,7 @@ namespace AssetImport
         internal Morph[] Morphs;
         internal RigidBody[] RigidBodyData;
         internal readonly HashSet<int> PhysicsBones = new HashSet<int>();
-        internal int SdefVertices, RigidBodies, Joints, IkBones, GrantBones, UnusedNormalsRepaired;
+        internal int SdefVertices, RigidBodies, Joints, IkBones, GrantBones, UnusedNormalsRepaired, InvalidRigidBodyPositions;
         internal static string BoneName(int index, string name) { return "PMX_" + index.ToString("D4") + "_" + name; }
     }
 
@@ -106,10 +106,11 @@ namespace AssetImport
         private float[] Floats(int n) { var values = new float[n]; for (int i=0;i<n;i++) values[i]=Float(); return values; }
         private PmxModel.V3 Vector() { return new PmxModel.V3(Float(),Float(),Float()); }
         // Some editors leave NaN normals on vertices left over after deleting
-        // faces. Defer only normal validation until the index table is known;
-        // all positions, UVs, weights and other consumed floats remain strict.
-        private PmxModel.V3 Normal() { return new PmxModel.V3(reader.ReadSingle(),reader.ReadSingle(),reader.ReadSingle()); }
-        private static bool NonFiniteNormal(PmxModel.V3 n)
+        // faces. Defer normal validation until the index table is known;
+        // vertex positions, UVs and skin weights remain strict. Optional body
+        // positions also use RawVector and are screened by collider planning.
+        private PmxModel.V3 RawVector() { return new PmxModel.V3(reader.ReadSingle(),reader.ReadSingle(),reader.ReadSingle()); }
+        private static bool NonFinite(PmxModel.V3 n)
         {
             return float.IsNaN(n.X) || float.IsInfinity(n.X) ||
                 float.IsNaN(n.Y) || float.IsInfinity(n.Y) ||
@@ -121,7 +122,7 @@ namespace AssetImport
             for (int i=0;i<model.Vertices.Length;i++)
             {
                 var vertex=model.Vertices[i];
-                if (!NonFiniteNormal(vertex.Normal)) continue;
+                if (!NonFinite(vertex.Normal)) continue;
                 if (referenced==null)
                 {
                     referenced=new bool[model.Vertices.Length];
@@ -170,7 +171,7 @@ namespace AssetImport
             m.Vertices = new PmxModel.Vertex[Count(38)];
             for (int i=0;i<m.Vertices.Length;i++)
             {
-                var v = new PmxModel.Vertex { Position=Vector(), Normal=Normal(), UV=new PmxModel.V3(Float(),Float(),0) };
+                var v = new PmxModel.Vertex { Position=Vector(), Normal=RawVector(), UV=new PmxModel.V3(Float(),Float(),0) };
                 Skip(16 * h[1]);
                 byte mode = reader.ReadByte();
                 int n = mode == 0 ? 1 : mode == 1 || mode == 3 ? 2 : mode == 2 ? 4 : 0;
@@ -287,7 +288,12 @@ namespace AssetImport
                 if (body.Shape>2) throw Error("invalid rigid body shape");
                 // PMX stores world-space rest transforms; convert only when building
                 // a collider so the original rigid body dimensions stay available.
-                body.Size=Vector(); body.Position=Vector(); body.Rotation=Vector();
+                body.Size=Vector(); body.Position=RawVector(); body.Rotation=Vector();
+                // Optional collision obstacles can contain editor garbage even
+                // when the render mesh is valid. Keep the original position so
+                // TryCollider's finite check skips it, never invent an obstacle
+                // at the origin. Geometry, sizes and other floats remain strict.
+                if (NonFinite(body.Position)) m.InvalidRigidBodyPositions++;
                 body.Mass=Float(); body.LinearDamping=Float(); body.AngularDamping=Float();
                 body.Restitution=Float(); body.Friction=Float(); body.Mode=reader.ReadByte();
                 if (body.Mode>2) throw Error("invalid rigid body mode");

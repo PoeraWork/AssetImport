@@ -9,6 +9,21 @@ namespace AssetImport
 {
     public partial class Import
     {
+        internal static void InstallMmddRuntime()
+        {
+            try
+            {
+                string problem;
+                string lib = MmddExportPaths.FindLibrary(BepInEx.Paths.GameRootPath, BepInEx.Paths.PluginPath,
+                    AssetImport.mmddLibraryPath.Value, out problem);
+                if (lib == null) return;
+                using (var stream = typeof(Import).Assembly.GetManifestResourceStream("AssetImport.MmddMorphFunctions.py"))
+                using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    WriteChanged(Path.Combine(lib, "MmddExtMorphFunc_AssetImport_Pmx_Runtime.py"), reader.ReadToEnd() + "\n_register({})\n");
+            }
+            catch (Exception e) { Logger.LogWarning("Could not install MMDD runtime extension: " + e.Message); }
+        }
+
         internal string LastMmddExportStatus { get; private set; } = "";
 
         internal string ExportMmddMapping()
@@ -47,6 +62,7 @@ namespace AssetImport
                 var roots = new HashSet<string>(dynamicRootNames);
                 var indices = Enumerable.Range(0, model.Bones.Length).Where(i => roots.Contains(PmxModel.BoneName(i, model.Bones[i].Name)));
                 var result = PmxMmddMapping.Build(model, RamCacheUtility.GetFileBlob(sourceIdentifier), label, targets, indices);
+                foreach (string warning in result.Warnings) Logger.LogWarning("PMX Auto: " + warning);
                 string directory = Path.Combine(BepInEx.Paths.GameRootPath, "UserData/AssetImport/MMDD/" + result.ModelId);
                 string name = "item_AssetImport_PMX_" + result.ModelId;
                 string script;
@@ -70,7 +86,7 @@ namespace AssetImport
                     WriteChanged(Path.Combine(lib, extension), script);
                     status = "Ready: " + label + " / AssetImport PMX Auto\n"
                         + name + ".json\nInstalled to: " + lib + "\n"
-                        + "Reopen MMDD > Load VMD Advanced; select this ITEM, then this model's PMX Auto definition.";
+                        + "After updating AssetImport, restart MMDD once to load its runtime extension. Then select this ITEM and this model's PMX Auto definition.";
                     Logger.LogInfo($"MMDD Auto mapping ready: {sourceFileName}; {result.BoneCount} bones, {result.IkCount} IK, {result.MorphCount} morphs; {name}; Lib={lib}. Open/restart MMDD after import, then choose this model's 'PMX Auto' definition.");
                 }
                 else

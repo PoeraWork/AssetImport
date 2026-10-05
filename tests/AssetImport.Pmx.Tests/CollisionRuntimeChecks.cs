@@ -184,6 +184,7 @@ namespace UnityEngine
     {
         internal bool destroyed;
         public static implicit operator bool(Object value)=>value is not null && !value.destroyed;
+        public static void Destroy(Object obj) { DestroyImmediate(obj); }
         public static void DestroyImmediate(Object obj)
         {
             obj.destroyed=true;

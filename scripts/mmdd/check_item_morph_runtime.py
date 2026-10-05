@@ -9,6 +9,7 @@ import argparse
 import ast
 import copy
 import importlib.util
+import importlib
 import json
 from pathlib import Path
 import shutil
@@ -122,6 +123,9 @@ def main():
            'Vector3': Vector3, 'Quaternion': Quaternion, 'Single': float, 'Double': float,
            'copy': copy, 'traceback': traceback}
     exec(compile(ast.Module(body=[lib, cls], type_ignores=[]), str(a.mmdd_lib / 'vmdlib.py'), 'exec'), env)
+    # Only solver installation is needed here; numerical IK has separate checks.
+    env['VmdLib'].mmdIKSolver = staticmethod(lambda *args: None)
+    sys.modules['vmdlib'] = types.SimpleNamespace(VmdLib=env['VmdLib'])
     controller = env['MorphController']()
     controller.motionCtrl = types.SimpleNamespace(boneType='item', ociChar=actor.objctrl)
     controller.morphDefineMap = {'old': types.SimpleNamespace(type='blend')}
@@ -152,6 +156,7 @@ def main():
         extension_lib = load_module('mmddmorphfuncext', folder / 'mmddmorphfuncext.py')
         # Python 2's MethodType takes a third class argument; no logic is changed.
         extension_lib.types = types.SimpleNamespace(MethodType=lambda fn, obj, cls: types.MethodType(fn, obj))
+        extension_lib.reload = importlib.reload
         extension_lib.loadUserFuncFiles()
         before = [list(r.weights) for r in renderers]
         controller.buildMorphIndex()
@@ -177,6 +182,22 @@ def main():
         set2(71)
         assert all(value == 71 for value in get2()) and [r.weights for r in renderers] == before
         set2(old)
+
+        # Import a different model AFTER MMDD startup and the first actor's
+        # playback/index creation. The stock loader never scans this file.
+        late_key = 'v2_late_model'
+        template = Path(__file__).with_name('item_morph_functions.py').read_text(encoding='utf-8')
+        late_file = folder / 'MmddExtMorphFunc_AssetImport_Pmx_Late.py'
+        late_file.write_text(template + '\n_register(' + repr({late_key: [duplicate['name'], duplicate['shapes'][0]]}) + ')\n', encoding='utf-8')
+        assert 'get_assetimport_' + late_key not in extension_lib._userFuncs
+        late_set = extension_lib.getMethod(other, 'set_assetimport_' + late_key)
+        late_get = extension_lib.getMethod(other, 'get_assetimport_' + late_key)
+        assert late_set and late_get, 'Late model must bind without restarting MMDD'
+        late_set(37)
+        assert all(value == 37 for value in late_get())
+        assert [r.weights for r in renderers] == before, 'Late binding must not change first actor'
+        controller.buildMorphIndex()
+        assert len(controller.funcIndexBuffer) == len(data['morphs']), 'First actor remains bound after refresh'
 
         # Rebuilding the item hierarchy invalidates the cached renderer.
         for r in other.objctrl.objectItem.renderers:

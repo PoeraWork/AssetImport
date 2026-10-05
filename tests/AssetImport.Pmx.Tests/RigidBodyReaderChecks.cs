@@ -41,7 +41,15 @@ internal static class RigidBodyReaderChecks
         {
             byte[] invalid=(byte[])one.Clone();
             Buffer.BlockCopy(BitConverter.GetBytes(i%2==0 ? float.NaN : float.PositiveInfinity),0,invalid,floats+i*4,4);
-            Reject(invalid,check,"non-finite rigid body float "+i);
+            if (i >= 3 && i <= 5)
+            {
+                var damaged = PmxReader.Read(invalid);
+                check(damaged.InvalidRigidBodyPositions == 1, "invalid optional body position recorded");
+                var plan = PmxCollisionPlan.Build(damaged, Array.Empty<int[]>());
+                check(plan.Colliders.Count == 0 && plan.Warnings.Count == 1, "invalid obstacle skipped with warning, never moved to origin");
+                check(damaged.Vertices.Length == model.Vertices.Length && damaged.PhysicsBones.Count == 0, "body position does not affect geometry or physics ownership");
+            }
+            else Reject(invalid,check,"non-finite rigid body float "+i);
         }
         for (int length=baseFixture.Length-8;length<data.Length;length++)
         {

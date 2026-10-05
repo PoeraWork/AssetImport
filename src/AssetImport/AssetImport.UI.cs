@@ -28,6 +28,10 @@ namespace AssetImport
         internal static bool EnablePhysicsAfterImport = true;
         internal static bool UsePmxPhysicsPreset = true;
         internal static bool PmxHairCollisionAssist;
+        internal static CubeLut ImportColorLut;
+        private bool _convertKkColor;
+        private string _colorLutPath = "";
+        private string _colorLutError = "";
         
         // preload
         internal static bool PreloadUI = false;
@@ -55,6 +59,7 @@ namespace AssetImport
 
         void Awake()
         {
+            _colorLutPath = Main.colorLutPath.Value;
             // setup textures
             const float w = 84f / 255f;
             _buttonBase = ColorTexture(new Color(w, w, w));
@@ -77,27 +82,71 @@ namespace AssetImport
         void OnGUI()
         {
             if (!(KoikatuAPI.GetCurrentGameMode() == GameMode.Maker || KoikatuAPI.GetCurrentGameMode() == GameMode.Studio)) return;
-            if (UIActive)
+            var skin = GUI.skin;
+            var color = GUI.color;
+            var contentColor = GUI.contentColor;
+            var backgroundColor = GUI.backgroundColor;
+            var wasEnabled = GUI.enabled;
+            try
             {
-                MainWindowRect = GUI.Window(33361, MainWindowRect, WindowFunction, "Asset Import v" + Main.Version);
-                KKAPI.Utilities.IMGUIUtils.EatInputInRect(MainWindowRect);
+                GUI.skin = KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin;
+                GUI.color = GUI.contentColor = GUI.backgroundColor = Color.white;
+                GUI.enabled = true;
+                if (UIActive)
+                {
+                    MainWindowRect = GUI.Window(33361, MainWindowRect, WindowFunction, "Asset Import v" + Main.Version);
+                    KKAPI.Utilities.IMGUIUtils.EatInputInRect(MainWindowRect);
+                }
+                if (PreloadUI)
+                {
+                    PreloadWindowRect = GUI.Window(
+                        33362,
+                        PreloadWindowRect,
+                        PreLoadWindowFunction,
+                        Main.currentLoadProcess.Import.SourceFileName,
+                        KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin.window
+                    );
+                    KKAPI.Utilities.IMGUIUtils.EatInputInRect(PreloadWindowRect);
+                }
             }
-            if (PreloadUI)
+            finally
             {
-                PreloadWindowRect = GUI.Window(
-                    33362,
-                    PreloadWindowRect,
-                    PreLoadWindowFunction,
-                    Main.currentLoadProcess.Import.SourceFileName,
-                    KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin.window
-                );
-                KKAPI.Utilities.IMGUIUtils.EatInputInRect(PreloadWindowRect);
+                GUI.skin = skin;
+                GUI.color = color;
+                GUI.contentColor = contentColor;
+                GUI.backgroundColor = backgroundColor;
+                GUI.enabled = wasEnabled;
             }
+        }
+
+        // Draw the indicator ourselves: Unity's dynamic font atlas can lose
+        // U+2610/U+2611 when another plugin rebuilds it (especially on KKS).
+        private static bool CheckButton(Rect rect, bool selected, string label)
+        {
+            var style = new GUIStyle(GUI.skin.button) { alignment = TextAnchor.MiddleLeft };
+            style.padding = new RectOffset(25, 4, 2, 2);
+            bool clicked = GUI.Button(rect, label, style);
+            if (Event.current.type == EventType.Repaint)
+            {
+                Color color = GUI.color;
+                try
+                {
+                    float x = rect.x + 7, y = rect.y + (rect.height - 12) / 2;
+                    GUI.color = new Color(1, 1, 1, GUI.enabled ? 1 : .45f);
+                    GUI.DrawTexture(new Rect(x, y, 12, 1), Texture2D.whiteTexture);
+                    GUI.DrawTexture(new Rect(x, y + 11, 12, 1), Texture2D.whiteTexture);
+                    GUI.DrawTexture(new Rect(x, y, 1, 12), Texture2D.whiteTexture);
+                    GUI.DrawTexture(new Rect(x + 11, y, 1, 12), Texture2D.whiteTexture);
+                    if (selected) GUI.DrawTexture(new Rect(x + 3, y + 3, 6, 6), Texture2D.whiteTexture);
+                }
+                finally { GUI.color = color; }
+            }
+            return clicked;
         }
         private static Texture2D ColorTexture(Color color)
         {
             Texture2D txt = new Texture2D(1, 1);
-            txt.SetPixel(1, 1, color);
+            txt.SetPixel(0, 0, color);
             txt.Apply();
             return txt;
         }
@@ -136,29 +185,43 @@ namespace AssetImport
                 EnablePhysicsAfterImport = true;
                 UsePmxPhysicsPreset = true;
             }
-            if (GUI.Button(new Rect(10, y += 25, 220, 25), ImportBones ? "☑ Import Armature" : "☐ Import Armature"))
+            if (CheckButton(new Rect(10, y += 25, 220, 25), ImportBones, "Import Armature"))
             {
                 ImportBones = !ImportBones;
             }
-            if (GUI.Button(new Rect(10, y += 25, 220, 25), LoadBlendshapes ? "☑ Import Blendshapes" : "☐ Import Blendshapes"))
+            if (CheckButton(new Rect(10, y += 25, 220, 25), LoadBlendshapes, "Import Blendshapes"))
             {
                 LoadBlendshapes = !LoadBlendshapes;
             }
 
-            if (GUI.Button(new Rect(10, y += 25, 220, 25), PerRendererMaterials ? "☑ Material per Renderer" : "☐ Material per Renderer"))
+            if (CheckButton(new Rect(10, y += 25, 220, 25), PerRendererMaterials, "Material per Renderer"))
             {
                 PerRendererMaterials = !PerRendererMaterials;
+            }
+            if (CheckButton(new Rect(10, y += 25, 220, 25), _convertKkColor, "Convert diffuse to KK color"))
+                _convertKkColor = !_convertKkColor;
+            if (_convertKkColor)
+            {
+                _colorLutPath = GUI.TextField(new Rect(10, y += 25, 195, 22), _colorLutPath);
+                if (GUI.Button(new Rect(205, y, 25, 22), "..."))
+                {
+                    string[] files = KKAPI.Utilities.OpenFileDialog.ShowDialog("Select PS to KK color LUT", Main.defaultDir.Value,
+                        "3D LUT (*.cube)|*.cube", "cube", SingleFileFlags);
+                    if (files != null && files.Length > 0) _colorLutPath = files[0];
+                }
+                GUI.Label(new Rect(10, y += 25, 220, 38), "Select PS-to-KK .cube. Already converted textures: leave OFF.", new GUIStyle(GUI.skin.label) { wordWrap = true });
+                y += 18;
             }
             if (FilePath.EndsWith(".pmx", StringComparison.OrdinalIgnoreCase))
             {
                 GUI.enabled = ImportBones;
-                if (GUI.Button(new Rect(10, y += 25, 220, 25), (AutoSelectPmxPhysics ? "☑ " : "☐ ") + "Auto PMX physics chains"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), AutoSelectPmxPhysics, "Auto PMX physics chains"))
                     AutoSelectPmxPhysics = !AutoSelectPmxPhysics;
-                if (GUI.Button(new Rect(10, y += 25, 220, 25), (EnablePhysicsAfterImport ? "☑ " : "☐ ") + "Enable physics after import"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), EnablePhysicsAfterImport, "Enable physics after import"))
                     EnablePhysicsAfterImport = !EnablePhysicsAfterImport;
-                if (GUI.Button(new Rect(10, y += 25, 220, 25), (UsePmxPhysicsPreset ? "☑ " : "☐ ") + "PMX physics preset"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), UsePmxPhysicsPreset, "PMX physics preset"))
                     UsePmxPhysicsPreset = !UsePmxPhysicsPreset;
-                if (GUI.Button(new Rect(10, y += 25, 220, 25), (PmxHairCollisionAssist ? "☑ " : "☐ ") + "Hair body collision assist"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), PmxHairCollisionAssist, "Hair body collision assist"))
                     PmxHairCollisionAssist = !PmxHairCollisionAssist;
                 GUI.enabled = true;
             }
@@ -167,7 +230,7 @@ namespace AssetImport
             /*
             if (Path.GetExtension(FilePath).ToLower() == ".fbx")
             {
-                if (GUI.Button(new Rect(10, y += 25, 220, 25), DoFbxTranslation ? "☑ Ignore Root translation" : "☐ Ignore Root Translation"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), DoFbxTranslation, "Ignore Root translation"))
                 {
                     DoFbxTranslation = !DoFbxTranslation;
                 }
@@ -190,31 +253,52 @@ namespace AssetImport
             if (string.IsNullOrEmpty(FilePath)) GUI.enabled = false;
             if (GUI.Button(new Rect(10, y+=25, 220, 30), "Import"))
             {
-                _mmddStatus = "";
-                _physicsActionStatus = "";
-                if (KoikatuAPI.GetCurrentGameMode() == GameMode.Studio)
-                    Main.asc.Import(FilePath, new Vector3(Scales[ScaleSelection], Scales[ScaleSelection], Scales[ScaleSelection]), ImportBones, PerRendererMaterials, LoadBlendshapes);
-                else if (KoikatuAPI.GetCurrentGameMode() == GameMode.Maker)
+                ImportColorLut = null;
+                _colorLutError = "";
+                try
                 {
-                    int slot = AccessoriesApi.SelectedMakerAccSlot;
-                    if (slot != -1)
+                    if (_convertKkColor && !PerRendererMaterials)
                     {
-                        MakerAPI.GetCharacterControl()
-                        .gameObject.GetComponentInChildren<AssetCharaController>()?
-                        .Import(
-                            slot,
-                            MakerAPI.GetCharacterControl().nowCoordinate.accessory.parts[slot].type,
-                            MakerAPI.GetCharacterControl().nowCoordinate.accessory.parts[slot].parentKey,
-                            FilePath,
-                            new Vector3(Scales[ScaleSelection], Scales[ScaleSelection], Scales[ScaleSelection]),
-                            ImportBones,
-                            PerRendererMaterials,
-                            LoadBlendshapes);
+                        using (var reader = new StreamReader(_colorLutPath)) ImportColorLut = CubeLut.Read(reader);
+                        Main.colorLutPath.Value = _colorLutPath;
                     }
-                    else Main.Logger.LogMessage("Please select an accessory which you want to replace!");
+                }
+                catch (Exception error) { _colorLutError = "Color LUT: " + error.Message; }
+                if (_colorLutError.Length == 0)
+                {
+                    _mmddStatus = "";
+                    _physicsActionStatus = "";
+                    if (KoikatuAPI.GetCurrentGameMode() == GameMode.Studio)
+                        Main.asc.Import(FilePath, new Vector3(Scales[ScaleSelection], Scales[ScaleSelection], Scales[ScaleSelection]), ImportBones, PerRendererMaterials, LoadBlendshapes);
+                    else if (KoikatuAPI.GetCurrentGameMode() == GameMode.Maker)
+                    {
+                        int slot = AccessoriesApi.SelectedMakerAccSlot;
+                        if (slot != -1)
+                        {
+                            MakerAPI.GetCharacterControl()
+                            .gameObject.GetComponentInChildren<AssetCharaController>()?
+                            .Import(
+                                slot,
+                                MakerAPI.GetCharacterControl().nowCoordinate.accessory.parts[slot].type,
+                                MakerAPI.GetCharacterControl().nowCoordinate.accessory.parts[slot].parentKey,
+                                FilePath,
+                                new Vector3(Scales[ScaleSelection], Scales[ScaleSelection], Scales[ScaleSelection]),
+                                ImportBones,
+                                PerRendererMaterials,
+                                LoadBlendshapes);
+                        }
+                        else Main.Logger.LogMessage("Please select an accessory which you want to replace!");
+                    }
                 }
             }
             GUI.enabled = true;
+            if (_colorLutError.Length > 0)
+            {
+                var errorStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
+                float height = errorStyle.CalcHeight(new GUIContent(_colorLutError), 220);
+                GUI.Label(new Rect(10, y += 32, 220, height), _colorLutError, errorStyle);
+                y += (int)height;
+            }
 
             var mode = KoikatuAPI.GetCurrentGameMode();
             AssetCharaController character = mode == GameMode.Maker
@@ -340,13 +424,13 @@ namespace AssetImport
                         import.ClearPhysicsRoots();
                         _physicsSelectionStatus = "Physics roots cleared. The full skeleton is still imported.";
                     }
-                    if (GUI.Button(new Rect(215, controlsY, 275, 25), (import.PhysicsEnabledAfterImport ? "☑ " : "☐ ") + "Enable physics after import"))
+                    if (CheckButton(new Rect(215, controlsY, 275, 25), import.PhysicsEnabledAfterImport, "Enable physics after import"))
                         import.PhysicsEnabledAfterImport = !import.PhysicsEnabledAfterImport;
                     controlsY += 29;
                     if (GUI.Button(new Rect(10, controlsY, 480, 25), "Physics settings: " + (import.PhysicsProfile == 1 ? "PMX preset (preview)" : "Legacy defaults")))
                         import.PhysicsProfile = import.PhysicsProfile == 1 ? 0 : 1;
                     controlsY += 29;
-                    if (GUI.Button(new Rect(10, controlsY, 480, 25), (import.PmxHairCollisionAssist ? "☑ " : "☐ ") + "Hair body collision assist (override PMX groups)"))
+                    if (CheckButton(new Rect(10, controlsY, 480, 25), import.PmxHairCollisionAssist, "Hair body collision assist (override PMX groups)"))
                         import.PmxHairCollisionAssist = !import.PmxHairCollisionAssist;
                     controlsY += 29;
 
@@ -354,7 +438,7 @@ namespace AssetImport
                 GUI.Label(new Rect(10, controlsY, 50, 25), "Search:");
                 string search = GUI.TextField(new Rect(60, controlsY, 235, 25), _boneSearch);
                 if (search != _boneSearch) { _boneSearch = search; ScrollPosition = Vector2.zero; }
-                if (GUI.Button(new Rect(300, controlsY, 190, 25), (_selectedRootsOnly ? "☑ " : "☐ ") + "Selected roots only"))
+                if (CheckButton(new Rect(300, controlsY, 190, 25), _selectedRootsOnly, "Selected roots only"))
                 {
                     _selectedRootsOnly = !_selectedRootsOnly;
                     ScrollPosition = Vector2.zero;
@@ -476,7 +560,7 @@ namespace AssetImport
                             GUI.enabled = false;
                             if (tPath.Use) tPath.Use = false;
                         }
-                        if (GUI.Button(new Rect(10, y, 25, 25), tPath.Use ? "☑" : "☐"))
+                        if (CheckButton(new Rect(10, y, 25, 25), tPath.Use, ""))
                         {
                             tPath.Use = !tPath.Use;
                         }

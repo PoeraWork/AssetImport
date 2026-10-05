@@ -67,9 +67,16 @@ try
     Check(found == tooDeep, "explicit path bypasses discovery depth bound");
 
     // Symlinks/junctions should not import a second game's installation or loop.
-    Directory.CreateSymbolicLink(Path.Combine(plugins, "linked-game"), external);
-    found = MmddExportPaths.FindLibrary(root, plugins, "", out message);
-    Check(found == null, "auto discovery ignores reparse points");
+    try
+    {
+        Directory.CreateSymbolicLink(Path.Combine(plugins, "linked-game"), external);
+        found = MmddExportPaths.FindLibrary(root, plugins, "", out message);
+        Check(found == null, "auto discovery ignores reparse points");
+    }
+    catch (IOException error) when (OperatingSystem.IsWindows() && (error.HResult & 0xffff) == 1314)
+    {
+        Console.WriteLine("SKIP: reparse-point check requires Windows Developer Mode or the symbolic-link privilege.");
+    }
     Console.WriteLine($"PASS: {checks} MMDD path checks");
 }
 finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
