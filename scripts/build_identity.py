@@ -1,4 +1,4 @@
-"""Tie distributable test packages to a clean Git commit and its actual DLL."""
+"""Tie distributable packages to a clean Git commit and its actual DLL."""
 import subprocess
 from pathlib import Path
 
@@ -24,9 +24,9 @@ def package_identity(plugin):
 
 
 def build_note(identity, version):
-    return ("AssetImport test build: " + identity["buildId"] + "\n"
+    return ("AssetImport build: " + identity["buildId"] + "\n"
             "Commit: " + identity["commit"] + "\n"
-            "Plugin compatibility version: " + version + "\n"
+            "Plugin version: " + version + "\n"
             "Report this build ID and BepInEx/LogOutput.log (or output_log.txt).\n").replace("\n", "\r\n").encode("utf-8-sig")
 
 

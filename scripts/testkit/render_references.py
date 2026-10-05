@@ -241,8 +241,8 @@ def draw_wrapped(draw, xy, text, font, fill, maxwidth, spacing=5):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--scenes', type=Path, required=True, help='Directory containing <demo-id>.assjson')
-    parser.add_argument('--manifest', type=Path, default=REPO/'testkit/models.json')
-    parser.add_argument('--output', type=Path, default=REPO/'testkit/Reference')
+    parser.add_argument('--manifest', type=Path, default=REPO/'.local/testkit/models.json')
+    parser.add_argument('--output', type=Path, default=REPO/'.local/testkit/Reference')
     parser.add_argument('--font', type=Path, help='Chinese-capable .ttf/.ttc font; auto-detects common OS fonts')
     parser.add_argument('--width', type=int, default=800)
     parser.add_argument('--height', type=int, default=660)

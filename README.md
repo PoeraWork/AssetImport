@@ -1,5 +1,64 @@
 # AssetImport
 
-Import external 3D models into Koikatsu-family games as Studio items and accessories.
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-Based on [Njaecha/AssetImport](https://github.com/Njaecha/AssetImport), using [Assimp](https://assimp.org/) for model loading.
+Import external 3D models into **Koikatsu (KK)** and **Koikatsu Sunshine (KKS)** as Studio items or character accessories. AssetImport uses [Assimp](https://assimp.org/) for general formats and a dedicated reader for PMX 2.0.
+
+This project extends [Njaecha/AssetImport](https://github.com/Njaecha/AssetImport) with KK support, PMX import, MMDD animation mapping, and DynamicBone integration.
+
+## Features
+
+- Import meshes, materials, textures, armatures, and supported blend shapes from formats such as FBX, OBJ, glTF, and PMX.
+- Save imported assets with Studio scenes and character accessories.
+- Generate MMDD 3 mappings for PMX bone animation and vertex morphs.
+- Create DynamicBone chains and body colliders from supported PMX metadata; control physics from the import panel.
+- Decode BMP, TGA, and common DDS textures, with optional `.cube` LUT conversion for diffuse colors.
+- Prepare textures asynchronously and apply them through MaterialEditor.
+
+Imported models remain items or accessories; they do not become native game characters with clothing slots.
+
+## Requirements
+
+Windows x64 and the matching game's plugins:
+
+| Dependency | KK | KKS |
+| --- | --- | --- |
+| BepInEx | 5.4.22 or later in the 5.x series | 5.4.22 or later in the 5.x series |
+| Game API | KKAPI 1.45.1+ | KKSAPI 1.43.0+ |
+| MaterialEditor | 4.0.3+ | 3.13.5+ |
+| LoadFileLimitedFix | KK build | KKS build |
+
+MMDD 3 is optional and required only for VMD playback. DynamicBoneEditor / KKPE / KKSPE provide optional editing integrations. Prerequisite plugins are installed separately.
+
+## Installation
+
+1. Download the matching `KK_AssetImport_*_Packed.zip` or `KKS_AssetImport_*_Packed.zip` from [Releases](https://github.com/PoeraWork/AssetImport/releases), or [build from source](CONTRIBUTING.md).
+2. Close the game and Studio.
+3. Extract both `BepInEx` and `runtimes` into the game root, preserving their directory structure.
+4. Start the game and press **Left Alt + I**. In the character editor, select an existing accessory first.
+
+When upgrading, replace the existing installation and move obsolete plugin copies out of `BepInEx/plugins`. KK and KKS use different runtime libraries; install the package for your game. ZIP files do not belong in `mods`.
+
+Package instructions: [KK](docs/INSTALL-KK.txt) · [KKS](docs/INSTALL-KKS.txt).
+
+## Usage
+
+Choose a model, adjust the import options and scale, then inspect the preview and finish importing. Keep companion textures beside the model in their original folders. Wait for **Textures ready** before saving, copying the object, or switching coordinates.
+
+For PMX, start with **PMX / VMD preset** and a scaling factor of **1**. In Studio, use MMDD's **Load VMD Advanced** to select the generated **AssetImport PMX Auto** definition. See the [PMX guide](docs/PMX-SUPPORT.md) for mapping, physics, texture conversion, and troubleshooting.
+
+PMX support is partial: PMX 2.1, full MMD rigid-body/joint simulation, toon/sphere shading, and bone/UV/material morphs are not implemented. SDEF uses linear skinning. Invalid optional constraints can be skipped with diagnostics, so a successful import does not guarantee identical MMD behavior.
+
+## Development and support
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, builds, automated checks, and packaging.
+
+Report bugs through [Issues](https://github.com/PoeraWork/AssetImport/issues). Include the game, plugin build from `BUILD.txt` or the startup log, reproduction steps, and relevant `BepInEx/LogOutput.log` output (or `output_log.txt`). For animation problems, include the frame range and import settings. Share models or motions only when their license permits it.
+
+## Credits
+
+- [Njaecha/AssetImport](https://github.com/Njaecha/AssetImport) — original plugin.
+- [Assimp](https://github.com/assimp/assimp), AssimpNet, and [AssimpNetter](https://github.com/Njaecha/AssimpNetter) — model loading.
+- [IllusionMods](https://github.com/IllusionMods) — game APIs and plugin integrations.
+
+Third-party license notices are available in [docs/licenses](docs/licenses) and the binary packages.
