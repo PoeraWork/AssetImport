@@ -46,6 +46,8 @@ class Quaternion:
 
     @staticmethod
     def AngleAxis(degrees, axis):
+        if axis.sqrMagnitude < 1e-20:
+            return Quaternion()
         half = math.radians(degrees) / 2
         scale = math.sin(half) / math.sqrt(axis.sqrMagnitude)
         return Quaternion(axis.x*scale, axis.y*scale, axis.z*scale, math.cos(half))
@@ -153,6 +155,68 @@ class RuntimeChecks(unittest.TestCase):
         self.assertAlmostEqual(chain[0].transform.local.eulerAngles.y, 5)
         self.solve(bone, tip, chain, 100, 5, limits)
         self.assertAlmostEqual(chain[0].transform.local.eulerAngles.y, 20)
+
+    def test_deep_crouch_hinges_across_ninety_degrees(self):
+        axes = (Vector(1,0,0), Vector(0,1,0), Vector(0,0,1))
+        for axis, unit in enumerate(axes):
+            for sign in (-1,1):
+                for desired in (85,95,120,150):
+                    with self.subTest(axis=axis, sign=sign, desired=desired):
+                        parent = Transform(rotation=Quaternion.Euler(15,25,-10))
+                        offset = Vector(0,0,-.5) if axis == 1 else Vector(0,-.5,0)
+                        base = Vector(0,1,0)
+                        hip = Transform(base,parent,Quaternion.AngleAxis(-sign*50,unit))
+                        knee = Transform(offset,hip,Quaternion.AngleAxis(sign*100,unit))
+                        tip = types.SimpleNamespace(transform=Transform(offset,knee))
+                        a = Quaternion.AngleAxis(-sign*desired/2,unit)
+                        b = Quaternion.AngleAxis(sign*desired,unit)
+                        goal = base+a*offset+(a*b)*offset
+                        bone = types.SimpleNamespace(name='assetimport_pmx_shuffled_hinge',transform=Transform(parent.rotation*goal))
+                        bounds = [[0,0] for _ in range(3)]
+                        bounds[axis] = [-.5,180] if sign == 1 else [-180,.5]
+                        self.solve(bone,tip,[types.SimpleNamespace(transform=knee),types.SimpleNamespace(transform=hip)],
+                                   80,114.6,[bounds,None])
+                        self.assertLess((bone.transform.position-tip.transform.position).sqrMagnitude, 1.1e-6)
+                        self.assertLess(Quaternion.Angle(knee.local, b), .3)
+
+    def test_hinge_limits_step_and_unreachable_off_plane_target(self):
+        parent = Transform(rotation=Quaternion.Euler(-30,15,45))
+        joint = Transform(parent=parent,rotation=Quaternion.Euler(100,0,0))
+        source = parent.rotation * (joint.local * Vector(0,0,1))
+        dest = parent.rotation * (Quaternion.Euler(145,0,0)*Vector(0,0,1)+Vector(.7,0,0))
+        limits = [[-.5,130],[0,0],[0,0]]
+        result = self.runtime._hinge_rotation(joint,source,dest,0,limits,5)
+        self.assertLess(Quaternion.Angle(Quaternion.Inverse(parent.rotation)*result,Quaternion.Euler(105,0,0)),1e-5)
+        result = self.runtime._hinge_rotation(joint,source,dest,0,limits,90)
+        self.assertLess(Quaternion.Angle(Quaternion.Inverse(parent.rotation)*result,Quaternion.Euler(130,0,0)),1e-5)
+        for angle in (170,185,195):
+            joint.local = Quaternion.Euler(angle,0,0)
+            source = parent.rotation*(joint.local*Vector(0,0,1))
+            dest = parent.rotation*(Quaternion.Euler(190,0,0)*Vector(0,0,1))
+            result = self.runtime._hinge_rotation(joint,source,dest,0,[[170,200],[0,0],[0,0]],30)
+            self.assertLess(Quaternion.Angle(Quaternion.Inverse(parent.rotation)*result,Quaternion.Euler(190,0,0)),1e-5)
+        self.assertIsNone(self.runtime._hinge_axis([[-20,120],[5,5],[0,0]]), 'nonzero locked axes are not a zero-axis hinge')
+
+    def test_old_model_extension_cannot_block_new_solver_or_downgrade_it(self):
+        lib = sys.modules['vmdlib'].VmdLib
+        old_calls = []
+        def old_solver(*args):
+            old_calls.append(args)
+        old_solver._assetimport_limits = True
+        lib.mmdIKSolver = staticmethod(old_solver)
+        self.runtime._register({})
+        current = lib.mmdIKSolver
+        self.assertEqual(current._assetimport_limits_version,2)
+        bone, tip, chain = self.chain(Vector(0,0,1))
+        current(bone,tip,chain,2,20,[[[-.5,180],[0,0],[0,0]]])
+        self.assertEqual(old_calls,[])
+        bone.name = 'foreign_plugin'
+        current(bone,tip,chain,2,20,[[[-.5,180],[0,0],[0,0]]])
+        self.assertEqual(len(old_calls),1)
+        self.runtime._register({})
+        self.assertIs(lib.mmdIKSolver,current)
+        # This is the legacy installer's guard, including on late model imports.
+        self.assertTrue(current._assetimport_limits)
 
     def test_antiparallel_and_degenerate(self):
         bone, tip, chain = self.chain(Vector(0, 0, -1))

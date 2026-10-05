@@ -41,7 +41,9 @@ def slerp(a, b, rate):
     if dot < 0:
         b, dot = Quaternion(-b.x, -b.y, -b.z, -b.w), -dot
     if dot > .999999:
-        return Quaternion(a.x, a.y, a.z, a.w)
+        values = [getattr(a, axis)+(getattr(b, axis)-getattr(a, axis))*rate for axis in ('x','y','z','w')]
+        length = math.sqrt(sum(value*value for value in values))
+        return Quaternion(*(value/length for value in values))
     angle = math.acos(min(1, dot))
     left, right = math.sin((1-rate)*angle)/math.sin(angle), math.sin(rate*angle)/math.sin(angle)
     return Quaternion(*(getattr(a, axis)*left + getattr(b, axis)*right for axis in ('x','y','z','w')))

@@ -97,12 +97,17 @@ def _install_runtime():
 
     import vmdlib
     original_solver = vmdlib.VmdLib.mmdIKSolver
-    if not getattr(original_solver, '_assetimport_limits', False):
+    if getattr(original_solver, '_assetimport_limits_version', 0) < 2:
         def solve(bone, target, chain, iterations, step, limits, debug='ik_foot_r'):
             if bone.name.startswith('assetimport_pmx_') and any(limit is not None for limit in limits) and not _ordinary_knee(limits):
                 return _solve_pmx_ik(bone, target, chain, iterations, step, limits)
             return original_solver(bone, target, chain, iterations, step, limits, debug)
         solve._assetimport_limits = True
+        # Older per-model extensions can be loaded before the shared runtime.
+        # Supersede their solver once; their existing marker prevents downgrade
+        # if an old extension is loaded after this one. Foreign solvers still
+        # pass through the original callable.
+        solve._assetimport_limits_version = 2
         vmdlib.VmdLib.mmdIKSolver = staticmethod(solve)
     _install_position_grants(vmdlib.MotionController)
 
@@ -190,6 +195,37 @@ def _clamp_angle(angle, bounds):
     return min(high, max(low, best))
 
 
+def _hinge_axis(bounds):
+    if bounds is None:
+        return None
+    free = [i for i in range(3) if abs(bounds[i][1] - bounds[i][0]) > 1e-6]
+    if len(free) == 1 and all(abs(value) < 1e-6 for i in range(3) if i != free[0] for value in bounds[i]):
+        return free[0]
+    return None
+
+
+def _hinge_rotation(transform, source, dest, axis, bounds, step):
+    # A hinge has one signed angle. Unity's Z-X-Y Euler decomposition can encode
+    # X=120 as (60,180,180); zeroing the locked axes would turn a deep bend into
+    # X=60. Solve in the hinge plane and clamp its quaternion twist instead.
+    import math
+    from UnityEngine import Quaternion, Vector3
+    parent = transform.parent.rotation if transform.parent else Quaternion.identity
+    unit = Vector3(1 if axis == 0 else 0, 1 if axis == 1 else 0, 1 if axis == 2 else 0)
+    world_axis = parent * unit
+    def dot(a, b):
+        return a.x*b.x + a.y*b.y + a.z*b.z
+    source_axis, dest_axis = dot(source, world_axis), dot(dest, world_axis)
+    if source.sqrMagnitude - source_axis*source_axis < 1e-12 or dest.sqrMagnitude - dest_axis*dest_axis < 1e-12:
+        return transform.rotation
+    delta = math.degrees(math.atan2(dot(world_axis, Vector3.Cross(source, dest)),
+                                   dot(source, dest) - source_axis*dest_axis))
+    local = Quaternion.Inverse(parent) * transform.rotation
+    current = math.degrees(2 * math.atan2((local.x, local.y, local.z)[axis], local.w))
+    angle = _clamp_angle(current + min(step, max(-step, delta)), bounds[axis])
+    return parent * Quaternion.AngleAxis(angle, unit)
+
+
 def _solve_pmx_ik(bone, target, chain, iterations, step, limits):
     # Scoped CCD for non-knee PMX constraints. MMDD's stock MMD solver treats
     # every limited link as a positive-X knee, including two-axis toe joints.
@@ -198,15 +234,22 @@ def _solve_pmx_ik(bone, target, chain, iterations, step, limits):
     from UnityEngine import Quaternion, Vector3
     from vmdlib import VmdLib
     goal = bone.transform.position
+    hinges = [_hinge_axis(bounds) for bounds in limits]
     for _ in range(iterations):
         moved = False
-        for link, bounds in zip(chain, limits):
+        for link, bounds, hinge in zip(chain, limits, hinges):
             end = target.transform.position
             if (goal - end).sqrMagnitude < 0.000001:
                 return
             transform = link.transform
             source, dest = end - transform.position, goal - transform.position
             if source.sqrMagnitude < 1e-12 or dest.sqrMagnitude < 1e-12:
+                continue
+            if hinge is not None:
+                result = _hinge_rotation(transform, source, dest, hinge, bounds, step)
+                if Quaternion.Angle(transform.rotation, result) > 1e-6:
+                    moved = True
+                    transform.rotation = result
                 continue
             angle, axis = VmdLib.rotateVectorFromTo(source, dest)
             if angle < 1e-6:
