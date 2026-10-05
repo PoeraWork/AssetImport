@@ -67,6 +67,8 @@ namespace AssetImport
         internal Morph[] Morphs;
         internal RigidBody[] RigidBodyData;
         internal readonly HashSet<int> PhysicsBones = new HashSet<int>();
+        internal readonly List<string> IgnoredMetadataWarnings = new List<string>();
+        internal int InvalidIgnoredMetadataFields;
         internal int SdefVertices, RigidBodies, Joints, IkBones, GrantBones, UnusedNormalsRepaired, InvalidRigidBodyPositions;
         internal static string BoneName(int index, string name) { return "PMX_" + index.ToString("D4") + "_" + name; }
     }
@@ -105,6 +107,23 @@ namespace AssetImport
         }
         private float[] Floats(int n) { var values = new float[n]; for (int i=0;i<n;i++) values[i]=Float(); return values; }
         private PmxModel.V3 Vector() { return new PmxModel.V3(Float(),Float(),Float()); }
+        // These fields are deliberately not consumed by this importer. Invalid
+        // optional metadata must not reject usable geometry. Still consume every
+        // byte through BinaryReader, so truncated records remain fatal.
+        private void UnusedFloats(PmxModel model, int count, string field, int index)
+        {
+            long offset = reader.BaseStream.Position;
+            bool invalid = false;
+            for (int i = 0; i < count; i++)
+            {
+                float value = reader.ReadSingle();
+                invalid |= float.IsNaN(value) || float.IsInfinity(value);
+            }
+            if (!invalid) return;
+            model.InvalidIgnoredMetadataFields++;
+            if (model.IgnoredMetadataWarnings.Count < 16)
+                model.IgnoredMetadataWarnings.Add(field + "[" + index + "] (byte " + offset + ")");
+        }
         // Some editors leave NaN normals on vertices left over after deleting
         // faces. Defer normal validation until the index table is known;
         // vertex positions, UVs and skin weights remain strict. Optional body
@@ -172,15 +191,15 @@ namespace AssetImport
             for (int i=0;i<m.Vertices.Length;i++)
             {
                 var v = new PmxModel.Vertex { Position=Vector(), Normal=RawVector(), UV=new PmxModel.V3(Float(),Float(),0) };
-                Skip(16 * h[1]);
+                UnusedFloats(m,4 * h[1],"vertex additional UV",i);
                 byte mode = reader.ReadByte();
                 int n = mode == 0 ? 1 : mode == 1 || mode == 3 ? 2 : mode == 2 ? 4 : 0;
                 if (n == 0) throw Error("unsupported vertex skinning mode");
                 v.Bones = new int[n]; for (int j=0;j<n;j++) v.Bones[j]=Index(boneSize);
                 v.Weights = n == 1 ? new[] {1f} : n == 2 ? new[] {Float(),0f} : Floats(4);
                 if (n == 2) v.Weights[1]=1-v.Weights[0];
-                if (mode == 3) { Skip(36); m.SdefVertices++; } // approximate SDEF with BDEF2
-                Float();
+                if (mode == 3) { UnusedFloats(m,9,"vertex SDEF parameters",i); m.SdefVertices++; } // approximate SDEF with BDEF2
+                UnusedFloats(m,1,"vertex edge scale",i);
                 float sum=0; foreach (float w in v.Weights) { if (w < 0 || w > 1.00001f) throw Error("invalid skin weight"); sum+=w; }
                 if (sum < .00001f) throw Error("vertex has no effective skin weight");
                 for (int j=0;j<n;j++) v.Weights[j]/=sum;
@@ -195,7 +214,8 @@ namespace AssetImport
             for (int i=0;i<m.Materials.Length;i++)
             {
                 var mat = new PmxModel.Material { Name=Text() }; Text(); mat.Diffuse=Floats(4);
-                Skip(28); mat.TwoSided=(reader.ReadByte() & 1)!=0; Skip(20);
+                UnusedFloats(m,7,"material specular/ambient",i); mat.TwoSided=(reader.ReadByte() & 1)!=0;
+                UnusedFloats(m,5,"material edge",i);
                 mat.Texture=Index(textureSize); ValidateIndex(mat.Texture,m.Textures.Length,true);
                 ValidateIndex(Index(textureSize),m.Textures.Length,true); reader.ReadByte();
                 byte toon=reader.ReadByte();
@@ -211,10 +231,10 @@ namespace AssetImport
             for (int i=0;i<m.Bones.Length;i++)
             {
                 var b = new PmxModel.Bone { Name=Text() }; Text(); b.Position=Vector(); b.Parent=Index(boneSize); b.Layer=reader.ReadInt32(); b.Flags=reader.ReadUInt16();
-                if ((b.Flags&1)!=0) referencedBones.Add(Index(boneSize)); else Vector();
+                if ((b.Flags&1)!=0) referencedBones.Add(Index(boneSize)); else UnusedFloats(m,3,"bone display tail offset",i);
                 if ((b.Flags&0x300)!=0) { b.GrantParent=Index(boneSize); referencedBones.Add(b.GrantParent); b.GrantWeight=Float(); m.GrantBones++; }
                 if ((b.Flags&0x400)!=0) b.FixedAxis=Vector();
-                if ((b.Flags&0x800)!=0) { Vector(); Vector(); }
+                if ((b.Flags&0x800)!=0) UnusedFloats(m,6,"bone local axes",i);
                 if ((b.Flags&0x2000)!=0) reader.ReadInt32();
                 if ((b.Flags&0x20)!=0)
                 {

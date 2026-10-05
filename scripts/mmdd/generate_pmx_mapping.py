@@ -31,24 +31,17 @@ def morph_targets(mapping, renderer_report):
     return targets
 
 
-def create(model, label, renderer_report=None):
+def create(model, label, renderer_report=None, dynamic_roots=()):
     bones = model['bones']
     by_id = {b['index']: b for b in bones}
     physics = {r['bone'] for r in model['rigid_bodies'] if r['mode'] > 0 and r['bone'] >= 0}
-    excluded = set(physics)
+    excluded = set(physics) | set(dynamic_roots)
     while True:
-        more = {b['index'] for b in bones if b['parent'] in excluded or (b.get('grant', {}).get('weight', 0) != 0 and b.get('grant', {}).get('parent', -1) in excluded)}
+        more = {b['index'] for b in bones if b['parent'] in excluded
+                or (b.get('grant', {}).get('weight', 0) != 0 and b.get('grant', {}).get('parent', -1) in excluded)
+                or ('ik' in b and ({b['ik']['target']} | {l['bone'] for l in b['ik']['links']}) & excluded)}
         if more.issubset(excluded):
             break
-        excluded |= more
-    # Do not put MMDD IK in control of a tail/skirt chain owned by physics.
-    for b in bones:
-        if 'ik' in b and ({b['ik']['target']} | {l['bone'] for l in b['ik']['links']}) & excluded:
-            excluded.add(b['index'])
-    # Propagate exclusions through children of omitted IK helpers, too.
-    while True:
-        more = {b['index'] for b in bones if b['parent'] in excluded}
-        if more.issubset(excluded):break
         excluded |= more
     included = set(by_id) - excluded
     dependencies = {}

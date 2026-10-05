@@ -77,7 +77,8 @@ internal static class GeometryProbe
         Console.WriteLine(JsonSerializer.Serialize(new {
             model=Path.GetFileName(path),result="OFFLINE GEOMETRY PASS",vertices=model.Vertices.Length,triangles=scene.Meshes.Sum(m=>m.FaceCount),
             meshes=scene.MeshCount,bones=model.Bones.Length,morphs=model.Morphs.Length,rigidBodies=model.RigidBodies,joints=model.Joints,
-            unusedNormalsRepaired=model.UnusedNormalsRepaired,cacheNormalsIdentical=true,loadedDiffuseTextures=loaded,decodedLegacyTextures=decoded,
+            unusedNormalsRepaired=model.UnusedNormalsRepaired,invalidIgnoredMetadataFields=model.InvalidIgnoredMetadataFields,
+            ignoredMetadataWarnings=model.IgnoredMetadataWarnings,cacheNormalsIdentical=true,loadedDiffuseTextures=loaded,decodedLegacyTextures=decoded,
             requiredDiffuseTextures=renderedTextures.Count,missingRenderTextures=missingTextures.Where(renderedTextures.Contains).ToArray(),
             textureStatus=missingTextures.Any(renderedTextures.Contains) ? "INCOMPLETE: required texture files missing" : "Available required textures read/converted",
             missingTextureMaterials=scene.Meshes.Select(m=>m.MaterialIndex).Distinct().Where(i=>scene.Materials[i].HasTextureDiffuse && missingTextures.Contains(scene.Materials[i].TextureDiffuse.FilePath)).Select(i=>new {

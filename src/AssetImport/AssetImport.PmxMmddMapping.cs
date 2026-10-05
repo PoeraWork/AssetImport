@@ -38,6 +38,7 @@ namespace AssetImport
             // Keep physics out of MMDD's transform writes. Include user-selected
             // roots as well as PMX physics metadata so editors cannot fight MMDD.
             var excluded = new HashSet<int>(model.PhysicsBones);
+            excluded.UnionWith(dynamicRoots);
             // Append followers of a PMX-simulated bone cannot be evaluated by
             // MMDD's virtual skeleton. Keep that whole physics-owned branch out
             // of animation writes instead of rejecting unrelated body/morph data.
@@ -48,25 +49,13 @@ namespace AssetImport
                 for (int i = 0; i < model.Bones.Length; i++)
                 {
                     var b = model.Bones[i];
-                    if (excluded.Contains(b.Parent) || (HasGrant(b) && excluded.Contains(b.GrantParent)))
+                    if (excluded.Contains(b.Parent) || (HasGrant(b) && excluded.Contains(b.GrantParent)) ||
+                        ((b.Flags & 0x20) != 0 && (excluded.Contains(b.IkTarget) || b.IkLinks.Any(l => excluded.Contains(l.Bone)))))
                         expanded |= excluded.Add(i);
                 }
             } while (expanded);
             var physicsAppend = Enumerable.Range(0, model.Bones.Length)
                 .Where(i => HasGrant(model.Bones[i]) && excluded.Contains(model.Bones[i].GrantParent)).ToArray();
-            excluded.UnionWith(dynamicRoots);
-            bool changed;
-            do
-            {
-                changed = false;
-                for (int i = 0; i < model.Bones.Length; i++)
-                {
-                    var b = model.Bones[i];
-                    if (excluded.Contains(b.Parent) || ((b.Flags & 0x20) != 0 &&
-                        (excluded.Contains(b.IkTarget) || b.IkLinks.Any(l => excluded.Contains(l.Bone)))))
-                        changed |= excluded.Add(i);
-                }
-            } while (changed);
             var pending = new HashSet<int>(Enumerable.Range(0, model.Bones.Length).Where(i => !excluded.Contains(i)));
             var dependencies = new Dictionary<int, HashSet<int>>();
             var names = new HashSet<string>(StringComparer.Ordinal);

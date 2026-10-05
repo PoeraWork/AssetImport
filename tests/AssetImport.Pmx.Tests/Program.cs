@@ -47,6 +47,7 @@ ImportTextureChecks.Run(Check);
 MappingChecks.Run(Check);
 RigidBodyReaderChecks.Run(fixture, Check);
 UnusedNormalChecks.Run(Check);
+IgnoredMetadataChecks.Run(Check);
 CollisionPlanChecks.Run(Check);
 CollisionRuntimeChecks.Run(Check);
 PhysicsRootSuggestionChecks.Run(Check);
@@ -96,7 +97,8 @@ if(args.Length>0)
     var report=new { result="OFFLINE PASS", vertices=pmx.Vertices.Length, bones=pmx.Bones.Length, meshes=converted.MeshCount,
         triangles=converted.Meshes.Sum(m=>m.FaceCount), vertexMorphs=pmx.Morphs.Count(m=>m.Type==1),
         morphAttachments=converted.Meshes.Sum(m=>m.MeshAnimationAttachmentCount), rigidBodies=pmx.RigidBodies,joints=pmx.Joints,
-        sdefApproximated=pmx.SdefVertices, checks, windowsGame="NOT RUN",
+        sdefApproximated=pmx.SdefVertices, invalidIgnoredMetadataFields=pmx.InvalidIgnoredMetadataFields,
+        ignoredMetadataWarnings=pmx.IgnoredMetadataWarnings, checks, windowsGame="NOT RUN",
         boneNames=pmx.Bones.Select((b,i)=>PmxModel.BoneName(i,b.Name)),textures,missingTextures,
         renderers=actualRenderers };
     if(args.Length>1)

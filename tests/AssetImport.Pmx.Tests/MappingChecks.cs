@@ -25,7 +25,8 @@ internal static class MappingChecks
         check(withoutMorphs.ModelId!=normal.ModelId,"different BlendShape options do not overwrite each other's map");
         void Reject(Action action,string reason) {try {action();throw new Exception("Accepted "+reason);}catch(FormatException){check(true,reason);}}
         Reject(()=>Build(new[]{0}),"all bones selected as physics");
-        Reject(()=>Build(new[]{2}),"grant depends on a physics bone");
+        var selectedSource=Build(new[]{2});
+        check(selectedSource.BoneCount==3 && selectedSource.Warnings.Any(w=>w.Contains("Physics append follower")),"selected physics grant source excludes follower just like intrinsic physics");
         model.Bones[2].Flags|=0x100; model.Bones[2].GrantParent=1; model.Bones[2].GrantWeight=1;
         Reject(()=>Build(Array.Empty<int>()),"cyclic append dependency");
         model.Bones[2].Flags=2;model.Bones[2].Name="root";
@@ -48,5 +49,6 @@ internal static class MappingChecks
         model.PhysicsBones.Add(2);
         var physicsFollower=Build(Array.Empty<int>());
         check(physicsFollower.BoneCount==3 && physicsFollower.Warnings.Any(w=>w.Contains("Physics append follower")),"intrinsic physics grant follower is excluded with diagnostics, unrelated animation still exports");
+        DependencyClosureChecks.Run(check);
     }
 }
