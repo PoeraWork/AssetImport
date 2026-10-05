@@ -97,7 +97,7 @@ def _install_runtime():
 
     import vmdlib
     original_solver = vmdlib.VmdLib.mmdIKSolver
-    if getattr(original_solver, '_assetimport_limits_version', 0) < 2:
+    if getattr(original_solver, '_assetimport_limits_version', 0) < 3:
         def solve(bone, target, chain, iterations, step, limits, debug='ik_foot_r'):
             if bone.name.startswith('assetimport_pmx_') and any(limit is not None for limit in limits) and not _ordinary_knee(limits):
                 return _solve_pmx_ik(bone, target, chain, iterations, step, limits)
@@ -107,7 +107,7 @@ def _install_runtime():
         # Supersede their solver once; their existing marker prevents downgrade
         # if an old extension is loaded after this one. Foreign solvers still
         # pass through the original callable.
-        solve._assetimport_limits_version = 2
+        solve._assetimport_limits_version = 3
         vmdlib.VmdLib.mmdIKSolver = staticmethod(solve)
     _install_position_grants(vmdlib.MotionController)
 
@@ -222,8 +222,59 @@ def _hinge_rotation(transform, source, dest, axis, bounds, step):
                                    dot(source, dest) - source_axis*dest_axis))
     local = Quaternion.Inverse(parent) * transform.rotation
     current = math.degrees(2 * math.atan2((local.x, local.y, local.z)[axis], local.w))
-    angle = _clamp_angle(current + min(step, max(-step, delta)), bounds[axis])
+    # Unwrap the stored orientation into the joint interval, then clip the step
+    # along that interval. Wrapping the requested angle instead can select the
+    # opposite stop: -114 degrees in [-0.5, 180] becomes 246, then snaps to 180.
+    # That both exceeds the step budget and can trap a two-link chain folded shut.
+    current = _clamp_angle(current, bounds[axis])
+    low, high = bounds[axis]
+    angle = min(high, max(low, current + min(step, max(-step, delta))))
     return parent * Quaternion.AngleAxis(angle, unit)
+
+
+def _two_link_hinge_rotation(target, chain, axis, bounds, goal, step):
+    # A free proximal joint can aim the entire two-segment chain at the goal.
+    # Solve the hinge's reach first, avoiding CCD's fully folded local minimum.
+    # Use the actual segment vectors, including a bent rest pose or offsets
+    # along the hinge axis. This is independent of bone names and world axes.
+    import math
+    from UnityEngine import Quaternion, Vector3
+    hinge, proximal = chain[0].transform, chain[1].transform
+    tip = target.transform
+    if hinge.parent != proximal or tip.parent != hinge:
+        return None
+    unit = Vector3(1 if axis == 0 else 0, 1 if axis == 1 else 0, 1 if axis == 2 else 0)
+    upper = Quaternion.Inverse(proximal.rotation) * (hinge.position - proximal.position)
+    lower = Quaternion.Inverse(hinge.rotation) * (tip.position - hinge.position)
+    def dot(a, b):
+        return a.x*b.x + a.y*b.y + a.z*b.z
+    axial = dot(upper, unit) * dot(lower, unit)
+    cosine = dot(upper, lower) - axial
+    sine = dot(upper, Vector3.Cross(unit, lower))
+    radius = math.sqrt(cosine*cosine + sine*sine)
+    if radius < 1e-12:
+        return None
+    distance2 = (goal - proximal.position).sqrMagnitude
+    base = upper.sqrMagnitude + lower.sqrMagnitude + 2*axial
+    phase = math.atan2(sine, cosine)
+    bend = math.acos(min(1.0, max(-1.0, (distance2-base)/(2*radius))))
+    local = Quaternion.Inverse(proximal.rotation) * hinge.rotation
+    current = _clamp_angle(math.degrees(2*math.atan2((local.x,local.y,local.z)[axis],local.w)), bounds[axis])
+    candidates = [_clamp_angle(math.degrees(phase+sign*bend), bounds[axis]) for sign in (-1,1)]
+    # If the requested reach is outside the permitted interval, extrema inside
+    # that interval can be closer than either clipped equation root.
+    candidates += [_clamp_angle(math.degrees(phase)+turn, bounds[axis]) for turn in (0,180)]
+    candidates += list(bounds[axis])
+    def score(angle):
+        radians = math.radians(angle)
+        reach = base + 2*(cosine*math.cos(radians) + sine*math.sin(radians))
+        return abs(reach-distance2)
+    best_error = min(score(angle) for angle in candidates)
+    tolerance = max(upper.sqrMagnitude + lower.sqrMagnitude, 1e-12)*1e-10
+    desired = min((angle for angle in candidates if score(angle) <= best_error+tolerance),
+                  key=lambda angle: abs(angle-current))
+    angle = current + min(step, max(-step, desired-current))
+    return proximal.rotation * Quaternion.AngleAxis(angle, unit)
 
 
 def _solve_pmx_ik(bone, target, chain, iterations, step, limits):
@@ -235,6 +286,7 @@ def _solve_pmx_ik(bone, target, chain, iterations, step, limits):
     from vmdlib import VmdLib
     goal = bone.transform.position
     hinges = [_hinge_axis(bounds) for bounds in limits]
+    two_link = len(chain) == 2 and hinges[0] is not None and limits[1] is None
     for _ in range(iterations):
         moved = False
         for link, bounds, hinge in zip(chain, limits, hinges):
@@ -243,13 +295,17 @@ def _solve_pmx_ik(bone, target, chain, iterations, step, limits):
                 return
             transform = link.transform
             source, dest = end - transform.position, goal - transform.position
-            if source.sqrMagnitude < 1e-12 or dest.sqrMagnitude < 1e-12:
-                continue
             if hinge is not None:
-                result = _hinge_rotation(transform, source, dest, hinge, bounds, step)
+                result = _two_link_hinge_rotation(target, chain, hinge, bounds, goal, step) if two_link else None
+                if result is None:
+                    if source.sqrMagnitude < 1e-12 or dest.sqrMagnitude < 1e-12:
+                        continue
+                    result = _hinge_rotation(transform, source, dest, hinge, bounds, step)
                 if Quaternion.Angle(transform.rotation, result) > 1e-6:
                     moved = True
                     transform.rotation = result
+                continue
+            if source.sqrMagnitude < 1e-12 or dest.sqrMagnitude < 1e-12:
                 continue
             angle, axis = VmdLib.rotateVectorFromTo(source, dest)
             if angle < 1e-6:

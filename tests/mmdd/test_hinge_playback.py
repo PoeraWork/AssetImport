@@ -18,6 +18,57 @@ from check_pmx_motion import controller
 
 @unittest.skipUnless((LIB / 'vmdlib.py').is_file(), 'Official MMDD Lib required for playback checks')
 class HingePlaybackChecks(unittest.TestCase):
+    def test_turning_crouch_does_not_snap_to_the_opposite_knee_stop(self):
+        previous = {name: sys.modules.get(name) for name in ('UnityEngine','vmdlib','mmddmorphfuncext')}
+        try:
+            for yaw in (0,90,170):
+                for scale in (.0832,1,3):
+                    with self.subTest(yaw=yaw,scale=scale):
+                        names = ['turning_%d' % i for i in range(9)]
+                        parents = [-1,0,1,2,3,0,1,6,7]
+                        heights = [0,1,1,.55,.15,0,1,.55,.15]
+                        bones = [dict(index=i,name=names[i],parent=parents[i],position=[0,heights[i],0],
+                                      flags=6,layer=0 if i<5 else 1 if i==5 else 2) for i in range(9)]
+                        bones[5]['ik'] = dict(target=4,iterations=80,angle=2,
+                                              links=[dict(bone=3,min=[-math.pi,0,0],max=[math.radians(.5),0,0]),dict(bone=2)])
+                        for i in range(6,9):
+                            bones[i]['grant'] = dict(parent=i-4,weight=1,rotation=True,position=False,local=False)
+                        model = dict(bones=bones,morphs=[],rigid_bodies=[])
+                        def key(frame,position=None,rotation=None):
+                            return types.SimpleNamespace(frameNo=frame,position=position or Vector(),rotation=rotation or Quaternion(),
+                                                         xCurve=[0,0,1,1],yCurve=[0,0,1,1],zCurve=[0,0,1,1],rCurve=[0,0,1,1])
+                        motion = {name:[key(0)] for name in names[:6]}
+                        motion[names[0]] = [key(0,rotation=Quaternion.Euler(0,yaw,0))]
+                        motion[names[2]] = [key(0,rotation=Quaternion.Euler(-120,0,0))]
+                        motion[names[3]] = [key(0,rotation=Quaternion.Euler(-90,0,0))]
+                        motion[names[5]] = [key(0,Vector(0,.4,-.1)),key(10,Vector(0,.2,.1))]
+                        c,mapping = controller(model,motion,LIB,ROOT/'scripts/mmdd/item_morph_functions.py',scale)
+                        mapped = {d['vmdName']:d['name'] for d in mapping['bones']}
+                        def transform(i):
+                            return c.getDummyBones(mapped[names[i]]).transform
+                        expected = {}
+                        for frame in (0,5,10,5,0,10):
+                            c.setFrame(frame)
+                            self.assertLess((transform(4).position-transform(5).position).sqrMagnitude,1.1e-6,'frame %s' % frame)
+                            self.assertLess((transform(8).position-transform(4).position).sqrMagnitude,1e-12)
+                            self.assertLess((transform(1).position-Vector(0,scale,0)).sqrMagnitude,1e-12)
+                            if frame in expected:
+                                self.assertLess((transform(8).position-expected[frame]).sqrMagnitude,1e-12)
+                            expected[frame] = transform(8).position
+                        with contextlib.redirect_stdout(io.StringIO()):
+                            c.buildWorkBoneIndex()
+                        c.setFrame(0)
+                        self.assertLess((transform(8).position-expected[0]).sqrMagnitude,1e-12)
+                        c.resetPose()
+                        c.setFrame(10)
+                        self.assertLess((transform(8).position-expected[10]).sqrMagnitude,1e-12)
+        finally:
+            for name,module in previous.items():
+                if module is None:
+                    sys.modules.pop(name,None)
+                else:
+                    sys.modules[name] = module
+
     def test_crouch_seek_reset_and_deform_followers(self):
         previous = {name: sys.modules.get(name) for name in ('UnityEngine','vmdlib','mmddmorphfuncext')}
         try:

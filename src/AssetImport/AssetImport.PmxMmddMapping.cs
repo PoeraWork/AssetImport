@@ -176,7 +176,7 @@ namespace AssetImport
             }
             string id = Hash(source).Substring(0, 12);
             // Physics-root and BlendShape selections need independent definitions.
-            string variant = Hash(Encoding.UTF8.GetBytes("runtime-v5\nconstraint-policy-v2\n" + string.Join(",", excluded.OrderBy(i => i).Select(i => i.ToString()).ToArray()) + "\n" + JsonMapper.ToJson(targets))).Substring(0, 8);
+            string variant = Hash(Encoding.UTF8.GetBytes("runtime-v6\nconstraint-policy-v2\n" + string.Join(",", excluded.OrderBy(i => i).Select(i => i.ToString()).ToArray()) + "\n" + JsonMapper.ToJson(targets))).Substring(0, 8);
             id += "_" + variant;
             var mapping = Obj("general", Obj("description", label + " / AssetImport PMX Auto / " + id,
                 "boneType", "ITEM", "enableAutoRotAdj", false, "overwriteDefaultBlend", false), "bones", definitions, "morphs", morphs);

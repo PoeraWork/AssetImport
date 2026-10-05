@@ -197,16 +197,90 @@ class RuntimeChecks(unittest.TestCase):
             self.assertLess(Quaternion.Angle(Quaternion.Inverse(parent.rotation)*result,Quaternion.Euler(190,0,0)),1e-5)
         self.assertIsNone(self.runtime._hinge_axis([[-20,120],[5,5],[0,0]]), 'nonzero locked axes are not a zero-axis hinge')
 
+    def test_hinge_step_cannot_wrap_across_the_forbidden_arc(self):
+        for axis, unit in enumerate((Vector(1,0,0),Vector(0,1,0),Vector(0,0,1))):
+            for sign in (-1,1):
+                for quaternion_sign in (-1,1):
+                    for initial, goal, expected in ((0,-120,-.5),(180,300,180)):
+                        with self.subTest(axis=axis,sign=sign,quaternion_sign=quaternion_sign,initial=initial):
+                            parent = Transform(rotation=Quaternion.Euler(-30,15,45))
+                            rotation = Quaternion.AngleAxis(sign*initial,unit)
+                            rotation = Quaternion(*(quaternion_sign*getattr(rotation,c) for c in ('x','y','z','w')))
+                            joint = Transform(parent=parent,rotation=rotation)
+                            offset = Vector(0,1,0) if axis == 2 else Vector(0,0,1)
+                            source = joint.rotation*offset
+                            dest = parent.rotation*(Quaternion.AngleAxis(sign*goal,unit)*offset)
+                            limits = [[0,0] for _ in range(3)]
+                            limits[axis] = [-.5,180] if sign == 1 else [-180,.5]
+                            result = self.runtime._hinge_rotation(joint,source,dest,axis,limits,114.6)
+                            self.assertLessEqual(Quaternion.Angle(joint.rotation,result),114.6+1e-5)
+                            wanted = parent.rotation*Quaternion.AngleAxis(sign*expected,unit)
+                            self.assertLess(Quaternion.Angle(wanted,result),1e-5)
+
+    def test_two_link_reach_with_bent_rest_offsets_and_step_limits(self):
+        for axis, unit in enumerate((Vector(1,0,0),Vector(0,1,0),Vector(0,0,1))):
+            for sign in (-1,1):
+                for bend in (45,135,175):
+                    with self.subTest(axis=axis,sign=sign,bend=bend):
+                        parent = Transform(rotation=Quaternion.Euler(15,-35,60))
+                        # Unequal segments with both in-plane and axial rest offsets.
+                        upper = Vector(.02,-.45,.03) if axis != 1 else Vector(.03,.02,-.45)
+                        lower = Vector(-.01,-.4,-.02) if axis != 1 else Vector(-.02,-.01,-.4)
+                        base = Vector(.2,1,-.1)
+                        hip = Transform(base,parent,Quaternion.AngleAxis(sign*120,unit))
+                        knee = Transform(upper,hip,Quaternion.AngleAxis(sign*90,unit))
+                        tip = types.SimpleNamespace(transform=Transform(lower,knee))
+                        a,b = Quaternion.AngleAxis(-sign*35,unit),Quaternion.AngleAxis(sign*bend,unit)
+                        goal = base+a*upper+(a*b)*lower
+                        bone = types.SimpleNamespace(name='assetimport_pmx_reach',transform=Transform(parent.rotation*goal))
+                        chain = [types.SimpleNamespace(transform=knee),types.SimpleNamespace(transform=hip)]
+                        bounds = [[0,0] for _ in range(3)]
+                        bounds[axis] = [-.5,180] if sign == 1 else [-180,.5]
+                        before = [joint.transform.local for joint in chain]
+                        self.solve(bone,tip,chain,1,5,[bounds,None])
+                        for previous,joint in zip(before,chain):
+                            self.assertLessEqual(Quaternion.Angle(previous,joint.transform.local),5+1e-5)
+                        self.solve(bone,tip,chain,80,30,[bounds,None])
+                        self.assertLess((tip.transform.position-bone.transform.position).sqrMagnitude,1.1e-6)
+                        current = math.degrees(2*math.atan2((knee.local.x,knee.local.y,knee.local.z)[axis],knee.local.w))
+                        self.assertAlmostEqual(current,self.runtime._clamp_angle(current,bounds[axis]),places=5)
+
+    def test_two_link_reach_rejects_nonadjacent_chain(self):
+        hip = Transform()
+        knee = Transform(Vector(0,-.5,0),hip)
+        extra = Transform(Vector(0,-.1,0),knee)
+        tip = types.SimpleNamespace(transform=Transform(Vector(0,-.4,0),extra))
+        chain = [types.SimpleNamespace(transform=knee),types.SimpleNamespace(transform=hip)]
+        self.assertIsNone(self.runtime._two_link_hinge_rotation(tip,chain,0,[[-.5,180],[0,0],[0,0]],Vector(0,-.8,0),30))
+
+    def test_two_link_unreachable_and_joint_coincident_goals(self):
+        for distance, expected in ((2,20),(.1,140),(.6,None),(0,140)):
+            with self.subTest(distance=distance):
+                hip = Transform()
+                knee = Transform(Vector(0,-.6,0),hip,Quaternion.Euler(60,0,0))
+                tip = types.SimpleNamespace(transform=Transform(Vector(0,-.4,0),knee))
+                chain = [types.SimpleNamespace(transform=knee),types.SimpleNamespace(transform=hip)]
+                bone = types.SimpleNamespace(name='assetimport_pmx_reach',transform=Transform(Vector(0,-distance,0)))
+                self.solve(bone,tip,chain,80,15,[[[20,140],[0,0],[0,0]],None])
+                error = math.sqrt((tip.transform.position-bone.transform.position).sqrMagnitude)
+                if expected is None:
+                    self.assertLess(error,.0011)
+                else:
+                    self.assertLess(Quaternion.Angle(knee.local,Quaternion.Euler(expected,0,0)),1e-5)
+                    reach = math.sqrt(.6**2+.4**2+2*.6*.4*math.cos(math.radians(expected)))
+                    self.assertAlmostEqual(error,abs(reach-distance),places=5)
+
     def test_old_model_extension_cannot_block_new_solver_or_downgrade_it(self):
         lib = sys.modules['vmdlib'].VmdLib
         old_calls = []
         def old_solver(*args):
             old_calls.append(args)
         old_solver._assetimport_limits = True
+        old_solver._assetimport_limits_version = 2
         lib.mmdIKSolver = staticmethod(old_solver)
         self.runtime._register({})
         current = lib.mmdIKSolver
-        self.assertEqual(current._assetimport_limits_version,2)
+        self.assertEqual(current._assetimport_limits_version,3)
         bone, tip, chain = self.chain(Vector(0,0,1))
         current(bone,tip,chain,2,20,[[[-.5,180],[0,0],[0,0]]])
         self.assertEqual(old_calls,[])
@@ -217,6 +291,7 @@ class RuntimeChecks(unittest.TestCase):
         self.assertIs(lib.mmdIKSolver,current)
         # This is the legacy installer's guard, including on late model imports.
         self.assertTrue(current._assetimport_limits)
+        self.assertFalse(current._assetimport_limits_version < 2, 'v2 extensions must not replace the newer solver')
 
     def test_antiparallel_and_degenerate(self):
         bone, tip, chain = self.chain(Vector(0, 0, -1))
