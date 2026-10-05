@@ -8,13 +8,11 @@ void Check(bool condition, string reason)
     if (!condition) throw new Exception(reason);
 }
 
-string repo = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
-string packages = Environment.GetEnvironmentVariable("NUGET_PACKAGES") ?? Path.Combine(repo, ".local/work/nuget-packages");
 foreach (var fixture in new[] {
-    (Game: "KK", Path: "illusionlibs.koikatu.assembly-csharp/2019.4.27.4/lib/net35/Assembly-CSharp.dll"),
-    (Game: "KKS", Path: "illusionlibs.koikatsusunshine.assembly-csharp/2021.9.17/lib/net46/Assembly-CSharp.dll") })
+    (Game: "KK", Path: "Fixtures/KK/Assembly-CSharp.dll"),
+    (Game: "KKS", Path: "Fixtures/KKS/Assembly-CSharp.dll") })
 {
-    using var game = new MetadataAssembly(Path.Combine(packages, fixture.Path));
+    using var game = new MetadataAssembly(Path.Combine(AppContext.BaseDirectory, fixture.Path));
     var reset = game.Reader.GetMethodDefinition(game.RequireMethod("DynamicBone", "ResetParticlesPosition"));
     Check((reset.Attributes & MethodAttributes.Public) != 0, fixture.Game + " reset is public");
     Check((reset.Attributes & MethodAttributes.Static) == 0, fixture.Game + " reset is instance method");

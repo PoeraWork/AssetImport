@@ -85,12 +85,10 @@ foreach (int root in new[] { 2, 5, 10 })
     Check(other.m_ElasticityDistrib.keys[0].value == 1, "editing a component curve cannot alter another chain");
 }
 
-string repo = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
-string packages = Environment.GetEnvironmentVariable("NUGET_PACKAGES") ?? Path.Combine(repo, ".local/work/nuget-packages");
-foreach (string path in new[] { "illusionlibs.koikatu.assembly-csharp/2019.4.27.4/lib/net35/Assembly-CSharp.dll",
-    "illusionlibs.koikatsusunshine.assembly-csharp/2021.9.17/lib/net46/Assembly-CSharp.dll" })
+foreach (string path in new[] { "Fixtures/KK/Assembly-CSharp.dll",
+    "Fixtures/KKS/Assembly-CSharp.dll" })
 {
-    using var game = new MetadataAssembly(Path.Combine(packages, path));
+    using var game = new MetadataAssembly(Path.Combine(AppContext.BaseDirectory, path));
     var fields = game.Reader.GetTypeDefinition(game.FindType("DynamicBone")).GetFields()
         .Select(h => game.Reader.GetFieldDefinition(h)).ToDictionary(f => game.Reader.GetString(f.Name));
     foreach (string name in new[] { "m_UpdateRate", "m_Damping", "m_Elasticity", "m_Stiffness", "m_Inert" })

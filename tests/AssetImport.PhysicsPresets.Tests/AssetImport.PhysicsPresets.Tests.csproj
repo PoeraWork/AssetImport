@@ -10,4 +10,5 @@
     <Compile Include="../../src/AssetImport/AssetImport.PmxReader.cs" Link="PmxReader.cs" />
     <Compile Include="../AssetImport.Compatibility.Tests/MetadataAssembly.cs" Link="MetadataAssembly.cs" />
   </ItemGroup>
+  <Import Project="../GameMetadataFixtures.props" />
 </Project>

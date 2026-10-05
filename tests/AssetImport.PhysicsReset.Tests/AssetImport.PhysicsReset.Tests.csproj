@@ -8,4 +8,5 @@
     <Compile Include="../../src/AssetImport/AssetImport.PhysicsReset.cs" Link="PhysicsReset.cs" />
     <Compile Include="../AssetImport.Compatibility.Tests/MetadataAssembly.cs" Link="MetadataAssembly.cs" />
   </ItemGroup>
+  <Import Project="../GameMetadataFixtures.props" />
 </Project>

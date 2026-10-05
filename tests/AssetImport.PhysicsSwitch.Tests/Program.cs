@@ -9,12 +9,11 @@ void Check(bool valid, string description)
     if (!valid) throw new Exception(description);
 }
 
-string repo = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
 foreach (var fixture in new[] {
-    (Game: "KK", Path: ".local/work/nuget-packages/illusionlibs.koikatu.assembly-csharp/2019.4.27.4/lib/net35/Assembly-CSharp.dll"),
-    (Game: "KKS", Path: ".local/work/nuget-packages/illusionlibs.koikatsusunshine.assembly-csharp/2021.9.17/lib/net46/Assembly-CSharp.dll") })
+    (Game: "KK", Path: "Fixtures/KK/Assembly-CSharp.dll"),
+    (Game: "KKS", Path: "Fixtures/KKS/Assembly-CSharp.dll") })
 {
-    using var game = new MetadataAssembly(Path.Combine(repo, fixture.Path));
+    using var game = new MetadataAssembly(Path.Combine(AppContext.BaseDirectory, fixture.Path));
     var switchHandle = game.RequireMethod("Studio.OCIItem", "ActiveDynamicBone", "System.Boolean");
     var method = game.Reader.GetMethodDefinition(switchHandle);
     Check((method.Attributes & MethodAttributes.Public) != 0 &&
