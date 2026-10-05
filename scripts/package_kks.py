@@ -5,14 +5,15 @@ import json
 from pathlib import Path
 import re
 import zipfile
+from build_identity import package_identity, build_note
 from package import ROOT, PLUGIN, NATIVE, version_output, write_zip
 UPSTREAM_SHA256 = '3c2743096c44a3b6d2d9a54198e7a5b865e105706ccc65b65c4e8ba571828e5d'
 RUNTIMES = [PLUGIN + 'AssimpNetter.dll', PLUGIN + 'IndexRange.dll', NATIVE]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--upstream-package', type=Path, required=True, help="Author's AssetImportv4.0.1Packed.zip (SHA-256 pinned)")
-    parser.add_argument('--managed-runtime', type=Path, required=True, help='Directory of pinned managed DLLs and license files from kks-runtime.json')
+    parser.add_argument('--upstream-package', type=Path, default=ROOT / '.build-downloads/AssetImportv4.0.1Packed.zip', help="Author's AssetImportv4.0.1Packed.zip (SHA-256 pinned)")
+    parser.add_argument('--managed-runtime', type=Path, default=ROOT / '.build-downloads/kks-runtime', help='Directory of pinned managed DLLs and license files from kks-runtime.json')
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts')
     parser.add_argument('--configuration', choices=['Debug', 'Release'], default='Release')
     args = parser.parse_args()
@@ -44,11 +45,14 @@ def main():
     for output_name, source_name in [('安装说明.txt', 'INSTALL-KKS.txt')]:
         text = 'AssetImport\nClose the game and Studio before installing. Copy the complete BepInEx and runtimes directories to the matching game root. Open AssetImport with Left Alt + I.\n'
         files[output_name] = text.replace('\n', '\r\n').encode('utf-8-sig')
-    output = version_output(args.output, version)
+    identity = package_identity(plugin)
+    build_id = identity['buildId']
+    files['BUILD.txt'] = build_note(identity, version)
+    output = version_output(args.output, build_id)
     output.mkdir(parents=True, exist_ok=True)
-    package = output / ('KKS_AssetImportv' + version + 'Packed.zip')
+    package = output / ('KKS_AssetImport_' + build_id + '_Packed.zip')
     write_zip(package, files)
-    manifest = {'plugin': 'KKS_AssetImport', 'version': version, 'status': 'preview; compiled and package-checked; Windows KKS game validation pending', 'target': 'Koikatsu Sunshine / Unity 2019.4 / .NET 4.6.2 / Windows x64', 'requiredPlugins': {'BepInEx': '5.4.22+ (5.x)', 'KKSAPI': '1.43.0+', 'KKS_MaterialEditor': '3.13.5+', 'LoadFileLimitedFix': 'KKS build'}, 'runtimeSource': {'archive': args.upstream_package.name, 'sha256': UPSTREAM_SHA256, 'members': RUNTIMES}, 'managedRuntimeSources': managed['packages'], 'sha256': {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}}
+    manifest = {'source': identity, 'plugin': 'KKS_AssetImport', 'version': version, 'status': 'preview; compiled and package-checked; Windows KKS game validation pending', 'target': 'Koikatsu Sunshine / Unity 2019.4 / .NET 4.6.2 / Windows x64', 'requiredPlugins': {'BepInEx': '5.4.22+ (5.x)', 'KKSAPI': '1.43.0+', 'KKS_MaterialEditor': '3.13.5+', 'LoadFileLimitedFix': 'KKS build'}, 'runtimeSource': {'archive': args.upstream_package.name, 'sha256': UPSTREAM_SHA256, 'members': RUNTIMES}, 'managedRuntimeSources': managed['packages'], 'sha256': {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}}
     package.with_suffix('.manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     package.with_suffix('.zip.sha256').write_text(hashlib.sha256(package.read_bytes()).hexdigest() + '  ' + package.name + '\n')
     print(package)

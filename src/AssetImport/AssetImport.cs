@@ -54,7 +54,9 @@ namespace AssetImport
         void Awake()
         {
             Logger = base.Logger;
-            Logger.LogInfo($"Runtime build {Version}; assembly {typeof(AssetImport).Assembly.GetName().Version}");
+            var buildInfo = (System.Reflection.AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute(
+                typeof(AssetImport).Assembly, typeof(System.Reflection.AssemblyInformationalVersionAttribute));
+            Logger.LogInfo($"Runtime build {Version}; source {buildInfo?.InformationalVersion ?? "unknown"}; assembly {typeof(AssetImport).Assembly.GetName().Version}");
 #if KK
             // Match the original Packed ZIP layout; do not depend on the working directory.
             string nativePath = Path.Combine(Paths.GameRootPath,

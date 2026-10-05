@@ -68,4 +68,25 @@
   <Target Name="CheckKKReferences" BeforeTargets="ResolveReferences" Condition="'$(TargetFramework)' == 'net35'">
     <Error Condition="!Exists('../Custom Dependencies/KK/KK_MaterialEditor.dll') Or !Exists('../Custom Dependencies/KK/KKPE.dll') Or !Exists('../Custom Dependencies/KK/KKABMX.dll') Or !Exists('../Custom Dependencies/KK/KK_DynamicBoneEditor.dll')" Text="KK build references are missing. Run: python3 scripts/prepare_dependencies.py (from the repository root)." />
   </Target>
+  <!-- Keep the numeric plugin/save version stable; identify each test DLL by Git. -->
+  <Target Name="StampGitRevision" BeforeTargets="CoreCompile">
+    <Exec Command="git rev-parse HEAD" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true" StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="AssetImportCommit" />
+    </Exec>
+    <Exec Command="git status --porcelain --untracked-files=normal" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true" StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" ItemName="AssetImportChanges" />
+    </Exec>
+    <PropertyGroup>
+      <AssetImportDirty Condition="'@(AssetImportChanges->Count())' != '0'">.dirty</AssetImportDirty>
+    </PropertyGroup>
+    <ItemGroup>
+      <AssetImportBuildAttribute Include="System.Reflection.AssemblyInformationalVersionAttribute">
+        <_Parameter1>git.$(AssetImportCommit)$(AssetImportDirty)</_Parameter1>
+      </AssetImportBuildAttribute>
+    </ItemGroup>
+    <WriteCodeFragment Language="C#" AssemblyAttributes="@(AssetImportBuildAttribute)" OutputFile="$(IntermediateOutputPath)AssetImport.BuildInfo.g.cs" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)AssetImport.BuildInfo.g.cs" />
+    </ItemGroup>
+  </Target>
 </Project>

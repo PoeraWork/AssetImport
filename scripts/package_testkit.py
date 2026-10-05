@@ -31,14 +31,15 @@ def zip_bytes(files):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--plugin-package', type=Path, required=True, help='KK_AssetImportvX.Y.ZPacked.zip produced by scripts/package.py')
+    parser.add_argument('--plugin-package', type=Path, required=True, help='KK_AssetImport_gHASH_Packed.zip produced by scripts/package.py')
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts', help='Artifact root; the test kit goes into its version subdirectory')
     parser.add_argument('--cache', type=Path, default=ROOT / '.build-downloads')
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
     package_manifest = json.loads(args.plugin_package.with_suffix('.manifest.json').read_text())
     version = package_manifest['version']
-    args.output = version_output(args.output, version)
+    build_id = package_manifest['source']['buildId']
+    args.output = version_output(args.output, build_id)
     args.output.mkdir(parents=True, exist_ok=True)
     plugin = read_zip(args.plugin_package.read_bytes())
     if set(plugin) != set(package_manifest['sha256']):
@@ -84,7 +85,7 @@ def main():
         install['Licenses/MaterialEditor/SOURCE.txt'] = ('Unmodified official KK MaterialEditor ' + profile['version'] + '.\nLicense: GPL-3.0. Corresponding source is included beside this file.\n' + profile['url'] + '\nSHA256 ' + profile['sha256'] + '\nBinary release: ' + release['url'] + '\n').encode('utf-8')
         instructions = "AssetImport {version} + MaterialEditor {me}\nClose the game and Studio. Copy BepInEx and runtimes into the KK game root.\n".format(version=version, me=profile["version"])
         install['安装说明.txt'] = instructions.replace('\n', '\r\n').encode('utf-8-sig')
-        installer_name = 'KK_AssetImport' + version + '_' + profile['profile'] + '_Packed.zip'
+        installer_name = 'KK_AssetImport_' + build_id + '_' + profile['profile'] + '_Packed.zip'
         files['Installers/' + installer_name] = zip_bytes(install)
         profile['installer'] = 'Installers/' + installer_name
         profile['material_editor_sha256'] = reference['sha256']
@@ -101,10 +102,10 @@ def main():
     files['Diagnostic/' + NATIVE] = plugin[NATIVE]
     for name in ['AssimpNet.txt', 'Assimp.txt', 'LitJson.txt']:
         files['Diagnostic/licenses/' + name] = plugin[PLUGIN + 'licenses/' + name]
-    manifest = {'plugin_version': version, 'status': 'preview; Windows game validation pending', 'profiles': profiles, 'same_assetimport_binary_in_both_profiles': True, 'assetimport_sha256': hashlib.sha256(plugin[PLUGIN + 'KK_AssetImport.dll']).hexdigest(), 'scope': '19 static demos / 18 UI extensions; not all historical format features', 'known_failures': [{'demo': 'lws', 'mode': 'plugin-io', 'reason': 'Companion LWO missing from cache; incomplete skeleton placeholder'}], 'sha256': {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}}
+    manifest = {'plugin_version': version, 'source': package_manifest['source'], 'status': 'preview; Windows game validation pending', 'profiles': profiles, 'same_assetimport_binary_in_both_profiles': True, 'assetimport_sha256': hashlib.sha256(plugin[PLUGIN + 'KK_AssetImport.dll']).hexdigest(), 'scope': '19 static demos / 18 UI extensions; not all historical format features', 'known_failures': [{'demo': 'lws', 'mode': 'plugin-io', 'reason': 'Companion LWO missing from cache; incomplete skeleton placeholder'}], 'sha256': {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}}
     files['kit-manifest.json'] = (json.dumps(manifest, indent=2, ensure_ascii=False) + '\n').encode('utf-8')
     files['SHA256SUMS.txt'] = ''.join((hashlib.sha256(data).hexdigest() + '  ' + name + '\n' for name, data in sorted(files.items()))).encode('utf-8')
-    target = args.output / ('KK_AssetImport' + version + '_ME403_ME500_TestKit.zip')
+    target = args.output / ('KK_AssetImport_' + build_id + '_ME403_ME500_TestKit.zip')
     write_zip(target, {'KK_AssetImport_TestKit/' + name: data for name, data in files.items()})
     target.with_suffix(target.suffix + '.sha256').write_text(hashlib.sha256(target.read_bytes()).hexdigest() + '  ' + target.name + '\n')
     print(target)
