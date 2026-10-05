@@ -32,7 +32,13 @@ internal static class MappingChecks
         model.Bones[2].Flags=2;model.Bones[2].Name="root";
         Reject(()=>Build(Array.Empty<int>()),"ambiguous original motion names");
         model.Bones[2].Name="source"; model.Bones[1].Flags|=0x200;
-        Reject(()=>Build(Array.Empty<int>()),"unsupported position append");
+        var combined=JsonDocument.Parse(Build(Array.Empty<int>()).MappingJson).RootElement.GetProperty("bones").EnumerateArray().Single(b=>b.GetProperty("vmdName").GetString()=="append");
+        check(combined.GetProperty("trackData")[0].GetString()=="rp" && combined.GetProperty("movable").GetBoolean(),"rotation and position grant resets and syncs translation even without the movable flag");
+        model.Bones[1].Flags=0x200;model.Bones[1].GrantWeight=-.25f;
+        var position=JsonDocument.Parse(Build(Array.Empty<int>()).MappingJson).RootElement.GetProperty("bones").EnumerateArray().Single(b=>b.GetProperty("vmdName").GetString()=="append");
+        check(position.GetProperty("trackData")[0].GetString()=="p" && position.GetProperty("trackData")[1].GetDouble()==-.25 && !position.GetProperty("rotatable").GetBoolean(),"position-only negative grant does not introduce rotation");
+        model.Bones[1].Flags|=0x80;
+        Reject(()=>Build(Array.Empty<int>()),"local append still requires world-space semantics");
         model.Bones[1].GrantParent=-1;
         var orphan=JsonDocument.Parse(Build(Array.Empty<int>()).MappingJson).RootElement.GetProperty("bones");
         check(!orphan.EnumerateArray().Single(b=>b.GetProperty("vmdName").GetString()=="append").TryGetProperty("isTrack",out _),"missing append source is a no-op, no pmx_-001 dependency");

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build an MMDD 3.0 ITEM mapping for AssetImport 4.2 direct PMX import.
 
-Input is a local PMX, never bundled. Handles rotation grants and per-axis IK
+Input is a local PMX, never bundled. Handles non-local rotation/position grants and per-axis IK
 through the AssetImport runtime extension. Physics descendants are left to Dynamic Bone. Generic
-position grants / external-parent transforms need a dedicated implementation.
+local grants / external-parent transforms need a dedicated implementation.
 """
 import argparse
 import hashlib
@@ -54,8 +54,8 @@ def create(model, label, renderer_report=None, dynamic_roots=()):
         dep = {b['parent']} if b['parent'] >= 0 else set()
         if 'grant' in b and b['grant']['parent'] >= 0 and b['grant']['weight'] != 0:
             g = b['grant']
-            if g['position'] or g['local']:
-                raise ValueError('Unsupported position/local grant: ' + b['name'])
+            if g['local']:
+                raise ValueError('Unsupported local grant: ' + b['name'])
             dep.add(g['parent'])
         if 'ik' in b:
             dep |= {b['ik']['target']} | {l['bone'] for l in b['ik']['links']}
@@ -82,7 +82,10 @@ def create(model, label, renderer_report=None, dynamic_roots=()):
         if b['parent'] >= 0:d['parent'] = key(b['parent'])
         if 'grant' in b and b['grant']['parent'] >= 0 and b['grant']['weight'] != 0:
             g = b['grant']
-            d.update(isTrack=True, trackData=['r', g['weight'], key(g['parent'])], rotatable=True)
+            mode = ('r' if g['rotation'] else '') + ('p' if g['position'] else '')
+            d.update(isTrack=True, trackData=[mode, g['weight'], key(g['parent'])])
+            if g['rotation']: d['rotatable'] = True
+            if g['position']: d['movable'] = True
         if 'fixed_axis' in b:
             axis = b['fixed_axis']
             # Both vectors are in the converted (-X,Y,-Z) coordinate system.
@@ -123,12 +126,14 @@ def create(model, label, renderer_report=None, dynamic_roots=()):
                           'boneType': 'ITEM', 'enableAutoRotAdj': False, 'overwriteDefaultBlend': False},
               'bones': definitions, 'morphs': morphs}
     dynamic_roots = [b for b in bones if b['index'] in physics and b['parent'] not in physics]
-    report = {'label': label, 'mapped_bones': len(definitions), 'rotation_grants': sum(d.get('isTrack', False) for d in definitions),
+    report = {'label': label, 'mapped_bones': len(definitions),
+              'rotation_grants': sum(d.get('isTrack', False) and 'r' in d['trackData'][0] for d in definitions),
+              'position_grants': sum(d.get('isTrack', False) and 'p' in d['trackData'][0] for d in definitions),
               'ik_solvers': ik_count, 'mapped_morphs': len(morphs),
               'excluded_from_mmdd': [target(by_id[i]) for i in sorted(excluded)],
               'physics_chain_roots': [target(b) for b in dynamic_roots],
               'unit_scale': .0832, 'import_scale_required': 1, 'mmdd_axis_scale_required': .0832,
-              'warnings': warnings + ['Requires the AssetImport MMDD runtime extension for non-knee per-axis IK limits',
+              'warnings': warnings + ['Requires the AssetImport MMDD runtime extension for position grants and non-knee per-axis IK limits',
                            'PMX rigid bodies/joints not simulated']}
     return result, report
 
@@ -147,7 +152,7 @@ if __name__ == '__main__':
     mapping, report = create(m, a.label, renderers)
     report['source_sha256'] = hashlib.sha256(data).hexdigest()
     a.output.parent.mkdir(parents=True, exist_ok=True)
-    if mapping['morphs'] or report['ik_solvers']:
+    if mapping['morphs'] or report['ik_solvers'] or report['position_grants']:
         ext_dir = a.morph_extension_dir or a.output.parent
         ext_dir.mkdir(parents=True, exist_ok=True)
         ext_name = 'MmddExtMorphFunc_AssetImport_Pmx_' + report['source_sha256'][:12] + '.py'

@@ -104,6 +104,72 @@ def _install_runtime():
             return original_solver(bone, target, chain, iterations, step, limits, debug)
         solve._assetimport_limits = True
         vmdlib.VmdLib.mmdIKSolver = staticmethod(solve)
+    _install_position_grants(vmdlib.MotionController)
+
+
+def _has_position_grant(controller, name):
+    if not name.startswith('assetimport_pmx_'):
+        return False
+    definition = controller.boneDefineMap[name]
+    return definition.isTrack and 'p' in definition.trackData[0]
+
+
+def _remove_grant_rest_offset(controller, name):
+    # MMDD tracks a source's complete local position. PMX non-local grants use
+    # its animated offset (including earlier grants), excluding the rest pose.
+    # Use the bound controller's base position: it includes import/item scale.
+    from UnityEngine import Vector3
+    mode, rate, source = controller.boneDefineMap[name].trackData
+    rest = controller.boneDefineMap[source].adjustment.basePosition
+    transform = controller.getDummyBones(name).transform
+    position = transform.localPosition
+    transform.localPosition = Vector3(position.x - rest.x * rate,
+                                      position.y - rest.y * rate,
+                                      position.z - rest.z * rate)
+
+
+class _PositionGrantStep(object):
+    # MMDD's indexed loop has an existing per-entry callback slot (solveFunc).
+    # Insert a correction immediately after the follower, before descendants or
+    # chained grants. Keep MMDD's native utility and the bone's own IK untouched.
+    needGetFrame = needPosition = needRotation = needTrackRot = needTrackPos = False
+    needIK = ikDefaultEnable = True
+    ikSolverIndex = (None, None, None)
+
+    def __init__(self, controller, name):
+        self.controller, self.name = controller, name
+        self.bonename = name + '__position_rest'
+
+    def solveFunc(self):
+        _remove_grant_rest_offset(self.controller, self.name)
+
+
+def _install_position_grants(controller_type):
+    # IronPython 2 exposes class methods as unbound method objects. Inspect the
+    # underlying function so repeated extension loads keep the hook idempotent.
+    original_track = getattr(controller_type.processTrack, 'im_func', controller_type.processTrack)
+    if not getattr(original_track, '_assetimport_position_grants', False):
+        def process_track(controller, name):
+            result = original_track(controller, name)
+            if _has_position_grant(controller, name):
+                _remove_grant_rest_offset(controller, name)
+            return result
+        process_track._assetimport_position_grants = True
+        controller_type.processTrack = process_track
+
+    original_build = getattr(controller_type.buildWorkBoneIndex, 'im_func', controller_type.buildWorkBoneIndex)
+    if not getattr(original_build, '_assetimport_position_grants', False):
+        def build_index(controller):
+            result = original_build(controller)
+            entries = []
+            for entry in controller.workBoneIndexBuffer:
+                entries.append(entry)
+                if _has_position_grant(controller, entry.bonename):
+                    entries.append(_PositionGrantStep(controller, entry.bonename))
+            controller.workBoneIndexBuffer = entries
+            return result
+        build_index._assetimport_position_grants = True
+        controller_type.buildWorkBoneIndex = build_index
 
 
 def _ordinary_knee(limits):

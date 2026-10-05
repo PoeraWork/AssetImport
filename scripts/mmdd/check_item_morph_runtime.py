@@ -125,7 +125,8 @@ def main():
     exec(compile(ast.Module(body=[lib, cls], type_ignores=[]), str(a.mmdd_lib / 'vmdlib.py'), 'exec'), env)
     # Only solver installation is needed here; numerical IK has separate checks.
     env['VmdLib'].mmdIKSolver = staticmethod(lambda *args: None)
-    sys.modules['vmdlib'] = types.SimpleNamespace(VmdLib=env['VmdLib'])
+    motion = type('MotionController', (), {'processTrack': lambda *a: None, 'buildWorkBoneIndex': lambda *a: None})
+    sys.modules['vmdlib'] = types.SimpleNamespace(VmdLib=env['VmdLib'], MotionController=motion)
     controller = env['MorphController']()
     controller.motionCtrl = types.SimpleNamespace(boneType='item', ociChar=actor.objctrl)
     controller.morphDefineMap = {'old': types.SimpleNamespace(type='blend')}

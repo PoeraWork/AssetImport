@@ -9,6 +9,25 @@ from generate_pmx_mapping import create
 
 
 class DependencyTests(unittest.TestCase):
+    def test_nonlocal_position_and_combined_grants(self):
+        for rotation in (False, True):
+            for weight in (-.25, .2, 1.5):
+                model = {'bones': [
+                    {'index': 0, 'name': 'source', 'parent': -1, 'flags': 6, 'layer': 0},
+                    {'index': 1, 'name': 'follower', 'parent': -1, 'flags': 0, 'layer': 0,
+                     'grant': {'parent': 0, 'weight': weight, 'position': True, 'rotation': rotation, 'local': False}}
+                ], 'morphs': [], 'rigid_bodies': []}
+                mapping, report = create(model, 'generated position grant')
+                follower = mapping['bones'][1]
+                self.assertEqual(follower['trackData'], ['rp' if rotation else 'p', weight, 'assetimport_pmx_0000'])
+                self.assertTrue(follower['movable'])
+                self.assertEqual(follower['rotatable'], rotation)
+                self.assertEqual(report['position_grants'], 1)
+                self.assertEqual(report['rotation_grants'], int(rotation))
+                model['bones'][1]['grant']['local'] = True
+                with self.assertRaisesRegex(ValueError, 'Unsupported local grant'):
+                    create(model, 'local semantics cannot use position-only fix')
+
     def test_transitive_physics_ik_append_closure(self):
         for seed in range(24):
             for selected in (False, True):

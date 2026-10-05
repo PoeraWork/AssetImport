@@ -73,8 +73,8 @@ namespace AssetImport
                     warnings.Add("Ignored append flag without a source bone: " + b.Name);
                 if (HasGrant(b))
                 {
-                    if ((b.Flags & 0x280) != 0)
-                        throw new FormatException("MMDD auto mapping does not support position/local append transforms: " + b.Name);
+                    if ((b.Flags & 0x80) != 0)
+                        throw new FormatException("MMDD auto mapping does not support local append transforms: " + b.Name);
                     dep.Add(b.GrantParent);
                 }
                 if ((b.Flags & 0x20) != 0)
@@ -107,8 +107,16 @@ namespace AssetImport
                     "weightBone", target, "weightSyncMode", "GLOBAL",
                     "adjustment", Obj("rotAdjAuto", false, "rotAxisAuto", false));
                 if (b.Parent >= 0) d["parent"] = Key(b.Parent);
-                if (HasGrant(b) && (b.Flags & 0x100) != 0)
-                { d["isTrack"] = true; d["trackData"] = new object[] { "r", b.GrantWeight, Key(b.GrantParent) }; d["rotatable"] = true; }
+                if (HasGrant(b))
+                {
+                    bool rotation = (b.Flags & 0x100) != 0, position = (b.Flags & 0x200) != 0;
+                    d["isTrack"] = true;
+                    d["trackData"] = new object[] { (rotation ? "r" : "") + (position ? "p" : ""), b.GrantWeight, Key(b.GrantParent) };
+                    if (rotation) d["rotatable"] = true;
+                    // MMDD must reset/sync even an otherwise immovable follower.
+                    // Our runtime removes the source's rest offset after tracking.
+                    if (position) d["movable"] = true;
+                }
                 if ((b.Flags & 0x400) != 0)
                 {
                     var axis = new[] { -b.FixedAxis.X, b.FixedAxis.Y, -b.FixedAxis.Z };
@@ -150,11 +158,12 @@ namespace AssetImport
             }
             string id = Hash(source).Substring(0, 12);
             // Physics-root and BlendShape selections need independent definitions.
-            string variant = Hash(Encoding.UTF8.GetBytes("runtime-v3\n" + string.Join(",", excluded.OrderBy(i => i).Select(i => i.ToString()).ToArray()) + "\n" + JsonMapper.ToJson(targets))).Substring(0, 8);
+            string variant = Hash(Encoding.UTF8.GetBytes("runtime-v4\n" + string.Join(",", excluded.OrderBy(i => i).Select(i => i.ToString()).ToArray()) + "\n" + JsonMapper.ToJson(targets))).Substring(0, 8);
             id += "_" + variant;
             var mapping = Obj("general", Obj("description", label + " / AssetImport PMX Auto / " + id,
                 "boneType", "ITEM", "enableAutoRotAdj", false, "overwriteDefaultBlend", false), "bones", definitions, "morphs", morphs);
             var report = Obj("mapped_bones", definitions.Count, "ik_solvers", ikCount, "mapped_morphs", morphs.Count,
+                "position_grants", ordered.Count(i => HasGrant(model.Bones[i]) && (model.Bones[i].Flags & 0x200) != 0),
                 "source_sha256", Hash(source), "model_id", id, "morph_targets", targets, "warnings", warnings,
                 "morph_extension", "MmddExtMorphFunc_AssetImport_Pmx_" + id + ".py",
                 "excluded_from_mmdd", excluded.OrderBy(i => i).Select(i => PmxModel.BoneName(i, model.Bones[i].Name)).ToArray(),
