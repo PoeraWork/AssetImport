@@ -1,4 +1,7 @@
 using HarmonyLib;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 
 namespace AssetImport
 {
@@ -18,5 +21,23 @@ namespace AssetImport
 
         [HarmonyPostfix, HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.SetupParticles))]
         private static void Setup(DynamicBone __instance) { AssetPhysicsEnvironment.AfterReset(__instance); }
+
+        [HarmonyTranspiler, HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.UpdateParticles2))]
+        private static IEnumerable<CodeInstruction> DrapeConstraints(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod, ILGenerator generator)
+        { return RewriteDrape(instructions, __originalMethod, generator); }
+
+        [HarmonyTranspiler, HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.SkipUpdateParticles))]
+        private static IEnumerable<CodeInstruction> DrapeSkip(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod, ILGenerator generator)
+        { return RewriteDrape(instructions, __originalMethod, generator); }
+
+        private static IEnumerable<CodeInstruction> RewriteDrape(IEnumerable<CodeInstruction> instructions, MethodBase method, ILGenerator generator)
+        {
+            List<CodeInstruction> result;
+            string reason;
+            bool ready = NaturalDrapePatch.TryRewrite(instructions, method, generator, out result, out reason);
+            NaturalDrapePatch.SetReady(method.Name, ready);
+            if (!ready) AssetImport.Logger.LogWarning("Natural drape unavailable: " + method.Name + ": " + reason);
+            return result;
+        }
     }
 }

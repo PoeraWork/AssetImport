@@ -9,16 +9,17 @@ namespace AssetImport
         public float FloorOffset;
         public float DownwardForce;
         public bool Settle;
+        public bool NaturalDrape;
 
         internal static PhysicsEnvironmentSettings NewImport()
         {
-            return new PhysicsEnvironmentSettings { Floor = true, DownwardForce = .001f, Settle = true };
+            return new PhysicsEnvironmentSettings { Floor = true, DownwardForce = .001f, Settle = true, NaturalDrape = true };
         }
 
         internal PhysicsEnvironmentSettings Copy()
         {
             return new PhysicsEnvironmentSettings { Floor = Floor, FloorOffset = Clamp(FloorOffset, -100f, 100f),
-                DownwardForce = Clamp(DownwardForce, 0f, .02f), Settle = Settle };
+                DownwardForce = Clamp(DownwardForce, 0f, .02f), Settle = Settle, NaturalDrape = NaturalDrape };
         }
 
         private static float Clamp(float value, float min, float max)

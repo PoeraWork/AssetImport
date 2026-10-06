@@ -19,6 +19,7 @@ Transform Child(Transform parent, Vector3 position)
     var chain = host.AddComponent<DynamicBone>(); chain.m_Root = anchor;
     chain.m_Particles.Add(new() { m_Transform = anchor, m_Position = anchor.position, m_PrevPosition = anchor.position });
     chain.m_Particles.Add(new() { m_ParentIndex = 0, m_Transform = tip, m_Position = tip.position, m_PrevPosition = tip.position });
+    chain.SetupParticles();
     AssetPhysicsEnvironment.Attach(host, root, [chain], settings);
     return (host.GetComponent<AssetPhysicsEnvironment>(), chain, root);
 }
@@ -29,10 +30,11 @@ foreach (string target in new[] { "KK", "KKS" })
     using var game = new MetadataAssembly(Path.Combine(AppContext.BaseDirectory, "Fixtures", target, "Assembly-CSharp.dll"));
     foreach (var hook in typeof(PhysicsEnvironmentHooks).GetMethods(BindingFlags.NonPublic | BindingFlags.Static))
     {
-        var patch = hook.GetCustomAttribute<HarmonyLib.HarmonyPatch>()!;
-        var method = game.Reader.GetMethodDefinition(game.RequireMethod(patch.Type.Name, patch.Name));
+        var patch = hook.GetCustomAttribute<HarmonyLib.HarmonyPatch>();
+        if (patch == null) continue;
+        var method = game.Reader.GetMethodDefinition(game.RequireMethod(patch.info.declaringType.Name, patch.info.methodName));
         Check(method.DecodeSignature(game.Names, null).ReturnType == "System.Void" && (method.Attributes & MethodAttributes.Static) == 0,
-            target + " compatible hook: " + patch.Name);
+            target + " compatible hook: " + patch.info.methodName);
     }
     game.RequireMethod("DynamicBone", "InitTransforms"); game.RequireMethod("DynamicBone", "UpdateDynamicBones", "System.Single");
     foreach (var pair in new[] { ("DynamicBone", "m_Weight"), ("DynamicBone", "m_DistantDisabled"),
@@ -40,15 +42,17 @@ foreach (string target in new[] { "KK", "KKS" })
         Check(game.Reader.GetTypeDefinition(game.FindType(pair.Item1)).GetFields().Any(f => game.Reader.GetString(game.Reader.GetFieldDefinition(f).Name) == pair.Item2), target + " particle API " + pair.Item2);
 }
 
+DrapeChecks.InstallAndRun(Check);
+
 var legacy = PhysicsEnvironmentPersistence.Read(new Asset());
-Check(!legacy.Floor && !legacy.Settle && legacy.DownwardForce == 0, "legacy records retain their behavior");
+Check(!legacy.Floor && !legacy.Settle && !legacy.NaturalDrape && legacy.DownwardForce == 0, "legacy records retain their behavior");
 var saved = new Asset(); var original = new PhysicsEnvironmentSettings { Floor = true, FloorOffset = -.4f, DownwardForce = .003f, Settle = true };
 PhysicsEnvironmentPersistence.Write(saved, original);
 var copied = new Asset(); PhysicsEnvironmentPersistence.Write(copied, PhysicsEnvironmentPersistence.Read(saved));
 original.FloorOffset = 5;
 var restored = PhysicsEnvironmentPersistence.Read(copied);
 Check(restored.Floor && restored.Settle && restored.FloorOffset == -.4f && restored.DownwardForce == .003f, "value settings survive persistence/copy independently");
-foreach (string key in new[] { "FloorCollision", "FloorOffset", "DownwardForce", "SettlePhysics" })
+foreach (string key in new[] { "FloorCollision", "FloorOffset", "DownwardForce", "SettlePhysics", "NaturalDrape" })
     Check(typeof(Asset).GetProperty(key)!.GetCustomAttribute<MessagePack.KeyAttribute>()!.Key == key, "stable MessagePack key " + key);
 var sanitized = new PhysicsEnvironmentSettings { FloorOffset = float.NaN, DownwardForce = float.PositiveInfinity }.Copy();
 Check(sanitized.FloorOffset == 0 && sanitized.DownwardForce == 0, "invalid persisted values sanitized");
@@ -124,11 +128,11 @@ Check(detached.Chain.m_Particles[1].m_Position.y == before.y, "reparented foreig
 
 var settling = Create(PhysicsEnvironmentSettings.NewImport());
 var colliders = settling.Chain.m_Colliders; var distribution = settling.Chain.m_DampingDistrib;
-var restPosition = settling.Chain.m_Particles[1].m_Transform.position;
+var restPosition = settling.Chain.m_Particles[1].m_InitLocalPosition;
 for (int i = 0; i < 300 && settling.Environment.IsSettling; i++) Tick(settling.Environment);
-Check(!settling.Environment.IsSettling && settling.Chain.Steps > 0 && settling.Chain.Steps <= 90, "settling has a finite work bound");
+Check(!settling.Environment.IsSettling && settling.Chain.Steps > 0 && settling.Chain.Steps <= AssetPhysicsEnvironment.DrapeSettleSteps, "settling has a finite work bound");
 Check(settling.Chain.m_Particles[1].m_Position.y < .49f && settling.Chain.m_Particles[1].m_Position.y >= 0, "resting fixture sags under downward force and respects ground");
-Check(settling.Chain.m_Particles[1].m_Transform.position.y == restPosition.y && ReferenceEquals(colliders, settling.Chain.m_Colliders) && ReferenceEquals(distribution, settling.Chain.m_DampingDistrib), "settling preserves rest pose and parameter references");
+Check(settling.Chain.m_Particles[1].m_InitLocalPosition.y == restPosition.y && ReferenceEquals(colliders, settling.Chain.m_Colliders) && ReferenceEquals(distribution, settling.Chain.m_DampingDistrib), "settling preserves rest pose and parameter references");
 settling.Environment.RequestSettle(); int steps = settling.Chain.Steps; settling.Chain.m_Root.position += new Vector3(0, .1f, 0); Tick(settling.Environment);
 Check(!settling.Environment.IsSettling && settling.Chain.Steps == steps, "root motion cancels extra simulation");
 settling.Environment.RequestSettle(); settling.Root.rotation = Quaternion.Turn(.2f); Tick(settling.Environment);
@@ -163,6 +167,7 @@ var crowd = Enumerable.Range(0, 60).Select(_ =>
     chain.m_Particles.Add(new() { m_Transform = chain.m_Root, m_Position = chain.m_Root.position });
     chain.m_Particles.Add(new() { m_Transform = crowded.Chain.m_Particles[1].m_Transform, m_ParentIndex = 0,
         m_Position = new(1, .5f, 0), m_PrevPosition = new(1, .5f, 0) });
+    chain.SetupParticles();
     return chain;
 }).ToArray();
 crowded.Environment.Configure(crowded.Root, crowd, new() { Settle = true }); Tick(crowded.Environment);

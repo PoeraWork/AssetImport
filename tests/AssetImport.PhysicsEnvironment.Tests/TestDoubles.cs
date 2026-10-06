@@ -1,5 +1,6 @@
-// Minimal Unity surface plus a deterministic Verlet fixture. This is not the
-// native DynamicBone solver; native API compatibility is checked separately.
+// Engine doubles with explicit rest attraction, stiffness, damping, lengths,
+// collision and skipped-step constraints. This is not the native DynamicBone
+// solver; the production IL rewrite and native API are checked separately.
 using AssetImport;
 using UnityEngine;
 
@@ -51,6 +52,9 @@ namespace UnityEngine
         public static Vector3 operator +(Vector3 a, Vector3 b) => new(a.x + b.x, a.y + b.y, a.z + b.z);
         public static Vector3 operator -(Vector3 a, Vector3 b) => new(a.x - b.x, a.y - b.y, a.z - b.z);
         public static Vector3 operator *(Vector3 a, float f) => new(a.x * f, a.y * f, a.z * f);
+        public static Vector3 operator /(Vector3 a, float f) => a * (1f / f);
+        public static float Dot(Vector3 a, Vector3 b) => a.x * b.x + a.y * b.y + a.z * b.z;
+        public static Vector3 Cross(Vector3 a, Vector3 b) => new(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
         public static Vector3 From(System.Numerics.Vector3 v) => new(v.X, v.Y, v.Z);
     }
     public struct Quaternion
@@ -58,6 +62,17 @@ namespace UnityEngine
         public System.Numerics.Quaternion Value;
         public static Quaternion identity => new() { Value = System.Numerics.Quaternion.Identity };
         public static Quaternion Turn(float angle) => new() { Value = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitZ, angle) };
+        public static Quaternion Inverse(Quaternion q) => new() { Value = System.Numerics.Quaternion.Inverse(q.Value) };
+        public static Quaternion operator *(Quaternion a, Quaternion b) => new() { Value = System.Numerics.Quaternion.Multiply(a.Value, b.Value) };
+        public static Vector3 operator *(Quaternion q, Vector3 v) => Vector3.From(System.Numerics.Vector3.Transform(new(v.x, v.y, v.z), q.Value));
+        public static Quaternion FromTo(Vector3 from, Vector3 to)
+        {
+            from = from.normalized; to = to.normalized;
+            float dot = Vector3.Dot(from, to);
+            if (dot < -.99999f) return Turn(MathF.PI);
+            var cross = Vector3.Cross(from, to);
+            return new() { Value = System.Numerics.Quaternion.Normalize(new(cross.x, cross.y, cross.z, 1 + dot)) };
+        }
         public static float Angle(Quaternion a, Quaternion b) => 2 * MathF.Acos(Math.Min(1, Math.Abs(System.Numerics.Quaternion.Dot(a.Value, b.Value)))) * 180 / MathF.PI;
     }
 }
@@ -70,6 +85,9 @@ public class DynamicBone : MonoBehaviour
         public Transform m_Transform;
         public float m_Radius;
         public Vector3 m_Position, m_PrevPosition, m_EndOffset;
+        public float m_Damping = .4f, m_Elasticity = .3f, m_Stiffness = .1f;
+        public Vector3 m_InitLocalPosition;
+        public Quaternion m_InitLocalRotation = Quaternion.identity;
     }
     public Transform m_Root;
     public List<Particle> m_Particles = new();
@@ -78,33 +96,93 @@ public class DynamicBone : MonoBehaviour
     public Vector3 m_Force, m_Gravity;
     public object m_Colliders = new(), m_DampingDistrib = new();
     public int Steps, InitCalls;
-    public void InitTransforms() { InitCalls++; }
+    public static Func<DynamicBone, Particle, float> ElasticityRead = (_, p) => p.m_Elasticity;
+    public static Func<DynamicBone, Particle, float> StiffnessRead = (_, p) => p.m_Stiffness;
+    public static Func<DynamicBone, Particle, float> SkipStiffnessRead = (_, p) => p.m_Stiffness;
+    public Action<Particle> Contact;
+    public void InitTransforms()
+    {
+        InitCalls++;
+        foreach (var p in m_Particles)
+        {
+            if (!p.m_Transform) continue;
+            p.m_Transform.rotation = p.m_Transform.parent.rotation * p.m_InitLocalRotation;
+            if (p.m_ParentIndex >= 0)
+                p.m_Transform.position = p.m_Transform.parent.position + p.m_Transform.parent.rotation * p.m_InitLocalPosition;
+        }
+    }
     public void UpdateDynamicBones(float time)
     {
         if (ThrowOnUpdate) throw new InvalidOperationException("injected");
         Steps++;
+        UpdateParticles1();
+        AssetPhysicsEnvironment.AfterIntegrate(this);
+        UpdateParticles2();
+        AssetPhysicsEnvironment.AfterConstraints(this);
+        ApplyParticlesToTransforms();
+    }
+    public void UpdateParticles1()
+    {
         foreach (var p in m_Particles)
         {
-            if (p.m_ParentIndex < 0) continue;
+            if (p.m_ParentIndex < 0)
+            { p.m_PrevPosition = p.m_Position; p.m_Position = p.m_Transform.position; continue; }
             var last = p.m_Position;
-            p.m_Position += (p.m_Position - p.m_PrevPosition) * .75f + m_Force + m_Gravity;
+            p.m_Position += (p.m_Position - p.m_PrevPosition) * (1 - p.m_Damping) + m_Force + m_Gravity;
             p.m_PrevPosition = last;
         }
-        AssetPhysicsEnvironment.AfterIntegrate(this);
+    }
+    private void Constraints(bool skip)
+    {
         foreach (var p in m_Particles)
             if (p.m_ParentIndex >= 0)
             {
                 var parent = m_Particles[p.m_ParentIndex];
                 var rest = p.m_Transform ? p.m_Transform.position - parent.m_Transform.position : parent.m_Transform.TransformVector(p.m_EndOffset);
+                float elasticity = skip ? 0 : ElasticityRead(this, p);
+                float stiffness = 1 - m_Weight + (skip ? SkipStiffnessRead(this, p) : StiffnessRead(this, p)) * m_Weight;
+                var target = parent.m_Position + rest;
+                p.m_Position += (target - p.m_Position) * elasticity;
+                var toRest = target - p.m_Position;
+                float allowed = rest.magnitude * (1 - stiffness) * 2;
+                if (toRest.magnitude > allowed) p.m_Position += toRest * (1 - allowed / toRest.magnitude);
+                Contact?.Invoke(p);
                 p.m_Position = parent.m_Position + (p.m_Position - parent.m_Position).normalized * rest.magnitude;
             }
-        AssetPhysicsEnvironment.AfterConstraints(this);
     }
-    public void UpdateParticles1() { }
-    public void UpdateParticles2() { }
-    public void SkipUpdateParticles() { }
-    public void ResetParticlesPosition() { }
-    public void SetupParticles() { }
+    public void UpdateParticles2() => Constraints(false);
+    public void SkipUpdateParticles() { Constraints(true); AssetPhysicsEnvironment.AfterConstraints(this); ApplyParticlesToTransforms(); }
+    public void ApplyParticlesToTransforms()
+    {
+        foreach (var p in m_Particles)
+        {
+            if (p.m_ParentIndex < 0) continue;
+            var parent = m_Particles[p.m_ParentIndex];
+            var rest = parent.m_Transform.rotation * (p.m_Transform ? p.m_InitLocalPosition : p.m_EndOffset);
+            parent.m_Transform.rotation = Quaternion.FromTo(rest, p.m_Position - parent.m_Position) * parent.m_Transform.rotation;
+            if (p.m_Transform) p.m_Transform.position = p.m_Position;
+        }
+    }
+    public void ResetParticlesPosition()
+    {
+        foreach (var p in m_Particles)
+            p.m_Position = p.m_PrevPosition = p.m_Transform ? p.m_Transform.position : m_Particles[p.m_ParentIndex].m_Transform.position + p.m_EndOffset;
+        AssetPhysicsEnvironment.AfterReset(this);
+    }
+    public void SetupParticles()
+    {
+        foreach (var p in m_Particles)
+        {
+            if (!p.m_Transform) continue;
+            p.m_InitLocalPosition = Quaternion.Inverse(p.m_Transform.parent.rotation) * (p.m_Transform.position - p.m_Transform.parent.position);
+            p.m_InitLocalRotation = Quaternion.Inverse(p.m_Transform.parent.rotation) * p.m_Transform.rotation;
+        }
+    }
+    public void SetEnabled(bool value)
+    {
+        enabled = value;
+        if (value) ResetParticlesPosition(); else InitTransforms();
+    }
 }
 
 namespace AssetImport
@@ -116,9 +194,4 @@ namespace MessagePack
 {
     [AttributeUsage(AttributeTargets.Class)] public sealed class MessagePackObjectAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.Property)] public sealed class KeyAttribute(string key) : Attribute { public string Key = key; }
-}
-namespace HarmonyLib
-{
-    public sealed class HarmonyPostfix : Attribute { }
-    public sealed class HarmonyPatch(Type type, string name) : Attribute { public Type Type = type; public string Name = name; }
 }

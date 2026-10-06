@@ -29,10 +29,15 @@ namespace AssetImport
             _floorOffsetText = GUI.TextField(new Rect(153, y, 77, 22), _floorOffsetText);
             GUI.Label(new Rect(10, y += 25, 140, 22), "Downward force");
             _downwardForceText = GUI.TextField(new Rect(153, y, 77, 22), _downwardForceText);
+            if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.NaturalDrape, "Natural drape"))
+                _environmentDraft.NaturalDrape = !_environmentDraft.NaturalDrape;
             if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.Settle, "Settle on load / reset"))
                 _environmentDraft.Settle = !_environmentDraft.Settle;
             var style = new GUIStyle(GUI.skin.label) { wordWrap = true };
-            const string help = "Ground offset is relative to the model origin. Force: 0 to 0.02 (0 = off). Pause motion before settling.";
+            string help = "Ground offset is relative to the model origin. Force: 0 to 0.02 (0 = off). Pause motion before settling.";
+            if (_environmentDraft.NaturalDrape)
+                help += NaturalDrapePatch.Available ? " Natural drape lets chains hang freely; elasticity and stiffness do not hold their original shape."
+                    : " Natural drape is unavailable with this physics runtime. Check the log.";
             float height = style.CalcHeight(new GUIContent(help), 220);
             GUI.Label(new Rect(10, y += 28, 220, height), help, style);
             y += (int)height;

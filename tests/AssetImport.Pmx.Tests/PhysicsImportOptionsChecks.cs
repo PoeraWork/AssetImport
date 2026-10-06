@@ -26,7 +26,7 @@ internal static class PhysicsImportOptionsChecks
             var process = Create(fresh, accessory, LoadProcess.LoadProcessKind.Normal);
             check(ReferenceEquals(process.Import, fresh) && fresh.InitialPhysicsSelectionStatus.Contains("2 added"), "new import constructor auto-selects all usable chains for " + (accessory ? "accessory" : "item"));
             check(fresh.PmxHairCollisionAssist, "new import copies explicit hair collision assistance option");
-            check(fresh.PhysicsEnvironment.Floor && fresh.PhysicsEnvironment.Settle && fresh.PhysicsEnvironment.DownwardForce == .001f,
+            check(fresh.PhysicsEnvironment.Floor && fresh.PhysicsEnvironment.Settle && fresh.PhysicsEnvironment.NaturalDrape && fresh.PhysicsEnvironment.DownwardForce == .001f,
                 "new PMX import receives ground, force and settling defaults");
             check(!ReferenceEquals(fresh.PhysicsEnvironment, AssetUI.NewPhysicsEnvironment), "import options do not share mutable settings with UI");
             check(fresh.PhysicsProfile == 1, "new PMX import uses the selected versioned preset");
@@ -57,7 +57,7 @@ internal static class PhysicsImportOptionsChecks
                 properties.radius = .29f;
                 Create(restored, accessory, kind);
                 check(!restored.PmxHairCollisionAssist, kind + " does not add assist to an old asset because UI is on");
-                check(!restored.PhysicsEnvironment.Floor && !restored.PhysicsEnvironment.Settle && restored.PhysicsEnvironment.DownwardForce == 0,
+                check(!restored.PhysicsEnvironment.Floor && !restored.PhysicsEnvironment.Settle && !restored.PhysicsEnvironment.NaturalDrape && restored.PhysicsEnvironment.DownwardForce == 0,
                     kind + " does not silently enable environment on legacy records");
                 check(restored.PhysicsProfile == 0, kind + " preserves the saved legacy profile even when new imports default to preset");
                 check(!restored.PhysicsEnabledAfterImport && !Node(restored, 1).IsDynamicRoot && Node(restored, 3).IsDynamicRoot && restored.InitialPhysicsSelectionStatus == "",
@@ -67,11 +67,11 @@ internal static class PhysicsImportOptionsChecks
                 AssetUI.UsePmxPhysicsPreset = false;
                 AssetUI.PmxHairCollisionAssist = false;
                 var savedPreset = new Import(model) { PhysicsProfile = 1, PmxHairCollisionAssist = true,
-                    PhysicsEnvironment = new PhysicsEnvironmentSettings { Floor = true, FloorOffset = -.3f, DownwardForce = .002f, Settle = true } };
+                    PhysicsEnvironment = new PhysicsEnvironmentSettings { Floor = true, FloorOffset = -.3f, DownwardForce = .002f, Settle = true, NaturalDrape = true } };
                 Create(savedPreset, accessory, kind);
                 check(savedPreset.PmxHairCollisionAssist, kind + " retains saved collision assistance despite UI being off");
                 check(savedPreset.PhysicsProfile == 1, kind + " retains saved preset when new-import UI disables it");
-                check(savedPreset.PhysicsEnvironment.FloorOffset == -.3f && savedPreset.PhysicsEnvironment.DownwardForce == .002f,
+                check(savedPreset.PhysicsEnvironment.FloorOffset == -.3f && savedPreset.PhysicsEnvironment.DownwardForce == .002f && savedPreset.PhysicsEnvironment.NaturalDrape,
                     kind + " retains saved environment values");
             }
 

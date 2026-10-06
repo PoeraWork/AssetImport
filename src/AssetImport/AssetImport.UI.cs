@@ -229,6 +229,8 @@ namespace AssetImport
                     NewPhysicsEnvironment.Floor = !NewPhysicsEnvironment.Floor;
                 if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.DownwardForce > 0f, "Downward force"))
                     NewPhysicsEnvironment.DownwardForce = NewPhysicsEnvironment.DownwardForce > 0f ? 0f : .001f;
+                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.NaturalDrape, "Natural drape"))
+                    NewPhysicsEnvironment.NaturalDrape = !NewPhysicsEnvironment.NaturalDrape;
                 if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.Settle, "Settle on load / reset"))
                     NewPhysicsEnvironment.Settle = !NewPhysicsEnvironment.Settle;
                 GUI.enabled = true;

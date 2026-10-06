@@ -18,13 +18,14 @@ namespace AssetImport
         private int _cursor;
         private readonly Stopwatch _budget = new Stopwatch();
         internal bool IsSettling { get { return _settling.Count != 0; } }
+        internal const int DrapeSettleSteps = 900;
 
         private sealed class SettleWork
         {
             internal DynamicBone Chain;
             internal Vector3 RootPosition;
             internal Quaternion ParentRotation;
-            internal int Remaining = 90, Stable;
+            internal int Remaining, Stable;
         }
 
         internal static void Attach(GameObject host, Transform root, DynamicBone[] chains, PhysicsEnvironmentSettings settings)
@@ -98,6 +99,13 @@ namespace AssetImport
             }
         }
 
+        internal static bool UsesNaturalDrape(DynamicBone chain)
+        {
+            if (!NaturalDrapePatch.Available) return false;
+            var owner = Find(chain);
+            return owner && owner.Settings.NaturalDrape;
+        }
+
         internal static void AfterIntegrate(DynamicBone chain)
         {
             var owner = Find(chain);
@@ -154,13 +162,14 @@ namespace AssetImport
 
         private void Queue(DynamicBone chain)
         {
+            int steps = UsesNaturalDrape(chain) ? DrapeSettleSteps : 90;
             foreach (var work in _settling) if (work.Chain == chain)
             {
-                work.Remaining = 90; work.Stable = 0; work.RootPosition = chain.m_Root.position;
+                work.Remaining = steps; work.Stable = 0; work.RootPosition = chain.m_Root.position;
                 work.ParentRotation = chain.m_Root.parent ? chain.m_Root.parent.rotation : Quaternion.identity;
                 return;
             }
-            _settling.Add(new SettleWork { Chain = chain, RootPosition = chain.m_Root.position,
+            _settling.Add(new SettleWork { Chain = chain, Remaining = steps, RootPosition = chain.m_Root.position,
                 ParentRotation = chain.m_Root.parent ? chain.m_Root.parent.rotation : Quaternion.identity });
         }
 

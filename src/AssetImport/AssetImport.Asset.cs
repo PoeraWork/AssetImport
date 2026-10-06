@@ -33,6 +33,9 @@ namespace AssetImport
         public float DownwardForce { get; set; }
         [Key("SettlePhysics")]
         public bool SettlePhysics { get; set; }
+        // Null distinguishes packages predating the drape constraint mode.
+        [Key("NaturalDrape")]
+        public bool? NaturalDrape { get; set; }
         [Key("ObjectKey")]
         public int Identifier { get; set; } // in Studio: dictKey | on Character: AccessorySlot
         [Key("Scale")]
