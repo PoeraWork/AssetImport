@@ -12,7 +12,7 @@ namespace AssetImport
     /// <summary>
     /// Everything IMGUI
     /// </summary>
-    internal class AssetUI : MonoBehaviour
+    internal partial class AssetUI : MonoBehaviour
     {
         // UI
         // main
@@ -28,6 +28,7 @@ namespace AssetImport
         internal static bool EnablePhysicsAfterImport = true;
         internal static bool UsePmxPhysicsPreset = true;
         internal static bool PmxHairCollisionAssist;
+        internal static PhysicsEnvironmentSettings NewPhysicsEnvironment = PhysicsEnvironmentSettings.NewImport();
         internal static CubeLut ImportColorLut;
         private bool _convertKkColor;
         private string _colorLutPath = "";
@@ -184,6 +185,7 @@ namespace AssetImport
                 AutoSelectPmxPhysics = true;
                 EnablePhysicsAfterImport = true;
                 UsePmxPhysicsPreset = true;
+                NewPhysicsEnvironment = PhysicsEnvironmentSettings.NewImport();
             }
             if (CheckButton(new Rect(10, y += 25, 220, 25), ImportBones, "Import Armature"))
             {
@@ -223,6 +225,12 @@ namespace AssetImport
                     UsePmxPhysicsPreset = !UsePmxPhysicsPreset;
                 if (CheckButton(new Rect(10, y += 25, 220, 25), PmxHairCollisionAssist, "Hair body collision assist"))
                     PmxHairCollisionAssist = !PmxHairCollisionAssist;
+                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.Floor, "Ground collision"))
+                    NewPhysicsEnvironment.Floor = !NewPhysicsEnvironment.Floor;
+                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.DownwardForce > 0f, "Downward force"))
+                    NewPhysicsEnvironment.DownwardForce = NewPhysicsEnvironment.DownwardForce > 0f ? 0f : .001f;
+                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.Settle, "Settle on load / reset"))
+                    NewPhysicsEnvironment.Settle = !NewPhysicsEnvironment.Settle;
                 GUI.enabled = true;
             }
             
@@ -333,6 +341,10 @@ namespace AssetImport
                     : character.ResetSelectedAccessoryPhysics();
             GUI.enabled = true;
             y += 25;
+            Asset environmentAsset = null;
+            var environment = mode == GameMode.Studio ? Main.asc?.GetSelectedPhysicsEnvironment(out environmentAsset)
+                : character?.GetSelectedPhysicsEnvironment(out environmentAsset);
+            DrawPhysicsEnvironment(ref y, environment, environmentAsset);
             if (!string.IsNullOrEmpty(_physicsActionStatus))
             {
                 string actionFeedback = "Last action: " + _physicsActionStatus;

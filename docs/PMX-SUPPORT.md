@@ -33,6 +33,13 @@ AssetImport detects a unique MMDD library under `BepInEx/plugins`. For another l
 - **PMX physics preset** applies initial settings for hair, skirts, and accessories.
 - **Physics ON / OFF** changes the selected item's or accessory's physics state.
 - **Reset physics motion** resets the simulation after seeking or repositioning.
+- **Ground collision** adds a horizontal ground plane at the model origin. **Ground offset** raises or lowers it in model units; scaling the model also scales the offset. Rotating the model does not tilt the plane.
+- **Downward force** adds a constant downward load so clothing can sag from its rest pose. Start with `0.001`; set it to `0` to disable it. This is a simulation-strength setting, not acceleration in metres per second squared. Existing gravity and force settings in physics editors remain additive.
+- **Settle on load / reset** lets enabled chains settle after loading or resetting. **Settle physics** starts settling manually. Pause motion first; moving a chain's anchor stops its extra settling steps. Settling is bounded and may not reach equilibrium on every model.
+
+New PMX imports enable ground collision, downward force (`0.001`), and automatic settling by default. Older scenes and cards keep these options off until enabled. To change an imported model, select one Studio item or the accessory slot, edit **Selected model physics**, and click **Apply physics settings**. These settings are saved with scenes, character cards, and coordinate cards, and are retained when copying the imported object or accessory.
+
+The ground belongs to each model and follows its origin height, rather than following animated feet. Set the offset if the model's origin is not at foot level. Ground collision acts on DynamicBone particles, not every mesh vertex; suitable chain roots and radii are still needed. It does not collide with stage geometry or prevent penetration when a fixed chain anchor is too far below ground. Disable downward force if a physics editor already supplies the desired load.
 
 Static PMX body shapes can become DynamicBone colliders. PMX collision groups determine which chains use them. **Hair body collision assist** can add body collisions for hair excluded by those groups; it is optional and takes effect on a new import. **PMX / Enable Body Collisions** controls collider generation and requires reloading the model or scene after a change.
 

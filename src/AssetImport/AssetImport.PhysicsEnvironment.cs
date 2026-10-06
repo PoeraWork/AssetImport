@@ -1,0 +1,211 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using UnityEngine;
+
+namespace AssetImport
+{
+    // Only explicitly owned chains enter this registry. Serialized Unity
+    // references remap when an accessory is cloned; settings are value data.
+    internal sealed class AssetPhysicsEnvironment : MonoBehaviour
+    {
+        public Transform ImportedRoot;
+        public DynamicBone[] Chains = new DynamicBone[0];
+        public PhysicsEnvironmentSettings Settings = new PhysicsEnvironmentSettings();
+        private static readonly Dictionary<DynamicBone, AssetPhysicsEnvironment> Owners = new Dictionary<DynamicBone, AssetPhysicsEnvironment>();
+        private readonly List<DynamicBone> _registered = new List<DynamicBone>();
+        private readonly List<SettleWork> _settling = new List<SettleWork>();
+        private int _cursor;
+        private readonly Stopwatch _budget = new Stopwatch();
+        internal bool IsSettling { get { return _settling.Count != 0; } }
+
+        private sealed class SettleWork
+        {
+            internal DynamicBone Chain;
+            internal Vector3 RootPosition;
+            internal Quaternion ParentRotation;
+            internal int Remaining = 90, Stable;
+        }
+
+        internal static void Attach(GameObject host, Transform root, DynamicBone[] chains, PhysicsEnvironmentSettings settings)
+        {
+            var environment = host.GetComponent<AssetPhysicsEnvironment>() ?? host.AddComponent<AssetPhysicsEnvironment>();
+            environment.Configure(root, chains, settings);
+        }
+
+        internal void Configure(Transform root, DynamicBone[] chains, PhysicsEnvironmentSettings settings)
+        {
+            Unregister();
+            ImportedRoot = root; Chains = chains; Settings = settings.Copy();
+            Register();
+            if (Settings.Settle) RequestSettle();
+        }
+
+        internal void Apply(PhysicsEnvironmentSettings settings)
+        {
+            Settings = settings.Copy();
+            _settling.Clear();
+            if (Settings.Settle) RequestSettle();
+        }
+
+        private void OnEnable()
+        {
+            Settings = (Settings ?? new PhysicsEnvironmentSettings()).Copy();
+            Register();
+            if (Settings.Settle) RequestSettle();
+        }
+
+        private void OnDisable() { Unregister(); }
+        private void OnDestroy() { Unregister(); }
+
+        private bool Owns(DynamicBone chain)
+        {
+            return chain && ImportedRoot && ImportedRoot.IsChildOf(transform) && chain.gameObject == gameObject &&
+                chain.m_Root && chain.m_Root.IsChildOf(ImportedRoot);
+        }
+
+        private void Register()
+        {
+            foreach (var chain in Chains ?? new DynamicBone[0])
+                if (Owns(chain) && !_registered.Contains(chain)) { Owners[chain] = this; _registered.Add(chain); }
+        }
+
+        private void Unregister()
+        {
+            foreach (var chain in _registered)
+            {
+                AssetPhysicsEnvironment owner;
+                if (Owners.TryGetValue(chain, out owner) && owner == this) Owners.Remove(chain);
+            }
+            _registered.Clear(); _settling.Clear();
+        }
+
+        private static AssetPhysicsEnvironment Find(DynamicBone chain)
+        {
+            AssetPhysicsEnvironment owner;
+            if (!chain || !Owners.TryGetValue(chain, out owner)) return null;
+            if (!owner || !owner.isActiveAndEnabled || !owner.Owns(chain)) { Owners.Remove(chain); return null; }
+            return chain.enabled && chain.m_Weight > 0f && !chain.m_DistantDisabled &&
+                chain.gameObject.activeInHierarchy && chain.m_Root.gameObject.activeInHierarchy ? owner : null;
+        }
+
+        private float Scale
+        {
+            get
+            {
+                float scale = ImportedRoot ? Math.Abs(ImportedRoot.lossyScale.x) : 0f;
+                return PhysicsEnvironmentMath.Finite(scale) ? scale : 0f;
+            }
+        }
+
+        internal static void AfterIntegrate(DynamicBone chain)
+        {
+            var owner = Find(chain);
+            if (!owner || owner.Settings.DownwardForce <= 0f || chain.m_Particles == null) return;
+            float displacement = owner.Settings.DownwardForce * owner.Scale;
+            // Verlet external acceleration is an additive displacement in this
+            // solver. Add it before constraints without writing m_Force or
+            // m_Gravity, so editor and interaction-plugin values stay intact.
+            foreach (var p in chain.m_Particles)
+                if (p.m_ParentIndex >= 0) p.m_Position += new Vector3(0f, -displacement, 0f);
+        }
+
+        internal static void AfterConstraints(DynamicBone chain)
+        {
+            var owner = Find(chain);
+            if (!owner || !owner.Settings.Floor || chain.m_Particles == null) return;
+            float scale = owner.Scale;
+            float floor = owner.ImportedRoot.position.y + owner.Settings.FloorOffset * scale;
+            float particleScale = Math.Abs(chain.transform.lossyScale.x);
+            if (scale <= 0f || !PhysicsEnvironmentMath.Finite(floor) || !PhysicsEnvironmentMath.Finite(particleScale)) return;
+            var particles = chain.m_Particles;
+            for (int i = 1; i < particles.Count; i++)
+            {
+                var p = particles[i];
+                if (p.m_ParentIndex < 0 || p.m_ParentIndex >= i) continue;
+                var parent = particles[p.m_ParentIndex];
+                if (!parent.m_Transform) continue;
+                float height = floor + Math.Max(0f, p.m_Radius) * particleScale;
+                Vector3 rest = p.m_Transform ? p.m_Transform.position - parent.m_Transform.position : parent.m_Transform.TransformVector(p.m_EndOffset);
+                // A preceding contact may have moved this particle's parent.
+                // Restore the link length before constraining the child too.
+                var direction = p.m_Position - parent.m_Position;
+                float length = rest.magnitude;
+                if (direction.sqrMagnitude > 1e-20f) p.m_Position = parent.m_Position + direction.normalized * length;
+                else if (length > 0f) p.m_Position = parent.m_Position + rest;
+                if (p.m_Position.y >= height) continue;
+                var velocity = p.m_Position - p.m_PrevPosition;
+                Vector3 fallback = rest;
+                if (rest.x * rest.x + rest.z * rest.z < 1e-12f * length * length)
+                    fallback = parent.m_Position - owner.ImportedRoot.position;
+                p.m_Position = PhysicsEnvironmentMath.Contact(p.m_Position, parent.m_Position, fallback, length, height);
+                // Contact correction is not an impulse. Preserve tangential
+                // velocity without launching a particle sideways on contact.
+                if (p.m_Position.y >= height - .000001f * scale) velocity.y = Math.Max(0f, velocity.y);
+                p.m_PrevPosition = p.m_Position - velocity;
+            }
+        }
+
+        internal static void AfterReset(DynamicBone chain)
+        {
+            var owner = Find(chain);
+            if (owner && owner.Settings.Settle) owner.Queue(chain);
+        }
+
+        private void Queue(DynamicBone chain)
+        {
+            foreach (var work in _settling) if (work.Chain == chain)
+            {
+                work.Remaining = 90; work.Stable = 0; work.RootPosition = chain.m_Root.position;
+                work.ParentRotation = chain.m_Root.parent ? chain.m_Root.parent.rotation : Quaternion.identity;
+                return;
+            }
+            _settling.Add(new SettleWork { Chain = chain, RootPosition = chain.m_Root.position,
+                ParentRotation = chain.m_Root.parent ? chain.m_Root.parent.rotation : Quaternion.identity });
+        }
+
+        internal int RequestSettle()
+        {
+            _settling.Clear(); _cursor = 0;
+            foreach (var chain in Chains ?? new DynamicBone[0]) if (Find(chain) == this) Queue(chain);
+            return _settling.Count;
+        }
+
+        private void LateUpdate()
+        {
+            _budget.Reset(); _budget.Start();
+            int count = 0;
+            // Cooperative work with both a time and a substep limit. No Unity
+            // objects are touched off-thread, and animation time never advances.
+            while (_settling.Count > 0 && count++ < 128 && _budget.Elapsed.TotalMilliseconds < 2)
+            {
+                if (_cursor >= _settling.Count) _cursor = 0;
+                var work = _settling[_cursor]; var chain = work.Chain;
+                if (Find(chain) != this || --work.Remaining <= 0) { _settling.RemoveAt(_cursor); continue; }
+                if (chain.m_Particles == null || chain.m_Particles.Count < 2) { _cursor++; break; }
+                Quaternion parentRotation = chain.m_Root.parent ? chain.m_Root.parent.rotation : Quaternion.identity;
+                if ((chain.m_Root.position - work.RootPosition).sqrMagnitude > .000001f * Scale * Scale ||
+                    Quaternion.Angle(parentRotation, work.ParentRotation) > .1f)
+                { _settling.RemoveAt(_cursor); continue; }
+                float rate = chain.m_UpdateRate;
+                if (!PhysicsEnvironmentMath.Finite(rate) || rate <= 0f) rate = 60f;
+                try
+                {
+                    chain.InitTransforms();
+                    chain.UpdateDynamicBones(1f / Math.Max(1f, Math.Min(240f, rate)));
+                    float motion = 0f;
+                    foreach (var p in chain.m_Particles) motion = Math.Max(motion, (p.m_Position - p.m_PrevPosition).sqrMagnitude);
+                    work.Stable = motion < 1e-10f * Scale * Scale ? work.Stable + 1 : 0;
+                    if (work.Stable >= 5) { _settling.RemoveAt(_cursor); continue; }
+                }
+                catch (Exception error)
+                {
+                    AssetImport.Logger.LogWarning("Could not settle physics for " + chain.m_Root.name + ": " + error.Message);
+                    _settling.RemoveAt(_cursor); continue;
+                }
+                _cursor++;
+            }
+            _budget.Stop();
+        }
+    }
+}

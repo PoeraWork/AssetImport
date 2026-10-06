@@ -24,7 +24,7 @@ namespace AssetImport
             this.Kind = kind;
             ColorLut = kind == LoadProcessKind.Normal ? AssetUI.ImportColorLut : null;
             if (kind == LoadProcessKind.Normal)
-                import.PrepareNewPmxPhysics(AssetUI.AutoSelectPmxPhysics, AssetUI.EnablePhysicsAfterImport, AssetUI.UsePmxPhysicsPreset, AssetUI.PmxHairCollisionAssist);
+                import.PrepareNewPmxPhysics(AssetUI.AutoSelectPmxPhysics, AssetUI.EnablePhysicsAfterImport, AssetUI.UsePmxPhysicsPreset, AssetUI.PmxHairCollisionAssist, AssetUI.NewPhysicsEnvironment);
         }
         public LoadProcess(GameObject baseGameObject, AccessoryHelper accessory, Import import, Vector3 scale, LoadProcessKind kind)
         {
@@ -35,7 +35,7 @@ namespace AssetImport
             this.Kind = kind;
             ColorLut = kind == LoadProcessKind.Normal ? AssetUI.ImportColorLut : null;
             if (kind == LoadProcessKind.Normal)
-                import.PrepareNewPmxPhysics(AssetUI.AutoSelectPmxPhysics, AssetUI.EnablePhysicsAfterImport, AssetUI.UsePmxPhysicsPreset, AssetUI.PmxHairCollisionAssist);
+                import.PrepareNewPmxPhysics(AssetUI.AutoSelectPmxPhysics, AssetUI.EnablePhysicsAfterImport, AssetUI.UsePmxPhysicsPreset, AssetUI.PmxHairCollisionAssist, AssetUI.NewPhysicsEnvironment);
         }
 
         public enum LoadProcessKind

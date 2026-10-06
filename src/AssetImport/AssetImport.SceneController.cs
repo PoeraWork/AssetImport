@@ -283,6 +283,7 @@ namespace AssetImport
 
                         import.PhysicsProfile = asset.PhysicsProfile;
                         import.PmxHairCollisionAssist = asset.PmxHairCollisionAssist;
+                        import.PhysicsEnvironment = PhysicsEnvironmentPersistence.Read(asset);
                         import.Load();
                         if (import == null || !import.IsLoaded)
                         {
@@ -364,6 +365,7 @@ namespace AssetImport
                 );
                 import.PhysicsProfile = oldAsset.PhysicsProfile;
                 import.PmxHairCollisionAssist = oldAsset.PmxHairCollisionAssist;
+                import.PhysicsEnvironment = PhysicsEnvironmentPersistence.Read(oldAsset);
                 import.Load();
                 if (!import.IsLoaded)
                 {
@@ -527,6 +529,7 @@ namespace AssetImport
             // ItemFKCtrl
             ItemFKCtrl itemFKCtrl = loadProcessBase.GetComponent<ItemFKCtrl>();
             itemFKCtrl.listBones.Clear();
+            AssetPhysicsEnvironment.Attach(loadProcessBase, importGameObject.transform, new DynamicBone[0], import.PhysicsEnvironment);
             if (!import.HasBones)
             {
                 itemFKCtrl.count = 0;
@@ -594,6 +597,7 @@ namespace AssetImport
                     import.ApplyPmxPhysicsDefaults(dBones);
                     import.ApplyPmxBodyCollisions(dBones, loadProcess.Scale, Main.pmxBodyCollisions.Value, import.PhysicsProfile, import.PmxHairCollisionAssist);
                     ociitem.dynamicBones = dBones.ToArray();
+                    AssetPhysicsEnvironment.Attach(loadProcessBase, importGameObject.transform, ociitem.dynamicBones, import.PhysicsEnvironment);
                     ApplyImportedPhysicsState(ociitem, physicsEnabled);
                     if (Hooks.IsOptionalIntegrationAvailable(Hooks.PoseEditorAssembly))
                         Hooks.RunOptionalIntegration(Hooks.PoseEditorAssembly, "studio pose controller refresh", () => RefreshPoseController(loadProcessBase));
@@ -629,6 +633,7 @@ namespace AssetImport
                 asset.PerRendererMaterials = loadProcess.Import.PerRendererMaterials;
                 asset.PhysicsProfile = import.PhysicsProfile;
                 asset.PmxHairCollisionAssist = import.PmxHairCollisionAssist;
+                PhysicsEnvironmentPersistence.Write(asset, import.PhysicsEnvironment);
 
                 LoadedObjects[ociitem.itemInfo.dicKey] = asset;
             }

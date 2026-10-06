@@ -65,7 +65,17 @@ namespace AssetImport
         private void RestoreAccessoryPhysics(int coordinate, int slot)
         {
             var physics = GetAccessoryPhysics(coordinate, slot, out var asset);
-            if (physics) physics.SetEnabled(AssetAccessoryPhysics.RestoreEnabled(asset));
+            if (physics)
+            {
+                AssetPhysicsEnvironment.Attach(physics.gameObject, physics.ImportedRoot, physics.Chains, PhysicsEnvironmentPersistence.Read(asset));
+                physics.SetEnabled(AssetAccessoryPhysics.RestoreEnabled(asset));
+            }
+        }
+
+        internal AssetPhysicsEnvironment GetSelectedPhysicsEnvironment(out Asset asset)
+        {
+            var physics = GetSelectedAccessoryPhysics(out asset);
+            return physics ? physics.GetComponent<AssetPhysicsEnvironment>() : null;
         }
 
         private IEnumerator ApplyEditorDataAndRestorePhysics(IEnumerator applyData, int coordinate)
@@ -76,7 +86,15 @@ namespace AssetImport
             if (coordinate != ChaControl.fileStatus.coordinateType ||
                 !loadedObjects.TryGetValue(coordinate, out var assets)) yield break;
             foreach (int slot in assets.Keys)
+            {
                 if (!AssetAccessoryPhysics.RestoreEnabled(assets[slot])) RestoreAccessoryPhysics(coordinate, slot);
+                else
+                {
+                    var physics = GetAccessoryPhysics(coordinate, slot, out var asset);
+                    var environment = physics ? physics.GetComponent<AssetPhysicsEnvironment>() : null;
+                    if (environment && environment.Settings.Settle) environment.RequestSettle();
+                }
+            }
         }
 
         private AssetAccessoryPhysics GetSelectedAccessoryPhysics(out Asset asset)
@@ -194,6 +212,7 @@ namespace AssetImport
                     PhysicsProfile = loadedObjects[cSet][source].PhysicsProfile,
                     PmxHairCollisionAssist = loadedObjects[cSet][source].PmxHairCollisionAssist
                 };
+                PhysicsEnvironmentPersistence.Write(asset, PhysicsEnvironmentPersistence.Read(loadedObjects[cSet][source]));
                 loadedObjects[cSet][destination] = asset;
                 RestoreAccessoryPhysics(cSet, destination);
                 Logger.LogDebug($"Source slot {source} --> Destination slot {destination}");
@@ -237,6 +256,7 @@ namespace AssetImport
                     asset.PhysicsEnabled = loadedObjects[source][slot].PhysicsEnabled;
                     asset.PhysicsProfile = loadedObjects[source][slot].PhysicsProfile;
                     asset.PmxHairCollisionAssist = loadedObjects[source][slot].PmxHairCollisionAssist;
+                    PhysicsEnvironmentPersistence.Write(asset, PhysicsEnvironmentPersistence.Read(loadedObjects[source][slot]));
                     loadedObjects[destination][slot] = asset;
                     RestoreAccessoryPhysics(destination, slot);
                     Logger.LogDebug($"Source: Type {source}, Slot {slot} --> Destination: Type {destination}");
@@ -782,6 +802,7 @@ namespace AssetImport
                     asset.PerRendererMaterials);
                 import.PhysicsProfile = asset.PhysicsProfile;
                 import.PmxHairCollisionAssist = asset.PmxHairCollisionAssist;
+                import.PhysicsEnvironment = PhysicsEnvironmentPersistence.Read(asset);
                 import.Load();
                 if (!import.IsLoaded)
                 {
@@ -987,6 +1008,7 @@ namespace AssetImport
             physics.SourceIdentifier = import.SourceIdentifier;
             physics.ImportedRoot = importObject.transform;
             physics.Chains = new DynamicBone[0];
+            AssetPhysicsEnvironment.Attach(loadProcessBase, importObject.transform, physics.Chains, import.PhysicsEnvironment);
 
             // dynamic bones
             if (import.HasBones)
@@ -1007,6 +1029,7 @@ namespace AssetImport
                     import.ApplyPmxPhysicsDefaults(dBones);
                     import.ApplyPmxBodyCollisions(dBones, loadProcess.Scale, Main.pmxBodyCollisions.Value, import.PhysicsProfile, import.PmxHairCollisionAssist);
                     physics.Chains = dBones.ToArray();
+                    AssetPhysicsEnvironment.Attach(loadProcessBase, importObject.transform, physics.Chains, import.PhysicsEnvironment);
                     physics.SetEnabled(enablePhysics);
                     Logger.LogDebug($"Created {dBones.Count} dynamic bone chains on {loadProcess.Import.SourceFileName}; physics {(enablePhysics ? "ON" : "OFF")}");
                 }
@@ -1033,6 +1056,7 @@ namespace AssetImport
                 asset.PhysicsEnabled = enablePhysics;
                 asset.PhysicsProfile = import.PhysicsProfile;
                 asset.PmxHairCollisionAssist = import.PmxHairCollisionAssist;
+                PhysicsEnvironmentPersistence.Write(asset, import.PhysicsEnvironment);
 
                 if (!loadedObjects.ContainsKey(ChaControl.fileStatus.coordinateType)) loadedObjects[ChaControl.fileStatus.coordinateType] = new Dictionary<int, Asset>();
                 loadedObjects[ChaControl.fileStatus.coordinateType][asset.Identifier] = asset;

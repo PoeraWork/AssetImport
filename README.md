@@ -12,6 +12,7 @@ This project extends [Njaecha/AssetImport](https://github.com/Njaecha/AssetImpor
 - Save imported assets with Studio scenes and character accessories.
 - Generate MMDD 3 mappings for PMX bone animation and vertex morphs.
 - Create DynamicBone chains and body colliders from supported PMX metadata; control physics from the import panel.
+- Add a ground plane, downward force, and initial settling to imported physics chains.
 - Decode BMP, TGA, and common DDS textures, with optional `.cube` LUT conversion for diffuse colors.
 - Prepare textures asynchronously and apply them through MaterialEditor.
 

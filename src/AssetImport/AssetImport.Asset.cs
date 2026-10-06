@@ -24,6 +24,15 @@ namespace AssetImport
         public int PhysicsProfile { get; set; }
         [Key("PmxHairCollisionAssist")]
         public bool PmxHairCollisionAssist { get; set; }
+        // Missing keys in older scenes/cards keep the environment disabled.
+        [Key("FloorCollision")]
+        public bool FloorCollision { get; set; }
+        [Key("FloorOffset")]
+        public float FloorOffset { get; set; }
+        [Key("DownwardForce")]
+        public float DownwardForce { get; set; }
+        [Key("SettlePhysics")]
+        public bool SettlePhysics { get; set; }
         [Key("ObjectKey")]
         public int Identifier { get; set; } // in Studio: dictKey | on Character: AccessorySlot
         [Key("Scale")]

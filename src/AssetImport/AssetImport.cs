@@ -102,6 +102,7 @@ namespace AssetImport
 
             // custom controllers and hooks
             Harmony harmony = Harmony.CreateAndPatchAll(typeof(Hooks), null);
+            Harmony.CreateAndPatchAll(typeof(PhysicsEnvironmentHooks), GUID + ".physics-environment");
 
             StudioSaveLoadApi.RegisterExtraBehaviour<AssetSceneController>(GUID);
             CharacterApi.RegisterExtraBehaviour<AssetCharaController>(GUID);
