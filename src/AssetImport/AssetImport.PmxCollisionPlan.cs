@@ -300,7 +300,7 @@ namespace AssetImport
             return true;
         }
 
-        private static float[] ConvertRotation(PmxModel.V3 angles)
+        internal static float[] ConvertRotation(PmxModel.V3 angles)
         {
             // PMX/MMD Y-X-Z Euler order: Ry * Rx * Rz. Convert the resulting
             // quaternion by C * R * C^-1 for C = diag(-1, 1, -1), exactly the

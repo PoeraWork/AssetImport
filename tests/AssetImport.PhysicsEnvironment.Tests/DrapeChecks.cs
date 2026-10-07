@@ -69,9 +69,12 @@ internal static class DrapeChecks
             }
 
         var loaded = PhysicsEnvironmentPersistence.Read(new Asset { DownwardForce = .001f });
-        check(loaded.NaturalDrape, "previous package's explicit downward force gains corrected drape behavior");
+        check(!loaded.NaturalDrape, "unversioned downward-force saves keep shape retention");
+        check(!PhysicsEnvironmentPersistence.Read(new Asset { DownwardForce=.001f,NaturalDrape=true }).NaturalDrape,
+            "unversioned automatic free-hanging saves migrate to shape retention");
         check(!PhysicsEnvironmentPersistence.Read(new Asset()).NaturalDrape, "pre-environment saves do not silently enable new physics");
         check(!PhysicsEnvironmentPersistence.Read(new Asset { DownwardForce = .001f, NaturalDrape = false }).NaturalDrape, "explicit drape opt-out survives migration");
+        loaded.NaturalDrape=true;
         var asset = new Asset(); PhysicsEnvironmentPersistence.Write(asset, loaded);
         var copy = new Asset(); PhysicsEnvironmentPersistence.Write(copy, PhysicsEnvironmentPersistence.Read(asset));
         loaded.NaturalDrape = false;
@@ -169,7 +172,7 @@ internal static class DrapeChecks
         }
     }
 
-    private static (AssetPhysicsEnvironment Environment, DynamicBone Chain) Model(bool drape, (float Elasticity, float Stiffness, float Damping) values, float scale = 1, Vector3? direction = null)
+    internal static (AssetPhysicsEnvironment Environment, DynamicBone Chain) Model(bool drape, (float Elasticity, float Stiffness, float Damping) values, float scale = 1, Vector3? direction = null)
     {
         var host = new GameObject(); var model = new GameObject().transform; model.parent = host.transform;
         model.lossyScale = new(scale, scale, scale);
@@ -188,7 +191,7 @@ internal static class DrapeChecks
         return (host.GetComponent<AssetPhysicsEnvironment>(), chain);
     }
 
-    private static void Run(DynamicBone chain, int steps, bool skipFrames)
+    internal static void Run(DynamicBone chain, int steps, bool skipFrames)
     {
         for (int i = 0; i < steps; i++)
         {

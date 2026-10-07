@@ -4,6 +4,8 @@ Run `python scripts/validate.py` from the repository root after preparing depend
 
 The small OBJ and texture under `fixtures/` can also be imported manually to inspect material binding and scene/card persistence. They are synthetic inputs, not a model compatibility catalogue.
 
+Physics checks cover PMX joint parsing and binding, asymmetric angular limits, spring response, per-chain modes, and saved settings. The physics fixture uses engine substitutes, checks hook signatures against both game reference APIs, and executes the coefficient rewrite. It does not replace native DynamicBone playback or visual checks in Studio.
+
 ## Optional model corpus
 
 ```powershell

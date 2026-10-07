@@ -58,14 +58,14 @@ internal static class RigidBodyReaderChecks
         }
     }
 
-    private sealed class Body
+    internal sealed class Body
     {
         internal string Name="";
         internal int Bone=0, Group=0, Mask=0, Shape=0, Mode=0;
         internal float SizeX=.25f;
     }
 
-    private static byte[] Fixture(byte[] original, params Body[] bodies)
+    internal static byte[] Fixture(byte[] original, params Body[] bodies)
     {
         using (var stream=new MemoryStream())
         using (var writer=new BinaryWriter(stream))

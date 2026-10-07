@@ -13,13 +13,14 @@ namespace AssetImport
         private void DrawPhysicsEnvironment(ref int y, AssetPhysicsEnvironment environment, Asset asset)
         {
             if (!environment || asset == null || environment.Chains == null || environment.Chains.Length == 0)
-            { _environmentAsset = null; _environment = null; return; }
+            { _environmentAsset = null; _environment = null; _chainPhysicsOpen = false; return; }
             if (_environmentAsset != asset || _environment != environment)
             {
                 _environmentAsset = asset; _environment = environment;
                 _environmentDraft = environment.Settings.Copy();
                 _floorOffsetText = _environmentDraft.FloorOffset.ToString(CultureInfo.InvariantCulture);
                 _downwardForceText = _environmentDraft.DownwardForce.ToString(CultureInfo.InvariantCulture);
+                _chainSelection.Clear(); _chainPhysicsOpen = false;
             }
             GUI.enabled = !PreloadUI;
             GUI.Label(new Rect(10, y += 8, 220, 22), "Selected model physics");
@@ -29,34 +30,22 @@ namespace AssetImport
             _floorOffsetText = GUI.TextField(new Rect(153, y, 77, 22), _floorOffsetText);
             GUI.Label(new Rect(10, y += 25, 140, 22), "Downward force");
             _downwardForceText = GUI.TextField(new Rect(153, y, 77, 22), _downwardForceText);
-            if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.NaturalDrape, "Natural drape"))
+            if (GUI.Button(new Rect(10, y += 25, 220, 25), "Default: " + PhysicsModeName(_environmentDraft.DefaultMode)))
                 _environmentDraft.NaturalDrape = !_environmentDraft.NaturalDrape;
+            if (GUI.Button(new Rect(10, y += 28, 220, 25), "Physics chains (" + environment.Chains.Length + ")..."))
+                _chainPhysicsOpen = !_chainPhysicsOpen;
             if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.Settle, "Settle on load / reset"))
                 _environmentDraft.Settle = !_environmentDraft.Settle;
             var style = new GUIStyle(GUI.skin.label) { wordWrap = true };
             string help = "Ground offset is relative to the model origin. Force: 0 to 0.02 (0 = off). Pause motion before settling.";
             if (_environmentDraft.NaturalDrape)
-                help += NaturalDrapePatch.Available ? " Natural drape lets chains hang freely; elasticity and stiffness do not hold their original shape."
-                    : " Natural drape is unavailable with this physics runtime. Check the log.";
+                help += NaturalDrapePatch.Available ? " Free hanging removes shape retention and PMX angular support."
+                    : " Free hanging is unavailable with this physics runtime. Check the log.";
             float height = style.CalcHeight(new GUIContent(help), 220);
             GUI.Label(new Rect(10, y += 28, 220, height), help, style);
             y += (int)height;
             if (GUI.Button(new Rect(10, y += 4, 220, 25), "Apply physics settings"))
-            {
-                float offset, force;
-                if (!float.TryParse(_floorOffsetText, NumberStyles.Float, CultureInfo.InvariantCulture, out offset) ||
-                    !float.TryParse(_downwardForceText, NumberStyles.Float, CultureInfo.InvariantCulture, out force) ||
-                    !PhysicsEnvironmentMath.Finite(offset) || !PhysicsEnvironmentMath.Finite(force) ||
-                    offset < -100f || offset > 100f || force < 0f || force > .02f)
-                    _physicsActionStatus = "Enter ground offset from -100 to 100 and force from 0 to 0.02.";
-                else
-                {
-                    _environmentDraft.FloorOffset = offset; _environmentDraft.DownwardForce = force;
-                    environment.Apply(_environmentDraft);
-                    PhysicsEnvironmentPersistence.Write(asset, _environmentDraft);
-                    _physicsActionStatus = "Physics settings applied.";
-                }
-            }
+                ApplyPhysicsDraft();
             if (GUI.Button(new Rect(10, y += 30, 220, 25), environment.IsSettling ? "Restart settling" : "Settle physics"))
                 _physicsActionStatus = environment.RequestSettle() > 0 ? "Settling physics." : "Enable physics before settling.";
             y += 25;
@@ -66,6 +55,24 @@ namespace AssetImport
                 y += 22;
             }
             GUI.enabled = true;
+        }
+
+        private void ApplyPhysicsDraft()
+        {
+            if (!_environment || _environmentAsset == null) return;
+            float offset, force;
+            if (!float.TryParse(_floorOffsetText, NumberStyles.Float, CultureInfo.InvariantCulture, out offset) ||
+                !float.TryParse(_downwardForceText, NumberStyles.Float, CultureInfo.InvariantCulture, out force) ||
+                !PhysicsEnvironmentMath.Finite(offset) || !PhysicsEnvironmentMath.Finite(force) ||
+                offset < -100f || offset > 100f || force < 0f || force > .02f)
+                _physicsActionStatus = "Enter ground offset from -100 to 100 and force from 0 to 0.02.";
+            else
+            {
+                _environmentDraft.FloorOffset = offset; _environmentDraft.DownwardForce = force;
+                _environment.Apply(_environmentDraft);
+                PhysicsEnvironmentPersistence.Write(_environmentAsset, _environmentDraft);
+                _physicsActionStatus = "Physics settings applied.";
+            }
         }
     }
 }

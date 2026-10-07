@@ -8,8 +8,8 @@ using HarmonyLib;
 namespace AssetImport
 {
     // DynamicBone's elasticity and stiffness both attract particles to the
-    // unforced input shape. A free-hanging chain must instead find equilibrium
-    // from load, lengths and contacts. Override only the *reads* in its native
+    // unforced input shape. Scale this attraction per chain, or release it for
+    // free hanging under load, lengths and contacts. Override only the reads in its native
     // constraint passes: no editor values, particle parameters, transforms or
     // bind/rest data are written. Native damping, collisions, freeze axes and
     // the weight blend remain in the original solver.
@@ -24,8 +24,8 @@ namespace AssetImport
             if (method == nameof(DynamicBone.SkipUpdateParticles)) _skipReady = ready;
         }
 
-        internal static float RestAttraction(float coefficient, bool drape)
-        { return drape ? 0f : coefficient; }
+        internal static float RestAttraction(float coefficient, float retention)
+        { return coefficient * retention; }
 
         internal static bool TryRewrite(IEnumerable<CodeInstruction> instructions, MethodBase method,
             ILGenerator generator, out List<CodeInstruction> result, out string reason)
@@ -58,10 +58,10 @@ namespace AssetImport
 
                 // Resolve ownership once per pass, not for every particle. Both
                 // passes must patch successfully before either changes behavior.
-                var active = generator.DeclareLocal(typeof(bool));
+                var active = generator.DeclareLocal(typeof(float));
                 var patched = new List<CodeInstruction> {
                     new CodeInstruction(OpCodes.Ldarg_0),
-                    new CodeInstruction(OpCodes.Call, typeof(AssetPhysicsEnvironment).GetMethod(nameof(AssetPhysicsEnvironment.UsesNaturalDrape), BindingFlags.Static | BindingFlags.NonPublic)),
+                    new CodeInstruction(OpCodes.Call, typeof(AssetPhysicsEnvironment).GetMethod(nameof(AssetPhysicsEnvironment.ShapeRetention), BindingFlags.Static | BindingFlags.NonPublic)),
                     new CodeInstruction(OpCodes.Stloc, active)
                 };
                 foreach (var source in original)

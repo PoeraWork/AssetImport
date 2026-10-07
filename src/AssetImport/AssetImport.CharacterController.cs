@@ -1027,9 +1027,10 @@ namespace AssetImport
                 if (dBones.Count > 0)
                 {
                     import.ApplyPmxPhysicsDefaults(dBones);
+                    import.PreparePmxJointPhysics(dBones);
                     import.ApplyPmxBodyCollisions(dBones, loadProcess.Scale, Main.pmxBodyCollisions.Value, import.PhysicsProfile, import.PmxHairCollisionAssist);
                     physics.Chains = dBones.ToArray();
-                    AssetPhysicsEnvironment.Attach(loadProcessBase, importObject.transform, physics.Chains, import.PhysicsEnvironment);
+                    AssetPhysicsEnvironment.Attach(loadProcessBase, importObject.transform, physics.Chains, import.PhysicsEnvironment, import.JointPhysicsBindings);
                     physics.SetEnabled(enablePhysics);
                     Logger.LogDebug($"Created {dBones.Count} dynamic bone chains on {loadProcess.Import.SourceFileName}; physics {(enablePhysics ? "ON" : "OFF")}");
                 }

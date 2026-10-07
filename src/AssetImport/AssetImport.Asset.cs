@@ -36,6 +36,12 @@ namespace AssetImport
         // Null distinguishes packages predating the drape constraint mode.
         [Key("NaturalDrape")]
         public bool? NaturalDrape { get; set; }
+        [Key("ChainPhysicsVersion")]
+        public int ChainPhysicsVersion { get; set; }
+        [Key("PhysicsDefaultMode")]
+        public int PhysicsDefaultMode { get; set; }
+        [Key("ChainPhysicsSettings")]
+        public PhysicsChainSettings[] ChainPhysicsSettings { get; set; }
         [Key("ObjectKey")]
         public int Identifier { get; set; } // in Studio: dictKey | on Character: AccessorySlot
         [Key("Scale")]

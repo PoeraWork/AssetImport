@@ -35,14 +35,26 @@ AssetImport detects a unique MMDD library under `BepInEx/plugins`. For another l
 - **Reset physics motion** resets the simulation after seeking or repositioning.
 - **Ground collision** adds a horizontal ground plane at the model origin. **Ground offset** raises or lowers it in model units; scaling the model also scales the offset. Rotating the model does not tilt the plane.
 - **Downward force** adds a constant downward load. Start with `0.001`; set it to `0` to disable this additional load. This is a simulation-strength setting, not acceleration in metres per second squared. Existing gravity and force settings in physics editors remain additive.
-- **Natural drape** allows the selected model's chains to hang under load while the character is stationary, and to return to a hanging equilibrium after movement stops. It removes the pull toward the unforced input shape; damping, length constraints, collision handling, freeze axes, and physics weight remain active. The original binding and rest data stay unchanged. Physics OFF restores the unforced pose.
+- **Keep shape** retains elasticity and stiffness while the chain responds to load. Supported PMX joints also contribute angular limits and an approximate spring response.
+- **Physics chains** opens per-chain settings. Search by root name, select one or several chains, and use **Show selected roots** to locate their attachment points on the model.
 - **Settle on load / reset** lets enabled chains settle after loading or resetting. **Settle physics** starts settling manually. Pause motion first; moving a chain's anchor stops its extra settling steps. Settling is bounded and may not reach equilibrium on every model.
 
-New PMX imports enable ground collision, downward force (`0.001`), natural drape, and automatic settling by default. Saved assets with downward force enabled and no explicit drape preference also enable natural drape on load. Older assets without downward force keep it off. To change an imported model, select one Studio item or the accessory slot, edit **Selected model physics**, and click **Apply physics settings**. These settings are saved with scenes, character cards, and coordinate cards, and are retained when copying the imported object or accessory.
+New PMX imports use **Keep shape**, ground collision, downward force (`0.001`), and automatic settling. To change a model, select one Studio item or the accessory slot, edit **Selected model physics**, and click **Apply physics settings**. Settings persist in scenes, character cards, and coordinate cards, including copied objects and accessories. Assets saved without per-chain settings load in **Keep shape** mode; their ground, force, and settling settings are retained.
 
-Natural drape applies to the model's imported chains. It leaves physics-editor values intact, but their elasticity and stiffness do not hold the original shape while this mode is active. Turn it off to use those shape-restoring parameters, for example on a model whose hair or ornaments need to retain a rigid shape. Drape needs a load: enable downward force or supply external force through an editor. Settling only advances the simulation; it cannot make a chain hang if shape-restoring constraints are still active or no force is present. The panel reports when the installed physics runtime cannot support natural drape.
+In **Physics chains**, choose a mode and click **Apply to selected chains**:
 
-This is a free-hanging DynamicBone mode, not a reconstruction of PMX joints, angular limits, masses, or spring coefficients. It can produce a different static shape from MMD, particularly for stiff, sprung, or tightly constrained parts.
+| Mode | Behavior |
+| --- | --- |
+| Model default | Follow the selected model's default mode. |
+| Keep shape | Respond to load while retaining shape support and supported PMX angular constraints. |
+| Free hanging | Release native shape attraction and PMX angular support for these chains. Lengths, damping, collisions, frozen axes, and physics weight remain active. |
+| No simulation | Stop secondary motion on these chains and restore their input pose. |
+
+**Added downward force** multiplies the model's additional load by `0–4`; `0` does not disable gravity supplied by another editor. **Shape retention** scales native elasticity and stiffness from `0–100%`; it does not loosen PMX hard angle limits. Lower it gradually for cloth that should sag further. Use **Free hanging** only for parts that should hang freely, since stiff ribbons and styled hair can collapse in that mode. **Reset selected overrides** restores inheritance and both multipliers. Editor parameters and the original rest pose are not overwritten. Pause motion before adjusting or settling.
+
+PMX stores rigid-body modes, masses, joint limits, and springs; it has no per-part “natural drape” flag. AssetImport reads these records and applies angular constraints where one rigid body per bone connects an ancestor to a descendant. Spring response uses mass and an approximate inertia. DynamicBone cannot reproduce joint translation, cross-linked rigid bodies, or full twist dynamics; ambiguous bindings retain native shape support and are reported in the log. Branches without a unique simulated direction cannot receive angular correction. Editor-frozen axes take priority, and contact corrections can relax angular limits. This remains an approximation of MMD physics, so static shapes and motion can differ. Reload existing models or scenes after upgrading to reconstruct joint bindings.
+
+Free hanging and the shape-retention multiplier require compatible DynamicBone constraint hooks. If unavailable, native attraction remains active and the log reports the limitation. Settling advances the existing simulation; a chain with no load or strong shape support may move very little.
 
 The ground belongs to each model and follows its origin height, rather than following animated feet. Set the offset if the model's origin is not at foot level. Ground collision acts on DynamicBone particles, not every mesh vertex; suitable chain roots and radii are still needed. It does not collide with stage geometry or prevent penetration when a fixed chain anchor is too far below ground. Disable downward force if a physics editor already supplies the desired load.
 
@@ -67,7 +79,7 @@ Texture preparation runs in the background with bounded buffers; Unity and Mater
 | Skinning | Linear; SDEF is approximated |
 | Morphs | Vertex morphs and groups containing only supported vertex morphs |
 | Animation mapping | Supported IK, fixed axes, and non-local rotation/position grants |
-| Physics | DynamicBone chains and supported static body colliders |
+| Physics | DynamicBone chains, supported static body colliders, and supported ancestor-linked joint angular constraints |
 | Not implemented | Full rigid-body/joint simulation, soft bodies, local grants, bone/UV/material morphs, toon/sphere shading |
 
 Invalid optional IK or cyclic grant/group-morph dependencies can be disabled with diagnostics while usable data is retained. Unsupported mixed morph groups are skipped as a whole. Necessary geometry corruption and cyclic parent hierarchies still fail validation. Check the log and mapping report when a model imports but a motion or expression differs from MMD.

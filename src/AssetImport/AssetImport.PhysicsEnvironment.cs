@@ -12,6 +12,9 @@ namespace AssetImport
         public Transform ImportedRoot;
         public DynamicBone[] Chains = new DynamicBone[0];
         public PhysicsEnvironmentSettings Settings = new PhysicsEnvironmentSettings();
+        public PhysicsJointBinding[] JointBindings = new PhysicsJointBinding[0];
+        private readonly Dictionary<DynamicBone, PhysicsJointSolver> _joints = new Dictionary<DynamicBone, PhysicsJointSolver>();
+        private readonly Dictionary<DynamicBone, PhysicsChainSettings> _preferences = new Dictionary<DynamicBone, PhysicsChainSettings>();
         private static readonly Dictionary<DynamicBone, AssetPhysicsEnvironment> Owners = new Dictionary<DynamicBone, AssetPhysicsEnvironment>();
         private readonly List<DynamicBone> _registered = new List<DynamicBone>();
         private readonly List<SettleWork> _settling = new List<SettleWork>();
@@ -28,9 +31,11 @@ namespace AssetImport
             internal int Remaining, Stable;
         }
 
-        internal static void Attach(GameObject host, Transform root, DynamicBone[] chains, PhysicsEnvironmentSettings settings)
+        internal static void Attach(GameObject host, Transform root, DynamicBone[] chains, PhysicsEnvironmentSettings settings, PhysicsJointBinding[] joints = null)
         {
             var environment = host.GetComponent<AssetPhysicsEnvironment>() ?? host.AddComponent<AssetPhysicsEnvironment>();
+            if (joints != null) environment.JointBindings = joints;
+            else if (environment.ImportedRoot != root) environment.JointBindings = new PhysicsJointBinding[0];
             environment.Configure(root, chains, settings);
         }
 
@@ -45,6 +50,10 @@ namespace AssetImport
         internal void Apply(PhysicsEnvironmentSettings settings)
         {
             Settings = settings.Copy();
+            RebuildPreferences();
+            foreach (var chain in _registered)
+                if (chain && Mode(chain) == PhysicsChainMode.Animation)
+                { chain.InitTransforms(); chain.ResetParticlesPosition(); }
             _settling.Clear();
             if (Settings.Settle) RequestSettle();
         }
@@ -69,7 +78,28 @@ namespace AssetImport
         {
             foreach (var chain in Chains ?? new DynamicBone[0])
                 if (Owns(chain) && !_registered.Contains(chain)) { Owners[chain] = this; _registered.Add(chain); }
+            foreach (var binding in JointBindings ?? new PhysicsJointBinding[0])
+                if (binding != null && binding.Chain && _registered.Contains(binding.Chain)) _joints[binding.Chain] = new PhysicsJointSolver(binding);
+            RebuildPreferences();
         }
+
+        private void RebuildPreferences()
+        {
+            _preferences.Clear();
+            foreach (var chain in _registered)
+                if (chain && chain.m_Root)
+                { var settings = Settings.ForRoot(chain.m_Root.name); if (settings != null) _preferences[chain] = settings; }
+        }
+
+        internal PhysicsChainMode Mode(DynamicBone chain)
+        {
+            PhysicsChainSettings settings;
+            if (_preferences.TryGetValue(chain, out settings) && settings.Mode != 0) return (PhysicsChainMode)settings.Mode;
+            return (PhysicsChainMode)Settings.DefaultMode;
+        }
+
+        internal int JointCount(DynamicBone chain)
+        { PhysicsJointSolver solver; return _joints.TryGetValue(chain,out solver) ? solver.Count : 0; }
 
         private void Unregister()
         {
@@ -79,6 +109,7 @@ namespace AssetImport
                 if (Owners.TryGetValue(chain, out owner) && owner == this) Owners.Remove(chain);
             }
             _registered.Clear(); _settling.Clear();
+            _joints.Clear(); _preferences.Clear();
         }
 
         private static AssetPhysicsEnvironment Find(DynamicBone chain)
@@ -103,14 +134,28 @@ namespace AssetImport
         {
             if (!NaturalDrapePatch.Available) return false;
             var owner = Find(chain);
-            return owner && owner.Settings.NaturalDrape;
+            return owner && owner.Mode(chain) == PhysicsChainMode.FreeHanging;
         }
+
+        internal static float ShapeRetention(DynamicBone chain)
+        {
+            if (!NaturalDrapePatch.Available) return 1f;
+            var owner = Find(chain); if (!owner) return 1f;
+            if (owner.Mode(chain) == PhysicsChainMode.FreeHanging) return 0f;
+            PhysicsChainSettings settings;
+            return owner._preferences.TryGetValue(chain, out settings) ? settings.ShapeRetention : 1f;
+        }
+
+        internal static bool ShouldSimulate(DynamicBone chain)
+        { var owner = Find(chain); return !owner || owner.Mode(chain) != PhysicsChainMode.Animation; }
 
         internal static void AfterIntegrate(DynamicBone chain)
         {
             var owner = Find(chain);
-            if (!owner || owner.Settings.DownwardForce <= 0f || chain.m_Particles == null) return;
+            if (!owner || owner.Mode(chain) == PhysicsChainMode.Animation || owner.Settings.DownwardForce <= 0f || chain.m_Particles == null) return;
             float displacement = owner.Settings.DownwardForce * owner.Scale;
+            PhysicsChainSettings settings;
+            if (owner._preferences.TryGetValue(chain, out settings)) displacement *= settings.ForceScale;
             // Verlet external acceleration is an additive displacement in this
             // solver. Add it before constraints without writing m_Force or
             // m_Gravity, so editor and interaction-plugin values stay intact.
@@ -118,10 +163,19 @@ namespace AssetImport
                 if (p.m_ParentIndex >= 0) p.m_Position += new Vector3(0f, -displacement, 0f);
         }
 
-        internal static void AfterConstraints(DynamicBone chain)
+        internal static void AfterConstraints(DynamicBone chain, bool integrated = true)
         {
             var owner = Find(chain);
-            if (!owner || !owner.Settings.Floor || chain.m_Particles == null) return;
+            if (!owner || owner.Mode(chain) == PhysicsChainMode.Animation || chain.m_Particles == null) return;
+            PhysicsJointSolver solver;
+            if (!UsesNaturalDrape(chain) && owner._joints.TryGetValue(chain, out solver))
+                solver.Apply(chain, owner.ImportedRoot, integrated);
+            ApplyFloor(chain, owner);
+        }
+
+        private static void ApplyFloor(DynamicBone chain, AssetPhysicsEnvironment owner)
+        {
+            if (!owner.Settings.Floor) return;
             float scale = owner.Scale;
             float floor = owner.ImportedRoot.position.y + owner.Settings.FloorOffset * scale;
             float particleScale = Math.Abs(chain.transform.lossyScale.x);
@@ -162,6 +216,7 @@ namespace AssetImport
 
         private void Queue(DynamicBone chain)
         {
+            if (Mode(chain) == PhysicsChainMode.Animation) return;
             int steps = UsesNaturalDrape(chain) ? DrapeSettleSteps : 90;
             foreach (var work in _settling) if (work.Chain == chain)
             {

@@ -26,7 +26,7 @@ internal static class PhysicsImportOptionsChecks
             var process = Create(fresh, accessory, LoadProcess.LoadProcessKind.Normal);
             check(ReferenceEquals(process.Import, fresh) && fresh.InitialPhysicsSelectionStatus.Contains("2 added"), "new import constructor auto-selects all usable chains for " + (accessory ? "accessory" : "item"));
             check(fresh.PmxHairCollisionAssist, "new import copies explicit hair collision assistance option");
-            check(fresh.PhysicsEnvironment.Floor && fresh.PhysicsEnvironment.Settle && fresh.PhysicsEnvironment.NaturalDrape && fresh.PhysicsEnvironment.DownwardForce == .001f,
+            check(fresh.PhysicsEnvironment.Floor && fresh.PhysicsEnvironment.Settle && !fresh.PhysicsEnvironment.NaturalDrape && fresh.PhysicsEnvironment.DownwardForce == .001f,
                 "new PMX import receives ground, force and settling defaults");
             check(!ReferenceEquals(fresh.PhysicsEnvironment, AssetUI.NewPhysicsEnvironment), "import options do not share mutable settings with UI");
             check(fresh.PhysicsProfile == 1, "new PMX import uses the selected versioned preset");

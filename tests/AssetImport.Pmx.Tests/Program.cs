@@ -48,6 +48,7 @@ MappingChecks.Run(Check);
 OptionalPmxDataChecks.Run(fixture,Check);
 ConstraintCycleChecks.Run(Check);
 RigidBodyReaderChecks.Run(fixture, Check);
+JointChecks.Run(fixture, Check);
 UnusedNormalChecks.Run(Check);
 IgnoredMetadataChecks.Run(Check);
 CollisionPlanChecks.Run(Check);
@@ -76,6 +77,10 @@ if(args.Length>0)
     var collisionPlan=PmxCollisionPlan.Build(pmx,physicsChains);
     var restoredPmx=PmxReader.Read((byte[])bytes.Clone());
     var restoredPlan=PmxCollisionPlan.Build(restoredPmx,physicsChains);
+    var jointPlan=PmxJointPlan.Build(pmx);
+    var restoredJoints=PmxJointPlan.Build(restoredPmx);
+    Check(pmx.JointData.Length==pmx.Joints && jointPlan.Angular.Select(j=>j.Index).SequenceEqual(restoredJoints.Angular.Select(j=>j.Index)),
+        "cached blob reconstructs the same supported joint constraints");
     Check(pmx.RigidBodyData.Length==pmx.RigidBodies,"full rigid-body table retained from source/cache blob");
     Check(collisionPlan.Colliders.Select(c=>c.Index).SequenceEqual(restoredPlan.Colliders.Select(c=>c.Index)),"cached blob reconstructs same collider list");
     for(int i=0;i<physicsChains.Length;i++) Check(collisionPlan.Chains[i].ColliderIndices.SequenceEqual(restoredPlan.Chains[i].ColliderIndices),"cached blob reconstructs same per-chain collision filters");
@@ -100,6 +105,12 @@ if(args.Length>0)
     if(args.Length>1)
     {
         Directory.CreateDirectory(args[1]);
+        File.WriteAllText(Path.Combine(args[1],"joint-validation.json"),JsonSerializer.Serialize(new {
+            total=pmx.Joints, supported=jointPlan.Angular.Count,
+            selected=jointPlan.Angular.Count(j=>physicsChains.Any(c=>c.Contains(j.Bone))),
+            angular=jointPlan.Angular.Select(j=>new {j.Index,j.Parent,j.Bone,j.Reverse}),
+            warnings=jointPlan.Warnings,windowsGame="NOT RUN"
+        },new JsonSerializerOptions {WriteIndented=true}));
         File.WriteAllText(Path.Combine(args[1],"pmx-validation.json"),JsonSerializer.Serialize(report,new JsonSerializerOptions { WriteIndented=true }));
         File.WriteAllText(Path.Combine(args[1],"collision-validation.json"),JsonSerializer.Serialize(collisionReport,new JsonSerializerOptions { WriteIndented=true, NumberHandling=System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals }));
         File.WriteAllText(Path.Combine(args[1],"physics-root-suggestions.json"),JsonSerializer.Serialize(new {

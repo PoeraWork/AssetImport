@@ -75,7 +75,7 @@ namespace MessagePack
 {
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class MessagePackObjectAttribute : Attribute { }
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public sealed class KeyAttribute : Attribute
     {
         public readonly string Key;

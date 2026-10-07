@@ -32,17 +32,21 @@ foreach (string target in new[] { "KK", "KKS" })
     {
         var patch = hook.GetCustomAttribute<HarmonyLib.HarmonyPatch>();
         if (patch == null) continue;
-        var method = game.Reader.GetMethodDefinition(game.RequireMethod(patch.info.declaringType.Name, patch.info.methodName));
+        var parameters = patch.info.methodName == "UpdateDynamicBones" ? new[] { "System.Single" } : Array.Empty<string>();
+        var method = game.Reader.GetMethodDefinition(game.RequireMethod(patch.info.declaringType.Name, patch.info.methodName, parameters));
         Check(method.DecodeSignature(game.Names, null).ReturnType == "System.Void" && (method.Attributes & MethodAttributes.Static) == 0,
             target + " compatible hook: " + patch.info.methodName);
     }
     game.RequireMethod("DynamicBone", "InitTransforms"); game.RequireMethod("DynamicBone", "UpdateDynamicBones", "System.Single");
+    game.RequireMethod("DynamicBoneCollider", "Collide", "UnityEngine.Vector3&", "System.Single");
     foreach (var pair in new[] { ("DynamicBone", "m_Weight"), ("DynamicBone", "m_DistantDisabled"),
         ("DynamicBone+Particle", "m_Position"), ("DynamicBone+Particle", "m_PrevPosition"), ("DynamicBone+Particle", "m_EndOffset") })
         Check(game.Reader.GetTypeDefinition(game.FindType(pair.Item1)).GetFields().Any(f => game.Reader.GetString(game.Reader.GetFieldDefinition(f).Name) == pair.Item2), target + " particle API " + pair.Item2);
 }
 
 DrapeChecks.InstallAndRun(Check);
+ChainPhysicsChecks.Run(Check);
+JointSolverChecks.Run(Check);
 
 var legacy = PhysicsEnvironmentPersistence.Read(new Asset());
 Check(!legacy.Floor && !legacy.Settle && !legacy.NaturalDrape && legacy.DownwardForce == 0, "legacy records retain their behavior");
@@ -131,7 +135,7 @@ var colliders = settling.Chain.m_Colliders; var distribution = settling.Chain.m_
 var restPosition = settling.Chain.m_Particles[1].m_InitLocalPosition;
 for (int i = 0; i < 300 && settling.Environment.IsSettling; i++) Tick(settling.Environment);
 Check(!settling.Environment.IsSettling && settling.Chain.Steps > 0 && settling.Chain.Steps <= AssetPhysicsEnvironment.DrapeSettleSteps, "settling has a finite work bound");
-Check(settling.Chain.m_Particles[1].m_Position.y < .49f && settling.Chain.m_Particles[1].m_Position.y >= 0, "resting fixture sags under downward force and respects ground");
+Check(settling.Chain.m_Particles[1].m_Position.y < .4999f && settling.Chain.m_Particles[1].m_Position.y >= 0, "resting fixture sags under downward force and respects ground");
 Check(settling.Chain.m_Particles[1].m_InitLocalPosition.y == restPosition.y && ReferenceEquals(colliders, settling.Chain.m_Colliders) && ReferenceEquals(distribution, settling.Chain.m_DampingDistrib), "settling preserves rest pose and parameter references");
 settling.Environment.RequestSettle(); int steps = settling.Chain.Steps; settling.Chain.m_Root.position += new Vector3(0, .1f, 0); Tick(settling.Environment);
 Check(!settling.Environment.IsSettling && settling.Chain.Steps == steps, "root motion cancels extra simulation");

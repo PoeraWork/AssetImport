@@ -60,6 +60,8 @@ namespace UnityEngine
     public struct Quaternion
     {
         public System.Numerics.Quaternion Value;
+        public float x=>Value.X; public float y=>Value.Y; public float z=>Value.Z; public float w=>Value.W;
+        public Quaternion(float x,float y,float z,float w) {Value=new(x,y,z,w);}
         public static Quaternion identity => new() { Value = System.Numerics.Quaternion.Identity };
         public static Quaternion Turn(float angle) => new() { Value = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitZ, angle) };
         public static Quaternion Inverse(Quaternion q) => new() { Value = System.Numerics.Quaternion.Inverse(q.Value) };
@@ -73,12 +75,22 @@ namespace UnityEngine
             var cross = Vector3.Cross(from, to);
             return new() { Value = System.Numerics.Quaternion.Normalize(new(cross.x, cross.y, cross.z, 1 + dot)) };
         }
+        public static Quaternion FromToRotation(Vector3 from, Vector3 to)=>FromTo(from,to);
+        public static Quaternion Slerp(Quaternion a,Quaternion b,float t)=>new(){Value=System.Numerics.Quaternion.Slerp(a.Value,b.Value,t)};
         public static float Angle(Quaternion a, Quaternion b) => 2 * MathF.Acos(Math.Min(1, Math.Abs(System.Numerics.Quaternion.Dot(a.Value, b.Value)))) * 180 / MathF.PI;
     }
 }
 
+public class DynamicBoneCollider : MonoBehaviour
+{
+    public Func<Vector3, float, Vector3> Project;
+    public void Collide(ref Vector3 position, float radius) { if (Project != null) position = Project(position, radius); }
+}
+
 public class DynamicBone : MonoBehaviour
 {
+    public enum FreezeAxis { None, X, Y, Z }
+    public FreezeAxis m_FreezeAxis;
     public class Particle
     {
         public int m_ParentIndex = -1;
@@ -94,7 +106,8 @@ public class DynamicBone : MonoBehaviour
     public float m_UpdateRate = 60, m_Weight = 1;
     public bool m_DistantDisabled, ThrowOnUpdate;
     public Vector3 m_Force, m_Gravity;
-    public object m_Colliders = new(), m_DampingDistrib = new();
+    public List<DynamicBoneCollider> m_Colliders = new();
+    public object m_DampingDistrib = new();
     public int Steps, InitCalls;
     public static Func<DynamicBone, Particle, float> ElasticityRead = (_, p) => p.m_Elasticity;
     public static Func<DynamicBone, Particle, float> StiffnessRead = (_, p) => p.m_Stiffness;
@@ -113,6 +126,7 @@ public class DynamicBone : MonoBehaviour
     }
     public void UpdateDynamicBones(float time)
     {
+        if (!AssetPhysicsEnvironment.ShouldSimulate(this)) return;
         if (ThrowOnUpdate) throw new InvalidOperationException("injected");
         Steps++;
         UpdateParticles1();
@@ -151,7 +165,7 @@ public class DynamicBone : MonoBehaviour
             }
     }
     public void UpdateParticles2() => Constraints(false);
-    public void SkipUpdateParticles() { Constraints(true); AssetPhysicsEnvironment.AfterConstraints(this); ApplyParticlesToTransforms(); }
+    public void SkipUpdateParticles() { if (!AssetPhysicsEnvironment.ShouldSimulate(this)) return; Constraints(true); AssetPhysicsEnvironment.AfterConstraints(this,false); ApplyParticlesToTransforms(); }
     public void ApplyParticlesToTransforms()
     {
         foreach (var p in m_Particles)
@@ -193,5 +207,5 @@ namespace AssetImport
 namespace MessagePack
 {
     [AttributeUsage(AttributeTargets.Class)] public sealed class MessagePackObjectAttribute : Attribute { }
-    [AttributeUsage(AttributeTargets.Property)] public sealed class KeyAttribute(string key) : Attribute { public string Key = key; }
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)] public sealed class KeyAttribute(string key) : Attribute { public string Key = key; }
 }

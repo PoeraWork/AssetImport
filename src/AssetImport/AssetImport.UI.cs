@@ -97,6 +97,7 @@ namespace AssetImport
                 {
                     MainWindowRect = GUI.Window(33361, MainWindowRect, WindowFunction, "Asset Import v" + Main.Version);
                     KKAPI.Utilities.IMGUIUtils.EatInputInRect(MainWindowRect);
+                    DrawChainPhysicsWindow();
                 }
                 if (PreloadUI)
                 {
@@ -229,7 +230,7 @@ namespace AssetImport
                     NewPhysicsEnvironment.Floor = !NewPhysicsEnvironment.Floor;
                 if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.DownwardForce > 0f, "Downward force"))
                     NewPhysicsEnvironment.DownwardForce = NewPhysicsEnvironment.DownwardForce > 0f ? 0f : .001f;
-                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.NaturalDrape, "Natural drape"))
+                if (GUI.Button(new Rect(10, y += 25, 220, 25), "Physics: " + PhysicsModeName(NewPhysicsEnvironment.DefaultMode)))
                     NewPhysicsEnvironment.NaturalDrape = !NewPhysicsEnvironment.NaturalDrape;
                 if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.Settle, "Settle on load / reset"))
                     NewPhysicsEnvironment.Settle = !NewPhysicsEnvironment.Settle;

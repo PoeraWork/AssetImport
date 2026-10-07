@@ -7,6 +7,8 @@ namespace AssetImport
 {
     internal static class PhysicsEnvironmentHooks
     {
+        [HarmonyPrefix, HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.UpdateDynamicBones))]
+        private static bool Simulate(DynamicBone __instance) { return AssetPhysicsEnvironment.ShouldSimulate(__instance); }
         [HarmonyPostfix, HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.UpdateParticles1))]
         private static void Integrate(DynamicBone __instance) { AssetPhysicsEnvironment.AfterIntegrate(__instance); }
 
@@ -14,7 +16,7 @@ namespace AssetImport
         private static void Constraints(DynamicBone __instance) { AssetPhysicsEnvironment.AfterConstraints(__instance); }
 
         [HarmonyPostfix, HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.SkipUpdateParticles))]
-        private static void Skip(DynamicBone __instance) { AssetPhysicsEnvironment.AfterConstraints(__instance); }
+        private static void Skip(DynamicBone __instance) { AssetPhysicsEnvironment.AfterConstraints(__instance, false); }
 
         [HarmonyPostfix, HarmonyPatch(typeof(DynamicBone), nameof(DynamicBone.ResetParticlesPosition))]
         private static void Reset(DynamicBone __instance) { AssetPhysicsEnvironment.AfterReset(__instance); }

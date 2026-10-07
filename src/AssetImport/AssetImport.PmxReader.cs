@@ -58,6 +58,12 @@ namespace AssetImport
             internal V3 Size, Position, Rotation;
             internal float Mass, LinearDamping, AngularDamping, Restitution, Friction;
         }
+        internal sealed class Joint
+        {
+            internal string Name;
+            internal int BodyA, BodyB;
+            internal V3 Position, Rotation, MoveMin, MoveMax, RotateMin, RotateMax, MoveSpring, RotateSpring;
+        }
         internal string Name;
         internal Vertex[] Vertices;
         internal int[] Indices;
@@ -66,6 +72,7 @@ namespace AssetImport
         internal Bone[] Bones;
         internal Morph[] Morphs;
         internal RigidBody[] RigidBodyData;
+        internal Joint[] JointData = new Joint[0];
         internal readonly HashSet<int> PhysicsBones = new HashSet<int>();
         internal readonly List<string> IgnoredMetadataWarnings = new List<string>();
         internal readonly List<string> MorphWarnings = new List<string>();
@@ -322,10 +329,20 @@ namespace AssetImport
                 if (body.Mode>0 && body.Bone>=0) m.PhysicsBones.Add(body.Bone);
             }
             m.Joints=Count(107);
+            m.JointData=new PmxModel.Joint[m.Joints];
             for (int i=0;i<m.Joints;i++)
             {
-                Text(); Text(); if (reader.ReadByte()!=0) throw Error("unsupported joint type");
-                ValidateIndex(Index(rigidSize),m.RigidBodies,true); ValidateIndex(Index(rigidSize),m.RigidBodies,true); Skip(96);
+                var joint=new PmxModel.Joint { Name=Text() }; Text();
+                if (reader.ReadByte()!=0) throw Error("unsupported joint type");
+                joint.BodyA=Index(rigidSize); joint.BodyB=Index(rigidSize);
+                ValidateIndex(joint.BodyA,m.RigidBodies,true); ValidateIndex(joint.BodyB,m.RigidBodies,true);
+                // Retain optional malformed data for planner diagnostics. This
+                // metadata used to be skipped; it must not break mesh import.
+                joint.Position=RawVector(); joint.Rotation=RawVector();
+                joint.MoveMin=RawVector(); joint.MoveMax=RawVector();
+                joint.RotateMin=RawVector(); joint.RotateMax=RawVector();
+                joint.MoveSpring=RawVector(); joint.RotateSpring=RawVector();
+                m.JointData[i]=joint;
             }
             if (Remaining!=0) throw Error("unexpected trailing data");
             if (m.Vertices.Length==0 || m.Indices.Length==0) throw Error("model has no triangles");

@@ -6,8 +6,10 @@ namespace AssetImport
         {
             return new PhysicsEnvironmentSettings { Floor = asset.FloorCollision, FloorOffset = asset.FloorOffset,
                 DownwardForce = asset.DownwardForce, Settle = asset.SettlePhysics,
-                NaturalDrape = asset.NaturalDrape ?? (asset.DownwardForce > 0f &&
-                    !float.IsNaN(asset.DownwardForce) && !float.IsInfinity(asset.DownwardForce)) }.Copy();
+                // Earlier builds enabled free hanging by default. Only the
+                // versioned per-chain settings represent an explicit choice.
+                DefaultMode = asset.ChainPhysicsVersion >= 1 ? asset.PhysicsDefaultMode : (int)PhysicsChainMode.KeepShape,
+                Chains = asset.ChainPhysicsVersion >= 1 ? asset.ChainPhysicsSettings : null }.Copy();
         }
 
         internal static void Write(Asset asset, PhysicsEnvironmentSettings settings)
@@ -18,6 +20,9 @@ namespace AssetImport
             asset.DownwardForce = clean.DownwardForce;
             asset.SettlePhysics = clean.Settle;
             asset.NaturalDrape = clean.NaturalDrape;
+            asset.ChainPhysicsVersion = 1;
+            asset.PhysicsDefaultMode = clean.DefaultMode;
+            asset.ChainPhysicsSettings = clean.Chains;
         }
     }
 }
