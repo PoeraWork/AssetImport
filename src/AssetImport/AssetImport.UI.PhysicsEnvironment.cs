@@ -24,6 +24,14 @@ namespace AssetImport
             }
             GUI.enabled = !PreloadUI;
             GUI.Label(new Rect(10, y += 8, 220, 22), "Selected model physics");
+            var contacts = environment.GetComponent<NativeContactController>();
+            if (contacts)
+            {
+                if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.NativeBreastContacts, "Breast contacts (experimental)"))
+                    _environmentDraft.NativeBreastContacts = !_environmentDraft.NativeBreastContacts;
+                GUI.Label(new Rect(10, y += 27, 220, 38), contacts.Status, new GUIStyle(GUI.skin.label) { wordWrap = true });
+                y += 16;
+            }
             if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.Floor, "Ground collision"))
                 _environmentDraft.Floor = !_environmentDraft.Floor;
             GUI.Label(new Rect(10, y += 28, 140, 22), "Ground offset");
@@ -70,6 +78,8 @@ namespace AssetImport
             {
                 _environmentDraft.FloorOffset = offset; _environmentDraft.DownwardForce = force;
                 _environment.Apply(_environmentDraft);
+                var contacts = _environment.GetComponent<NativeContactController>();
+                if (contacts) contacts.ResetContacts();
                 PhysicsEnvironmentPersistence.Write(_environmentAsset, _environmentDraft);
                 _physicsActionStatus = "Physics settings applied.";
             }

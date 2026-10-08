@@ -1031,6 +1031,7 @@ namespace AssetImport
                     import.ApplyPmxBodyCollisions(dBones, loadProcess.Scale, Main.pmxBodyCollisions.Value, import.PhysicsProfile, import.PmxHairCollisionAssist);
                     physics.Chains = dBones.ToArray();
                     AssetPhysicsEnvironment.Attach(loadProcessBase, importObject.transform, physics.Chains, import.PhysicsEnvironment, import.JointPhysicsBindings);
+                    NativeContactController.Attach(loadProcessBase, import.BuildNativeContacts());
                     physics.SetEnabled(enablePhysics);
                     Logger.LogDebug($"Created {dBones.Count} dynamic bone chains on {loadProcess.Import.SourceFileName}; physics {(enablePhysics ? "ON" : "OFF")}");
                 }

@@ -265,7 +265,7 @@ namespace AssetImport
             return 0;
         }
 
-        private static bool TryCollider(PmxModel.RigidBody body, int index, PmxModel.Bone[] bones, out PmxBodyCollider collider)
+        internal static bool TryCollider(PmxModel.RigidBody body, int index, PmxModel.Bone[] bones, out PmxBodyCollider collider)
         {
             collider = null;
             if (!ValidFilter(body) || body.Bone < -1 || body.Bone >= bones.Length ||

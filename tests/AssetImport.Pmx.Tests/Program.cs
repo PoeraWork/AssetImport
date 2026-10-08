@@ -49,6 +49,7 @@ OptionalPmxDataChecks.Run(fixture,Check);
 ConstraintCycleChecks.Run(Check);
 RigidBodyReaderChecks.Run(fixture, Check);
 JointChecks.Run(fixture, Check);
+NativeContactPlanChecks.Run(Check);
 UnusedNormalChecks.Run(Check);
 IgnoredMetadataChecks.Run(Check);
 CollisionPlanChecks.Run(Check);
@@ -63,6 +64,7 @@ Check(JsonDocument.Parse(fixtureMap.MappingJson).RootElement.GetProperty("bones"
 if(args.Length>0)
 {
     var bytes=File.ReadAllBytes(args[0]); var pmx=PmxReader.Read(bytes); var converted=PmxSceneBuilder.Build(pmx,true);
+    NativeContactPlanChecks.Corpus(pmx, Check);
     ValidateSkin(converted);
     // Same serialized bytes are used by AssetFile/RamCache on scene reload.
     var reloaded=PmxSceneBuilder.Build(PmxReader.Read((byte[])bytes.Clone()),true);

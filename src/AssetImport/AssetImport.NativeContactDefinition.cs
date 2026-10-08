@@ -1,0 +1,23 @@
+using System;
+using UnityEngine;
+
+namespace AssetImport
+{
+    [Serializable]
+    internal sealed class NativeContactShape
+    {
+        public Transform Bone;
+        public Vector3 Center;
+        public Quaternion Rotation = new Quaternion(0, 0, 0, 1);
+        public float Radius, Height;
+        public int Direction;
+    }
+
+    [Serializable]
+    internal sealed class NativeContactDefinition
+    {
+        public Transform Model;
+        public NativeContactShape[] Breasts = new NativeContactShape[0];
+        public NativeContactShape[] Obstacles = new NativeContactShape[0];
+    }
+}

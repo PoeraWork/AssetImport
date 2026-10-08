@@ -599,6 +599,7 @@ namespace AssetImport
                     import.ApplyPmxBodyCollisions(dBones, loadProcess.Scale, Main.pmxBodyCollisions.Value, import.PhysicsProfile, import.PmxHairCollisionAssist);
                     ociitem.dynamicBones = dBones.ToArray();
                     AssetPhysicsEnvironment.Attach(loadProcessBase, importGameObject.transform, ociitem.dynamicBones, import.PhysicsEnvironment, import.JointPhysicsBindings);
+                    NativeContactController.Attach(loadProcessBase, import.BuildNativeContacts());
                     ApplyImportedPhysicsState(ociitem, physicsEnabled);
                     if (Hooks.IsOptionalIntegrationAvailable(Hooks.PoseEditorAssembly))
                         Hooks.RunOptionalIntegration(Hooks.PoseEditorAssembly, "studio pose controller refresh", () => RefreshPoseController(loadProcessBase));

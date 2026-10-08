@@ -10,6 +10,7 @@ namespace AssetImport
         public float FloorOffset;
         public float DownwardForce;
         public bool Settle;
+        public bool NativeBreastContacts;
         public int DefaultMode = (int)PhysicsChainMode.KeepShape;
         public PhysicsChainSettings[] Chains = new PhysicsChainSettings[0];
         internal bool NaturalDrape
@@ -29,7 +30,7 @@ namespace AssetImport
             foreach (var chain in Chains ?? new PhysicsChainSettings[0])
                 if (chain != null && !string.IsNullOrEmpty(chain.Root) && seen.Add(chain.Root)) chains.Add(chain.Copy());
             return new PhysicsEnvironmentSettings { Floor = Floor, FloorOffset = Clamp(FloorOffset, -100f, 100f),
-                DownwardForce = Clamp(DownwardForce, 0f, .02f), Settle = Settle,
+                DownwardForce = Clamp(DownwardForce, 0f, .02f), Settle = Settle, NativeBreastContacts = NativeBreastContacts,
                 DefaultMode = DefaultMode >= 1 && DefaultMode <= 3 ? DefaultMode : (int)PhysicsChainMode.KeepShape,
                 Chains = chains.ToArray() };
         }

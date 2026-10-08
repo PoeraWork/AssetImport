@@ -62,6 +62,16 @@ Static PMX body shapes can become DynamicBone colliders. PMX collision groups de
 
 DynamicBone approximates secondary motion; it is not MMD's rigid-body/joint solver. Box colliders are approximated, and fast motion can still cause penetration. Adjust chain roots and parameters for the model through AssetImport or a compatible physics editor. Saved scenes retain their stored settings.
 
+### Experimental breast contacts
+
+For a selected model, enable **Breast contacts (experimental)** under **Selected model physics**, then click **Apply physics settings**. The option defaults to off and saves with the model. Turn it off and apply to remove the contact displacement. **Physics OFF** and per-chain **No simulation** also suppress contact motion for their associated chains.
+
+This feature uses the game's `DynamicBone_Ver02` on private proxy bones. Ordinary imported physics continues running; only an additional, bounded positional offset is applied to recognized breast bones after animation and physics. It does not require Colliders or a pose-editor plugin. Bone rotation and scale remain controlled by the existing animation and physics.
+
+Recognition requires weighted breast bones and PMX dynamic bodies, plus stable PMX body obstacles. Missing shapes are not guessed. One sphere approximates each breast body, with a maximum displacement of one sphere radius; contact size and initial overlap depend on the model. Positive uniform scale is required. This is not full MMD rigid-body physics, and some rigs may fail to initialize or produce unsuitable contact motion.
+
+The panel reports eligible and active breasts. Activation first checks a hidden proxy at rest and against a temporary sphere; the model is not changed during this check. An initialization, self-check, or update failure disables the contact layer and leaves ordinary physics active. To retry after correcting the model or settings, click **Apply physics settings**. Diagnostic lines start with `PMX native breast candidates`, `PMX native breast initialized`, `PMX native breast response`, or `PMX native breast adapter stopped`. A reported response establishes that the native proxy moved, not that visible mesh contact is correct.
+
 ## Textures and color conversion
 
 PNG/JPEG are supported along with BMP, TGA, and common DDS formats. Supported DDS data includes BC1/2/3 and common RGB(A) layouts; BC7, HDR, cubemaps, arrays, and volume textures are not supported. Missing or unsupported textures are reported separately.

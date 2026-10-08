@@ -42,6 +42,8 @@ namespace AssetImport
         public int PhysicsDefaultMode { get; set; }
         [Key("ChainPhysicsSettings")]
         public PhysicsChainSettings[] ChainPhysicsSettings { get; set; }
+        [Key("NativeBreastContacts")]
+        public bool NativeBreastContacts { get; set; }
         [Key("ObjectKey")]
         public int Identifier { get; set; } // in Studio: dictKey | on Character: AccessorySlot
         [Key("Scale")]

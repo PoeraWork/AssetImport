@@ -22,6 +22,7 @@ namespace AssetImport
         private readonly Stopwatch _budget = new Stopwatch();
         internal bool IsSettling { get { return _settling.Count != 0; } }
         internal const int DrapeSettleSteps = 900;
+        internal static event Action<DynamicBone> ResetRequested;
 
         private sealed class SettleWork
         {
@@ -210,6 +211,7 @@ namespace AssetImport
 
         internal static void AfterReset(DynamicBone chain)
         {
+            if (ResetRequested != null) ResetRequested(chain);
             var owner = Find(chain);
             if (owner && owner.Settings.Settle) owner.Queue(chain);
         }
