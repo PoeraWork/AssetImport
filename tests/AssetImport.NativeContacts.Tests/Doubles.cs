@@ -116,9 +116,14 @@ public sealed class DynamicBone_Ver02 : MonoBehaviour
     public float UpdateRate, ReflectSpeed, Weight; public int HeavyLoopMaxCount, PtnNo;
     public List<BonePtn> Patterns; public List<Particle> Particles;
     public static Vector3 Output;
+    public static bool AccumulateOutput;
+    private Vector3 _injectedCarry;
+    public static readonly List<DynamicBone_Ver02> Created = new();
+    public Vector3 LastResetBodyPosition { get; private set; }
+    public int ResetCalls { get; private set; }
     public static bool FailSetup, FailStep, FailCalibration;
     public static int Steps, Instances;
-    public DynamicBone_Ver02() { Instances++; }
+    public DynamicBone_Ver02() { Instances++; Created.Add(this); }
     private void InitNodeParticle() { }
     private void InitLocalPosition() { }
     private bool setPtn(int pattern, bool force) => true;
@@ -127,7 +132,11 @@ public sealed class DynamicBone_Ver02 : MonoBehaviour
         if (FailSetup) return;
         Particles = Bones.Select((b, i) => new Particle { Transform = b, ParentIndex = i - 1, Radius = Patterns[0].Params[i].CollisionRadius }).ToList();
     }
-    private void ResetParticlesPosition() { }
+    private void ResetParticlesPosition()
+    {
+        LastResetBodyPosition = Bones[1].position; ResetCalls++;
+        _injectedCarry = Bones[1].position - Patterns[0].Params[1].RefTransform.position;
+    }
     private void InitTransforms() { Bones[1].localPosition = Patterns[0].Params[1].RefTransform.localPosition; }
     private void UpdateDynamicBones(float elapsed)
     {
@@ -137,6 +146,8 @@ public sealed class DynamicBone_Ver02 : MonoBehaviour
         bool calibration = Colliders.Count == 1 && Colliders[0].transform.name == "AI_ContactValidation";
         var output = Colliders.Count == 0 ? Vector3.zero : calibration ?
             new Vector3(FailCalibration ? 0 : Patterns[0].Params[1].CollisionRadius * .2f, 0, 0) : Output;
+        if (AccumulateOutput && !calibration && Colliders.Count > 0)
+        { output += _injectedCarry; _injectedCarry = output; }
         Bones[1].position += output; Steps++;
     }
     private void ApplyParticlesToTransforms() { }

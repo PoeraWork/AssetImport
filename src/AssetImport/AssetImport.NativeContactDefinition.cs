@@ -12,6 +12,8 @@ namespace AssetImport
         public float Radius, Height;
         public int Direction;
         public string SourceBody;
+        public bool HasReferencePose;
+        public Vector3 ReferenceCenter;
     }
 
     [Serializable]

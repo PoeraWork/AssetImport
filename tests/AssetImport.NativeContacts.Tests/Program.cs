@@ -137,6 +137,8 @@ Check(PhysicsEnvironmentPersistence.Read(asset).NativeBreastContacts && preferen
     System.Globalization.CultureInfo.CurrentCulture = culture;
     Invoke(c, "OnDisable");
 }
+PairAndBoundChecks.Run(Check);
+
 // Exercise the production report writer on disk, including the no-model and
 // unwritable-game-directory paths, without requiring a UI click or game loop.
 {

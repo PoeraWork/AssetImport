@@ -78,32 +78,35 @@ namespace AssetImport
         // the native component used a pair. Sample only at report time.
         internal static float SurfaceGap(Vector3 center, float radius, NativeContactShape obstacle)
         {
-            var delta = center - obstacle.Bone.TransformPoint(obstacle.Center);
             float scale = Math.Abs(obstacle.Bone.lossyScale.x);
-            var direction = obstacle.Direction == 0 ? new Vector3(1, 0, 0) :
-                obstacle.Direction == 2 ? new Vector3(0, 0, 1) : new Vector3(0, 1, 0);
-            var axis = obstacle.Bone.rotation * obstacle.Rotation * direction;
-            float along = delta.x * axis.x + delta.y * axis.y + delta.z * axis.z;
-            float halfSegment = Math.Max(0, obstacle.Height * .5f - obstacle.Radius) * scale;
-            var nearestDelta = delta - axis * Math.Max(-halfSegment, Math.Min(halfSegment, along));
-            return nearestDelta.magnitude - radius - obstacle.Radius * scale;
+            return NativeContactPairPolicy.Gap(center, radius, obstacle.Bone.TransformPoint(obstacle.Center),
+                obstacle.Bone.rotation * obstacle.Rotation, obstacle.Radius * scale, obstacle.Height * scale, obstacle.Direction);
         }
         private string ContactSample(NativeContactShape shape)
         {
             if (!shape.Bone) return "sample: missing breast bone";
             float radius = shape.Radius * Math.Abs(shape.Bone.lossyScale.x);
             Vector3 center = shape.Bone.TransformPoint(shape.Center);
-            float gap = float.PositiveInfinity; string nearest = "none"; int overlap = 0;
+            float gap = float.PositiveInfinity; string nearest = "none"; int overlap = 0, excluded = 0;
             foreach (var obstacle in Definition.Obstacles)
             {
-                if (!obstacle.Bone) continue;
+                if (NativeContactPairPolicy.Exclusion(shape, obstacle) != null) { excluded++; continue; }
                 float distance = SurfaceGap(center, radius, obstacle);
                 if (distance <= 0) overlap++;
                 if (distance < gap) { gap = distance; nearest = obstacle.Bone.name + "/" + obstacle.SourceBody; }
             }
             return "sample bone=" + shape.Bone.name + "; center=" + Vector(center) + "; radius=" + Number(radius) +
                 "; nearest=" + nearest + "; surfaceGap=" + Number(gap) + "; estimatedOverlaps=" + overlap +
-                "; chainEnabled=" + (_environment && EnabledFor(shape)) + "; geometric estimate only";
+                "; excludedPairs=" + excluded + "; chainEnabled=" + (_environment && EnabledFor(shape)) + "; geometric estimate only";
+        }
+
+        private string ProbeState(int i)
+        {
+            var bone = Definition.Breasts[i].Bone;
+            return "Probe: " + (bone ? bone.name : "missing") + "; boundObstacles=" + _pairCounts[i] +
+                "; rawDisplacement=" + Number(_engines[i].LastRawDisplacement) +
+                "; maxRawDisplacement=" + Number(_engines[i].MaximumRawDisplacement) +
+                "; outputRebases=" + _engines[i].OutputRebases;
         }
 
         internal string BuildDiagnosticReport()
@@ -120,7 +123,17 @@ namespace AssetImport
             {
                 report.AppendLine("Recognition:\n" + Definition.RecognitionReport);
                 report.AppendLine("Bound breasts=" + EligibleCount + "; obstacles=" + Definition.Obstacles.Length);
-                foreach (var shape in Definition.Breasts) report.AppendLine(ContactSample(shape));
+                for (int i = 0; i < Definition.Breasts.Length; i++)
+                {
+                    var shape = Definition.Breasts[i];
+                    report.AppendLine(ContactSample(shape));
+                    if (_engines != null && i < _engines.Length && _engines[i] != null)
+                        report.AppendLine(ProbeState(i));
+                    foreach (var obstacle in Definition.Obstacles)
+                        report.AppendLine("Pair: breast=" + (shape.Bone ? shape.Bone.name : "missing") + "; obstacle=" + obstacle.SourceBody +
+                            "; result=" + (NativeContactPairPolicy.Exclusion(shape, obstacle) ?? "allowed") +
+                            "; referenceGap=" + (shape.HasReferencePose && obstacle.HasReferencePose ? Number(NativeContactPairPolicy.ReferenceGap(shape, obstacle)) : "unavailable"));
+                }
                 foreach (var shape in Definition.Obstacles)
                     report.AppendLine("Obstacle: " + shape.SourceBody + "; bone=" + (shape.Bone ? shape.Bone.name : "missing") +
                         "; localCenter=" + Vector(shape.Center) + "; radius=" + Number(shape.Radius) + "; height=" + Number(shape.Height));

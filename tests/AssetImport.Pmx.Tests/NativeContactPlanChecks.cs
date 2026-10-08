@@ -15,6 +15,25 @@ internal static class NativeContactPlanChecks
         check(plan.Breasts.All(s => Math.Abs(s.Radius - .0416f) < 1e-6f), "contact radius uses existing PMX coordinate conversion");
         var report = plan.Describe(model);
         check(report.Contains("result=selected") && report.Contains("result=not-dynamic") && report.Contains("bone=breast_ribbon"), "recognition report covers selected, rejected and unknown-name source bodies");
+        model.Bones[1].Position = new(2, 8, 3);
+        model.RigidBodyData[1].Position = new(3, 10, 5);
+        model.RigidBodyData[2].Position = new(-4, 12, 6);
+        var import = new Import(model);
+        // Binding must retain authored coordinates, regardless of the live pose.
+        import.Bone(1).localPosition = new UnityEngine.Vector3(20, 30, 40);
+        var definition = import.BuildNativeContacts();
+        var boundBreast = definition.Breasts.Single(s => s.Bone == import.Bone(1));
+        var boundArm = definition.Obstacles.Single(s => s.Bone == import.Bone(2));
+        check(boundBreast.HasReferencePose && boundArm.HasReferencePose,
+            "PMX binding supplies reference geometry for both probes and obstacles");
+        check(Math.Abs(boundBreast.ReferenceCenter.x + 3 * .0832f) < 1e-6f &&
+            Math.Abs(boundBreast.ReferenceCenter.y - 10 * .0832f) < 1e-6f &&
+            Math.Abs(boundBreast.ReferenceCenter.z + 5 * .0832f) < 1e-6f &&
+            Math.Abs(boundArm.ReferenceCenter.x - 4 * .0832f) < 1e-6f,
+            "reference centers use PMX world positions and handedness instead of animated transforms");
+        check(Math.Abs(boundBreast.Center.x + .0832f) < 1e-6f &&
+            Math.Abs(boundBreast.ReferenceCenter.x - boundBreast.Center.x) > .1f,
+            "source reference center remains distinct from bone-local collider offset");
         model.Vertices = []; check(PmxNativeContactPlan.Build(model).Breasts.Count == 0, "unweighted helper bones cannot be selected as deforming breasts");
         check(PmxNativeContactPlan.Build(model).Describe(model).Contains("result=unweighted"), "unweighted rejection is diagnosed");
         model.RigidBodyData = [];

@@ -33,7 +33,10 @@ namespace AssetImport
                 Transform bone;
                 if (!bones.TryGetValue(PmxModel.BoneName(shape.Bone, _pmx.Bones[shape.Bone].Name), out bone))
                 { Logger.LogWarning("PMX breast diagnostics: binding missing for bone=" + _pmx.Bones[shape.Bone].Name + "; body=" + shape.Index); continue; }
-                result.Add(new NativeContactShape { Bone = bone,
+                var reference = _pmx.RigidBodyData[shape.Index].Position;
+                result.Add(new NativeContactShape { Bone = bone, HasReferencePose = true,
+                    ReferenceCenter = new Vector3(-reference.X * PmxCollisionPlan.UnitScale,
+                        reference.Y * PmxCollisionPlan.UnitScale, -reference.Z * PmxCollisionPlan.UnitScale),
                     SourceBody = "[" + shape.Index + "]" + _pmx.RigidBodyData[shape.Index].Name,
                     Center = new Vector3(shape.LocalPosition.X, shape.LocalPosition.Y, shape.LocalPosition.Z),
                     Radius = shape.Radius, Height = shape.Height, Direction = shape.Direction,

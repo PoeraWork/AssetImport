@@ -20,6 +20,9 @@ namespace AssetImport
         private readonly Action<string> _diagnostic;
         internal int ParticleCount { get { return _engine.Particles.Count; } }
         internal GameObject Host { get { return _host; } }
+        internal int OutputRebases { get; private set; }
+        internal float LastRawDisplacement { get; private set; }
+        internal float MaximumRawDisplacement { get; private set; }
 
         internal NativeContactEngine(Transform owner, Vector3 center, Quaternion rotation, float radius, List<DynamicBoneCollider> colliders,
             Action<string> diagnostic = null)
@@ -81,6 +84,7 @@ namespace AssetImport
                 Follow(center, rotation);
                 _reset.Invoke(_engine, null);
                 ValidateResponse(center, rotation, colliders);
+                OutputRebases = 0; LastRawDisplacement = MaximumRawDisplacement = 0;
             }
             catch { Dispose(); throw; }
         }
@@ -153,10 +157,23 @@ namespace AssetImport
                 _apply.Invoke(_engine, null);
             }
             var displacement = _body.position - input;
+            LastRawDisplacement = displacement.magnitude;
             if (!PhysicsEnvironmentMath.Finite(displacement.sqrMagnitude) || displacement.magnitude > _radius * 4f)
-                throw new InvalidOperationException("Native solver returned an invalid or excessive displacement.");
-            // Conflicting contacts cannot move a model arbitrarily far.
-            return displacement.magnitude > _radius ? displacement.normalized * _radius : displacement;
+                throw new InvalidOperationException("Native solver returned an invalid or excessive displacement: raw=" +
+                    NativeContactController.Number(LastRawDisplacement) + "; radius=" + NativeContactController.Number(_radius) +
+                    "; hardLimit=" + NativeContactController.Number(_radius * 4f) + "; dt=" + NativeContactController.Number(elapsed) + ".");
+            MaximumRawDisplacement = Math.Max(MaximumRawDisplacement, LastRawDisplacement);
+            if (LastRawDisplacement > _radius)
+            {
+                displacement = displacement.normalized * _radius;
+                // Keep the native particle state consistent with the bounded
+                // output. Clamping only the real bone leaves a diverging proxy
+                // hidden behind an apparently safe one-radius displacement.
+                _body.position = input + displacement;
+                _reset.Invoke(_engine, null);
+                OutputRebases++;
+            }
+            return displacement;
         }
 
         public void Dispose() { if (_host) UnityEngine.Object.Destroy(_host); }

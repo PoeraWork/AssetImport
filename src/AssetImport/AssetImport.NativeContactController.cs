@@ -11,6 +11,9 @@ namespace AssetImport
         private AssetPhysicsEnvironment _environment;
         private NativeContactEngine[] _engines;
         private List<DynamicBoneCollider> _obstacles;
+        private List<NativeContactShape> _obstacleShapes;
+        private int[] _pairCounts;
+        private string _currentProbe;
         // Unity cloning remaps these references. A cloned controller restores
         // the input pose and removes cloned helpers before making its own rig.
         [SerializeField] private List<GameObject> _objects = new List<GameObject>();
@@ -107,11 +110,14 @@ namespace AssetImport
                     if (!shape.Bone || !shape.Bone.IsChildOf(Definition.Model)) throw new InvalidOperationException("Breast bone is no longer owned by the model.");
                     _baseLocal[i] = shape.Bone.localPosition; _baseWorld[i] = shape.Bone.position;
                     _displacements[i] = Vector3.zero;
-                    if (!EnabledFor(shape)) continue;
+                    if (!EnabledFor(shape) || _engines[i] == null) continue;
+                    _currentProbe = shape.Bone.name;
                     _displacements[i] = _engines[i].Step(shape.Bone.TransformPoint(shape.Center), shape.Bone.rotation, elapsed);
                     if (elapsed > 0) _solverSteps++;
                     maximum = Math.Max(maximum, _displacements[i].magnitude); active++;
                 }
+                if (active == 0)
+                { Status = "Breast contacts: no independent contact pairs"; DiagnosticState("no-contact-pairs"); return; }
                 // Import binding is sorted by ancestry. Real bone rotations and
                 // scales remain the original animation/ordinary physics output.
                 _written = true;
@@ -132,10 +138,15 @@ namespace AssetImport
             }
             catch (Exception error)
             {
+                var detail = error.InnerException ?? error;
+                _lastFailure = "probe=" + _currentProbe + "\n" + detail;
+                // Preserve native counters before disposing a failed rig; the
+                // next automatic report must still explain how it stopped.
+                if (_engines != null)
+                    for (int i = 0; i < _engines.Length; i++)
+                        if (_engines[i] != null) _lastFailure += "\nfailure snapshot; " + ProbeState(i);
                 Restore(); Release(); _failed = true; _lastDisplacement = 0;
                 Status = "Breast contacts unavailable; see log";
-                var detail = error.InnerException ?? error;
-                _lastFailure = detail.ToString();
                 DiagnosticState("failed");
                 AssetImport.Logger.LogWarning("PMX native breast adapter stopped; ordinary physics remains active. " + detail);
             }
@@ -145,6 +156,7 @@ namespace AssetImport
         {
             _scale = scale;
             _obstacles = new List<DynamicBoneCollider>();
+            _obstacleShapes = new List<NativeContactShape>();
             foreach (var shape in Definition.Obstacles)
             {
                 if (!shape.Bone || !shape.Bone.IsChildOf(Definition.Model)) continue;
@@ -156,10 +168,12 @@ namespace AssetImport
                 collider.m_Direction = (DynamicBoneCollider.Direction)shape.Direction;
                 collider.m_Bound = DynamicBoneCollider.Bound.Outside;
                 _obstacles.Add(collider);
+                _obstacleShapes.Add(shape);
             }
             if (_obstacles.Count == 0) throw new InvalidOperationException("No owned body obstacles remain.");
             int count = EligibleCount;
             _engines = new NativeContactEngine[count];
+            _pairCounts = new int[count];
             _baseLocal = new Vector3[count]; _baseWorld = new Vector3[count];
             _writtenLocal = new Vector3[count]; _displacements = new Vector3[count];
             for (int i = 0; i < count; i++)
@@ -168,12 +182,22 @@ namespace AssetImport
                 if (!shape.Bone || !shape.Bone.IsChildOf(Definition.Model)) throw new InvalidOperationException("Invalid breast owner.");
                 float radius = shape.Radius * UniformScale(shape.Bone);
                 if (!PhysicsEnvironmentMath.Finite(radius) || radius <= .000001f) throw new InvalidOperationException("Invalid breast radius.");
-                DiagnosticEvent("initializing bone=" + shape.Bone.name + "; radius=" + Number(radius) + "; obstacles=" + _obstacles.Count);
-                _engines[i] = new NativeContactEngine(transform, shape.Bone.TransformPoint(shape.Center), shape.Bone.rotation, radius, _obstacles,
+                _currentProbe = shape.Bone.name;
+                var pairs = new List<DynamicBoneCollider>();
+                for (int j = 0; j < _obstacles.Count; j++)
+                {
+                    string excluded = NativeContactPairPolicy.Exclusion(shape, _obstacleShapes[j]);
+                    if (excluded == null) pairs.Add(_obstacles[j]);
+                    else DiagnosticEvent("pair excluded: breast=" + shape.Bone.name + "; obstacle=" + _obstacleShapes[j].SourceBody + "; reason=" + excluded);
+                }
+                _pairCounts[i] = pairs.Count;
+                DiagnosticEvent("initializing bone=" + shape.Bone.name + "; radius=" + Number(radius) + "; obstacles=" + pairs.Count + "/" + _obstacles.Count);
+                if (pairs.Count == 0) continue;
+                _engines[i] = new NativeContactEngine(transform, shape.Bone.TransformPoint(shape.Center), shape.Bone.rotation, radius, pairs,
                     message => DiagnosticEvent("bone=" + shape.Bone.name + "; " + message));
                 _objects.Add(_engines[i].Host);
                 AssetImport.Logger.LogInfo("PMX native breast initialized: bone=" + shape.Bone.name + "; radius=" + radius +
-                    "; obstacles=" + _obstacles.Count + "; nativeParticles=" + _engines[i].ParticleCount +
+                    "; obstacles=" + pairs.Count + "; nativeParticles=" + _engines[i].ParticleCount +
                     "; sphereSelfCheck=passed; engine=" + typeof(DynamicBone_Ver02).Assembly.GetName().Version + ".");
             }
         }
@@ -194,7 +218,7 @@ namespace AssetImport
             if (_engines != null) foreach (var engine in _engines) if (engine != null) engine.Dispose();
             _engines = null;
             foreach (var obj in _objects) if (obj && obj.transform.IsChildOf(transform)) UnityEngine.Object.Destroy(obj);
-            _objects.Clear(); _obstacles = null;
+            _objects.Clear(); _obstacles = null; _obstacleShapes = null;
         }
         private static float UniformScale(Transform bone)
         {
