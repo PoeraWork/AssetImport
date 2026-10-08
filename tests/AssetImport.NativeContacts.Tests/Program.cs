@@ -5,6 +5,7 @@ using UnityEngine;
 int checks = 0;
 void Check(bool value, string why) { checks++; if (!value) throw new Exception(why); }
 void Invoke(NativeContactController c, string name) => typeof(NativeContactController).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(c, null);
+void ApplyLate(NativeContactController c) => typeof(NativeContactLateUpdate).GetMethod("LateUpdate", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(c.GetComponent<NativeContactLateUpdate>(), null);
 Transform Child(string name, Transform parent, Vector3 local)
 { var t = new GameObject(name).transform; t.SetParent(parent, false); t.localPosition = local; return t; }
 
@@ -52,8 +53,21 @@ foreach (float scale in new[] { .1f, 1f, 3f })
     int steps = DynamicBone_Ver02.Steps;
     Time.frameCount++; Invoke(controller, "Update"); Camera.Render();
     Check(DynamicBone_Ver02.Steps == steps, "camera before LateUpdate cannot capture incomplete animation");
-    Invoke(controller, "LateUpdate"); Camera.Render(); Camera.Render();
-    Check(DynamicBone_Ver02.Steps == steps + 1, "multiple cameras advance once per frame");
+    Invoke(controller, "LateUpdate");
+    Check(DynamicBone_Ver02.Steps == steps, "early controller LateUpdate does not run before ordinary physics");
+    ApplyLate(controller);
+    // Model the skinning boundary before camera callbacks. This fails when
+    // writeback is deferred to onPreCull/onPreRender, even if counters advance.
+    var skinningPose = breast.position;
+    Check((skinningPose - original - DynamicBone_Ver02.Output).magnitude < 1e-6f,
+        "skinning stage sees contact displacement before any camera callback");
+    ApplyLate(controller); Camera.Render(); Camera.Render();
+    Check(DynamicBone_Ver02.Steps == steps + 1 && (breast.position - skinningPose).magnitude == 0, "multiple cameras observe one pose and never advance or restore physics");
+    Check(controller.BuildDiagnosticReport().Contains("renderWriteError=0") && controller.BuildDiagnosticReport().Contains("renderObservations=2"), "camera stage verifies the written pose without claiming GPU rendering");
+    Time.frameCount++; Invoke(controller, "Update");
+    Check((breast.position - original).magnitude < 1e-6f, "early Update removes the contact offset before next animation and physics");
+    ApplyLate(controller);
+    Check(DynamicBone_Ver02.Steps == steps + 2, "simulation progresses without a camera callback");
     AssetPhysicsEnvironment.Reset(ordinary);
     Check((breast.position - original).magnitude < 1e-6f, "reset immediately restores the input pose");
     ordinary.enabled = false; steps = DynamicBone_Ver02.Steps; controller.Tick(1f / 60);
@@ -109,17 +123,17 @@ Check(PhysicsEnvironmentPersistence.Read(asset).NativeBreastContacts && preferen
     DynamicBone_Ver02.Output = new(); c.Tick(1f / 60);
     Check(log.Any(s => s.Contains("selfCheck.sphereDisplacement=")), "self-check records measured response");
     Check(log.Any(s => s.Contains("stage=SetupParticles")), "native initialization stage is logged before invocation");
-    lines = log.Count; Invoke(c, "LateUpdate");
+    lines = log.Count; Invoke(c, "DiagnosticHeartbeat");
     Check(log.Count == lines, "periodic logging respects wall-clock interval");
-    Time.realtimeSinceStartup += 5.1f; Invoke(c, "LateUpdate");
+    Time.realtimeSinceStartup += 5.1f; Invoke(c, "DiagnosticHeartbeat");
     Check(log.Any(s => s.Contains("summary;") && s.Contains("lastDisplacement=0") && s.Contains("state=running")), "running solver with zero response still logs a summary");
     Check(log.Any(s => s.Contains("estimatedOverlaps=1") && s.Contains("[2]arm")), "geometry report names intersecting obstacle without claiming native contact");
     var before = breast.position; int steps = DynamicBone_Ver02.Steps;
     string report = c.BuildDiagnosticReport();
     Check(report.Contains("result=selected") && report.Contains("Applied enabled: True") && report.Contains("poseWrites="), "export contains recognition, applied setting and write counters");
     Check((breast.position - before).magnitude == 0 && DynamicBone_Ver02.Steps == steps, "capturing diagnostics never moves bones or advances native solver");
-    Time.realtimeSinceStartup += 5.1f; Invoke(c, "LateUpdate");
-    Check(c.Status.Contains("no camera update") && log.Any(s => s.Contains("ticksSinceSummary=0")), "watchdog works even when render callback never runs");
+    Time.realtimeSinceStartup += 5.1f; Invoke(c, "DiagnosticHeartbeat");
+    Check(c.Status.Contains("no late update") && log.Any(s => s.Contains("ticksSinceSummary=0")), "watchdog distinguishes a missing late update from an absent camera");
     c.Tick(0); Check(c.BuildDiagnosticReport().Contains("state=zero-delta-time"), "paused update reports zero delta separately from running");
     c.ResetContacts(); DynamicBone_Ver02.FailCalibration = true; c.Tick(1f / 60);
     report = c.BuildDiagnosticReport();
@@ -138,6 +152,7 @@ Check(PhysicsEnvironmentPersistence.Read(asset).NativeBreastContacts && preferen
     Invoke(c, "OnDisable");
 }
 PairAndBoundChecks.Run(Check);
+SkinTimingChecks.Run(Check);
 
 // Exercise the production report writer on disk, including the no-model and
 // unwritable-game-directory paths, without requiring a UI click or game loop.

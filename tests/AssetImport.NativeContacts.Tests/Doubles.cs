@@ -21,11 +21,15 @@ namespace UnityEngine
         public void SetActive(bool active) { activeSelf = active; }
         public T AddComponent<T>() where T : MonoBehaviour, new() { var c = new T { gameObject = this }; _components.Add(c); return c; }
         public T GetComponent<T>() where T : MonoBehaviour => _components.OfType<T>().FirstOrDefault();
+        public T[] GetComponentsInChildren<T>(bool includeInactive) where T : MonoBehaviour =>
+            (!includeInactive && !activeInHierarchy ? [] : _components.OfType<T>().Concat(
+                transform.Children.SelectMany(t => t.gameObject.GetComponentsInChildren<T>(includeInactive)))).ToArray();
     }
     public class MonoBehaviour : Object
     {
         public GameObject gameObject;
         public Transform transform => gameObject.transform;
+        public string name => transform.name;
         public bool enabled = true;
         public bool isActiveAndEnabled => enabled && gameObject.activeInHierarchy;
         public T GetComponent<T>() where T : MonoBehaviour => gameObject.GetComponent<T>();
@@ -35,12 +39,13 @@ namespace UnityEngine
         public GameObject gameObject;
         public string name;
         public Transform parent;
+        public readonly List<Transform> Children = new();
         public Vector3 localPosition, localScale = new(1, 1, 1);
         public Quaternion localRotation = Quaternion.identity;
         public Vector3 lossyScale => parent ? Vector3.Scale(parent.lossyScale, localScale) : localScale;
         public Vector3 position { get => parent ? parent.TransformPoint(localPosition) : localPosition; set => localPosition = parent ? parent.InverseTransformPoint(value) : value; }
         public Quaternion rotation { get => parent ? parent.rotation * localRotation : localRotation; set => localRotation = parent ? Quaternion.Inverse(parent.rotation) * value : value; }
-        public void SetParent(Transform value, bool keep = true) { var p = position; var q = rotation; parent = value; if (keep) { position = p; rotation = q; } }
+        public void SetParent(Transform value, bool keep = true) { var p = position; var q = rotation; parent?.Children.Remove(this); parent = value; parent?.Children.Add(this); if (keep) { position = p; rotation = q; } }
         public bool IsChildOf(Transform value) => this == value || (parent && parent.IsChildOf(value));
         public Vector3 TransformPoint(Vector3 value) => position + rotation * Vector3.Scale(value, lossyScale);
         public Vector3 InverseTransformPoint(Vector3 value) { var v = Quaternion.Inverse(rotation) * (value - position); var s = lossyScale; return new(v.x / s.x, v.y / s.y, v.z / s.z); }
@@ -67,7 +72,9 @@ namespace UnityEngine
         public static Quaternion operator *(Quaternion a, Quaternion b) => new() { _v = a._v * b._v };
         public static Vector3 operator *(Quaternion q, Vector3 v) { var r = System.Numerics.Vector3.Transform(new(v.x, v.y, v.z), q._v); return new(r.X, r.Y, r.Z); }
     }
-    public class Camera : Object { public static event Action<Camera> onPreCull; public static void Render() => onPreCull?.Invoke(new()); }
+    public class Camera : Object { public static event Action<Camera> onPreRender; public static void Render() => onPreRender?.Invoke(new()); }
+    public class Mesh : Object { public string name; public int vertexCount; }
+    public class SkinnedMeshRenderer : MonoBehaviour { public Transform[] bones = []; public Mesh sharedMesh; }
     public static class Time { public static int frameCount; public static float deltaTime = 1f / 60, realtimeSinceStartup; }
     public static class Application { public static string unityVersion = "test-double", dataPath = "test-game-data"; }
     public static class Resources
@@ -82,7 +89,7 @@ namespace UnityEngine
         public static void Log(string text) => Lines.Add(text);
         public static void LogWarning(string text) => Lines.Add(text);
     }
-    [AttributeUsage(AttributeTargets.Class)] public sealed class DefaultExecutionOrder(int order) : Attribute { }
+    [AttributeUsage(AttributeTargets.Class)] public sealed class DefaultExecutionOrder(int order) : Attribute { public int Order = order; }
     [AttributeUsage(AttributeTargets.Field)] public sealed class SerializeField : Attribute { }
 }
 public sealed class DynamicBoneCollider : MonoBehaviour

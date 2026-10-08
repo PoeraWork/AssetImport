@@ -19,8 +19,9 @@ namespace AssetImport
         [SerializeField] private List<GameObject> _objects = new List<GameObject>();
         [SerializeField] private Vector3[] _baseLocal, _writtenLocal;
         [SerializeField] private bool _written;
-        private Vector3[] _baseWorld, _displacements;
-        private bool _readyForCamera, _failed, _reported;
+        private Vector3[] _baseWorld, _displacements, _inputCenters, _outputCenters;
+        [SerializeField] private NativeContactLateUpdate _lateUpdater;
+        private bool _failed, _reported;
         private int _frame = -1;
         private float _scale;
         internal string Status { get; private set; } = "Breast contacts: Off";
@@ -39,24 +40,40 @@ namespace AssetImport
             controller.DiagnosticEvent("attached; " + controller.DiagnosticSummary.Replace('\n', ';'));
             AssetImport.Logger.LogInfo("PMX breast recognition: model=" + definition.Model.name + "\n" + definition.RecognitionReport);
         }
-        private void OnEnable() { ResetContacts(); Camera.onPreCull += BeforeCamera; AssetPhysicsEnvironment.ResetRequested += OnPhysicsReset; }
-        private void OnDisable() { Camera.onPreCull -= BeforeCamera; AssetPhysicsEnvironment.ResetRequested -= OnPhysicsReset; ResetContacts(); }
+        private void OnEnable()
+        {
+            ResetContacts();
+            _lateUpdater = GetComponent<NativeContactLateUpdate>() ?? gameObject.AddComponent<NativeContactLateUpdate>();
+            _lateUpdater.Controller = this; _lateUpdater.enabled = true;
+            Camera.onPreRender += BeforeRender; AssetPhysicsEnvironment.ResetRequested += OnPhysicsReset;
+        }
+        private void OnDisable()
+        {
+            Camera.onPreRender -= BeforeRender; AssetPhysicsEnvironment.ResetRequested -= OnPhysicsReset;
+            if (_lateUpdater) _lateUpdater.enabled = false;
+            ResetContacts();
+        }
         private void OnDestroy() { ResetContacts(); }
         private void OnPhysicsReset(DynamicBone chain) { if (chain && chain.gameObject == gameObject) ResetContacts(); }
-        private void Update() { _readyForCamera = false; Restore(); }
-        private void LateUpdate() { _readyForCamera = true; DiagnosticHeartbeat(); }
-        private void BeforeCamera(Camera camera)
+        // Restore before animation/ordinary physics, then a separate, late
+        // component writes the result before Unity updates skinned meshes.
+        private void Update() { Restore(); }
+        private void LateUpdate()
+        { if (!_lateUpdater || !_lateUpdater.isActiveAndEnabled) DiagnosticHeartbeat(); }
+        internal void ApplyLateUpdate()
         {
-            _cameraCallbacks++;
-            if (!_readyForCamera || _frame == Time.frameCount || !isActiveAndEnabled) return;
+            if (_frame == Time.frameCount || !isActiveAndEnabled) return;
             _frame = Time.frameCount;
+            _lateUpdates++;
             Tick(Time.deltaTime);
+            DiagnosticHeartbeat();
         }
 
         internal void ResetContacts()
         {
             Restore(); Release(); _failed = false; _reported = false; _frame = -1;
             _resets++; _lastDisplacement = 0; _diagnosticState = "awaiting-update";
+            _nextGeometrySample = 0;
             _nextDiagnostic = Time.realtimeSinceStartup + 5f;
         }
 
@@ -109,10 +126,11 @@ namespace AssetImport
                     var shape = Definition.Breasts[i];
                     if (!shape.Bone || !shape.Bone.IsChildOf(Definition.Model)) throw new InvalidOperationException("Breast bone is no longer owned by the model.");
                     _baseLocal[i] = shape.Bone.localPosition; _baseWorld[i] = shape.Bone.position;
+                    _inputCenters[i] = shape.Bone.TransformPoint(shape.Center);
                     _displacements[i] = Vector3.zero;
                     if (!EnabledFor(shape) || _engines[i] == null) continue;
                     _currentProbe = shape.Bone.name;
-                    _displacements[i] = _engines[i].Step(shape.Bone.TransformPoint(shape.Center), shape.Bone.rotation, elapsed);
+                    _displacements[i] = _engines[i].Step(_inputCenters[i], shape.Bone.rotation, elapsed);
                     if (elapsed > 0) _solverSteps++;
                     maximum = Math.Max(maximum, _displacements[i].magnitude); active++;
                 }
@@ -126,6 +144,9 @@ namespace AssetImport
                     Definition.Breasts[i].Bone.position = _baseWorld[i] + _displacements[i];
                     _writtenLocal[i] = Definition.Breasts[i].Bone.localPosition;
                 }
+                for (int i = 0; i < EligibleCount; i++)
+                    _outputCenters[i] = Definition.Breasts[i].Bone.TransformPoint(Definition.Breasts[i].Center);
+                RecordWriteback();
                 Status = "Breast contacts: " + active + " active / " + EligibleCount;
                 _poseWrites++; _lastDisplacement = maximum; _maximumDisplacement = Math.Max(_maximumDisplacement, maximum);
                 DiagnosticState(elapsed <= 0 ? "zero-delta-time" : "running");
@@ -176,6 +197,8 @@ namespace AssetImport
             _pairCounts = new int[count];
             _baseLocal = new Vector3[count]; _baseWorld = new Vector3[count];
             _writtenLocal = new Vector3[count]; _displacements = new Vector3[count];
+            _inputCenters = new Vector3[count]; _outputCenters = new Vector3[count];
+            _lastWriteFrame = -1;
             for (int i = 0; i < count; i++)
             {
                 var shape = Definition.Breasts[i];

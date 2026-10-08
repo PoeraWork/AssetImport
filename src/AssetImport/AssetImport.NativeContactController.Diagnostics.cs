@@ -8,7 +8,13 @@ namespace AssetImport
 {
     internal sealed partial class NativeContactController
     {
-        private long _cameraCallbacks, _ticks, _solverSteps, _poseWrites, _changedAfterWrite, _resets, _heartbeatTicks;
+        private long _cameraCallbacks, _ticks, _solverSteps, _poseWrites, _changedAfterWrite, _resets, _heartbeatTicks, _lateUpdates, _renderObservations;
+        private int _observedRenderFrame = -1;
+        private float _renderWriteError, _maximumRenderWriteError;
+        private Vector3[] _renderCenters;
+        private int _lastWriteFrame = -1;
+        private float _nextGeometrySample;
+        private string _writebackGeometry = "Contact geometry: not sampled";
         private float _lastElapsed, _lastDisplacement, _maximumDisplacement, _nextDiagnostic;
         private string _diagnosticState = "awaiting-update", _lastFailure = "none";
         private readonly Queue<string> _diagnosticEvents = new Queue<string>();
@@ -49,7 +55,10 @@ namespace AssetImport
         }
         private string Counters()
         {
-            return "state=" + _diagnosticState + "; cameraCallbacks=" + _cameraCallbacks + "; ticks=" + _ticks +
+            return "state=" + _diagnosticState + "; writePhase=LateUpdate; lateUpdates=" + _lateUpdates +
+                "; cameraCallbacks=" + _cameraCallbacks + "; renderObservations=" + _renderObservations +
+                "; observedRenderFrame=" + _observedRenderFrame + "; renderWriteError=" + Number(_renderWriteError) +
+                "; maxRenderWriteError=" + Number(_maximumRenderWriteError) + "; ticks=" + _ticks +
                 "; solverSteps=" + _solverSteps + "; poseWrites=" + _poseWrites + "; dt=" + Number(_lastElapsed) +
                 "; lastDisplacement=" + Number(_lastDisplacement) + "; maxDisplacement=" + Number(_maximumDisplacement) +
                 "; changedAfterWrite=" + _changedAfterWrite + "; resets=" + _resets;
@@ -62,7 +71,7 @@ namespace AssetImport
             try
             {
                 long since = _ticks - _heartbeatTicks; _heartbeatTicks = _ticks;
-                if (since == 0 && !_failed) Status = "Breast contacts: no camera update; save diagnostics";
+                if (since == 0 && !_failed) Status = "Breast contacts: no late update; save diagnostics";
                 DiagnosticEvent("summary; ticksSinceSummary=" + since + "; " + Counters());
                 if (Definition != null)
                     foreach (var shape in Definition.Breasts) DiagnosticEvent(ContactSample(shape));
@@ -71,6 +80,33 @@ namespace AssetImport
             {
                 if (!_diagnosticFailureReported)
                 { _diagnosticFailureReported = true; DiagnosticEvent("diagnostic sampling failed: " + error.Message); }
+            }
+        }
+
+        // Observe only. Advancing or restoring here could miss the skinning
+        // pass or give different cameras different poses in the same frame.
+        private void BeforeRender(Camera camera)
+        {
+            _cameraCallbacks++;
+            if (!_written || _frame != Time.frameCount || !isActiveAndEnabled || Definition == null) return;
+            try
+            {
+                if (_renderCenters == null || _renderCenters.Length != EligibleCount) _renderCenters = new Vector3[EligibleCount];
+                _renderWriteError = 0;
+                for (int i = 0; i < EligibleCount; i++)
+                {
+                    var shape = Definition.Breasts[i];
+                    if (!shape.Bone) continue;
+                    _renderCenters[i] = shape.Bone.TransformPoint(shape.Center);
+                    _renderWriteError = Math.Max(_renderWriteError, (_renderCenters[i] - _outputCenters[i]).magnitude);
+                }
+                _maximumRenderWriteError = Math.Max(_maximumRenderWriteError, _renderWriteError);
+                _observedRenderFrame = Time.frameCount; _renderObservations++;
+            }
+            catch (Exception error)
+            {
+                if (!_diagnosticFailureReported)
+                { _diagnosticFailureReported = true; DiagnosticEvent("render observation failed: " + error.Message); }
             }
         }
 
@@ -104,6 +140,7 @@ namespace AssetImport
         {
             var bone = Definition.Breasts[i].Bone;
             return "Probe: " + (bone ? bone.name : "missing") + "; boundObstacles=" + _pairCounts[i] +
+                "; nativeColliderCount=" + _engines[i].ColliderCount +
                 "; rawDisplacement=" + Number(_engines[i].LastRawDisplacement) +
                 "; maxRawDisplacement=" + Number(_engines[i].MaximumRawDisplacement) +
                 "; outputRebases=" + _engines[i].OutputRebases;
@@ -129,6 +166,14 @@ namespace AssetImport
                     report.AppendLine(ContactSample(shape));
                     if (_engines != null && i < _engines.Length && _engines[i] != null)
                         report.AppendLine(ProbeState(i));
+                    if (_inputCenters != null && i < _inputCenters.Length && _lastWriteFrame >= 0)
+                    {
+                        report.AppendLine("Writeback: bone=" + (shape.Bone ? shape.Bone.name : "missing") +
+                            "; frame=" + _lastWriteFrame +
+                            "; inputCenter=" + Vector(_inputCenters[i]) + "; outputCenter=" + Vector(_outputCenters[i]) +
+                            "; appliedDelta=" + Vector(_outputCenters[i] - _inputCenters[i]) +
+                            "; observedRenderCenter=" + (_renderCenters != null && i < _renderCenters.Length ? Vector(_renderCenters[i]) : "not-observed"));
+                    }
                     foreach (var obstacle in Definition.Obstacles)
                         report.AppendLine("Pair: breast=" + (shape.Bone ? shape.Bone.name : "missing") + "; obstacle=" + obstacle.SourceBody +
                             "; result=" + (NativeContactPairPolicy.Exclusion(shape, obstacle) ?? "allowed") +
@@ -138,6 +183,8 @@ namespace AssetImport
                     report.AppendLine("Obstacle: " + shape.SourceBody + "; bone=" + (shape.Bone ? shape.Bone.name : "missing") +
                         "; localCenter=" + Vector(shape.Center) + "; radius=" + Number(shape.Radius) + "; height=" + Number(shape.Height));
             }
+            report.AppendLine(_writebackGeometry);
+            AppendSkinBindings(report);
             if (_environment)
                 foreach (var chain in _environment.Chains)
                     if (chain) report.AppendLine("Chain: " + (chain.m_Root ? chain.m_Root.name : "missing root") +

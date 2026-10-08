@@ -19,6 +19,7 @@ namespace AssetImport
         private bool _started;
         private readonly Action<string> _diagnostic;
         internal int ParticleCount { get { return _engine.Particles.Count; } }
+        internal int ColliderCount { get { return _engine.Colliders == null ? 0 : _engine.Colliders.Count; } }
         internal GameObject Host { get { return _host; } }
         internal int OutputRebases { get; private set; }
         internal float LastRawDisplacement { get; private set; }
