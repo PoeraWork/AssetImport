@@ -69,6 +69,19 @@ namespace UnityEngine
     }
     public class Camera : Object { public static event Action<Camera> onPreCull; public static void Render() => onPreCull?.Invoke(new()); }
     public static class Time { public static int frameCount; public static float deltaTime = 1f / 60, realtimeSinceStartup; }
+    public static class Application { public static string unityVersion = "test-double", dataPath = "test-game-data"; }
+    public static class Resources
+    {
+        public static Object[] Items = [];
+        public static bool FailEnumeration;
+        public static T[] FindObjectsOfTypeAll<T>() where T : Object => FailEnumeration ? throw new TypeLoadException("injected type load failure") : Items.OfType<T>().Where(i => i).ToArray();
+    }
+    public static class Debug
+    {
+        public static readonly List<string> Lines = new();
+        public static void Log(string text) => Lines.Add(text);
+        public static void LogWarning(string text) => Lines.Add(text);
+    }
     [AttributeUsage(AttributeTargets.Class)] public sealed class DefaultExecutionOrder(int order) : Attribute { }
     [AttributeUsage(AttributeTargets.Field)] public sealed class SerializeField : Attribute { }
 }
@@ -137,13 +150,17 @@ namespace AssetImport
         internal static event Action<DynamicBone> ResetRequested;
         internal static void Reset(DynamicBone chain) => ResetRequested?.Invoke(chain);
     }
-    internal static class AssetImport { internal static Log Logger = new(); }
+    internal static class AssetImport { internal static Log Logger = new(); internal const string PluginName = "AssetImport test"; }
     internal sealed class Log
     {
         internal readonly List<string> Lines = new();
         internal void LogInfo(string text) { Lines.Add(text); }
         internal void LogWarning(string text) { Lines.Add(text); }
     }
+}
+namespace BepInEx
+{
+    public static class Paths { public static string GameRootPath; }
 }
 namespace MessagePack
 {

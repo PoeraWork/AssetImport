@@ -42,6 +42,7 @@ namespace AssetImport
                 string line = "t=" + Number(Time.realtimeSinceStartup) + "; model=" + ModelName + "; " + message;
                 if (_diagnosticEvents.Count >= 64) _diagnosticEvents.Dequeue();
                 _diagnosticEvents.Enqueue(line);
+                NativeContactDiagnostics.Request("model-state");
                 AssetImport.Logger.LogInfo("PMX breast diagnostics: " + line);
             }
             catch { }
@@ -107,6 +108,7 @@ namespace AssetImport
 
         internal string BuildDiagnosticReport()
         {
+            if (!_environment) _environment = GetComponent<AssetPhysicsEnvironment>();
             var report = new StringBuilder();
             report.AppendLine("Model: " + ModelName);
             report.AppendLine("Status: " + Status);

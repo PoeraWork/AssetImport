@@ -137,4 +137,50 @@ Check(PhysicsEnvironmentPersistence.Read(asset).NativeBreastContacts && preferen
     System.Globalization.CultureInfo.CurrentCulture = culture;
     Invoke(c, "OnDisable");
 }
-Console.WriteLine($"PASS: {checks} native contact adapter lifecycle and KK/KKS metadata checks. Collision output was injected; game physics and visual behavior are NOT tested.");
+// Exercise the production report writer on disk, including the no-model and
+// unwritable-game-directory paths, without requiring a UI click or game loop.
+{
+    string testRoot = Path.Combine(Path.GetTempPath(), "AssetImport-report-test-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(testRoot);
+    string fallbackDirectory = null;
+    try
+    {
+        BepInEx.Paths.GameRootPath = testRoot; Resources.Items = [];
+        NativeContactDiagnostics.Select(null, null, "no selection");
+        NativeContactDiagnostics.Initialize();
+        string path = Path.Combine(testRoot, "UserData/AssetImport/Diagnostics/breast-contacts.txt");
+        Check(File.Exists(path), "startup creates report without models or user interaction");
+        string initial = File.ReadAllText(path);
+        Check(initial.Contains("reason: startup") && initial.Contains("No contact controller was created") && initial.Contains("Game root: " + testRoot), "startup report identifies session directory and absent model");
+        Check(Debug.Lines.Any(s => s.Contains("AssetImport diagnostics: build=") && s.Contains("breast-contacts.txt")), "report path also reaches Unity player log");
+        NativeContactDiagnostics.Request("sample-one"); NativeContactDiagnostics.Poll();
+        Check(File.ReadAllText(path) == initial, "automatic report writes are rate limited");
+        NativeContactDiagnostics.Request("sample-two"); Time.realtimeSinceStartup += 5.1f;
+        NativeContactDiagnostics.Poll();
+        Check(File.ReadAllText(path).Contains("reason: sample-two"), "multiple model events are coalesced and saved without UI");
+        Check(Directory.GetFiles(Path.GetDirectoryName(path)).Length == 1, "automatic capture updates one report instead of accumulating files");
+        var model = new GameObject("report-model"); var broken = model.AddComponent<NativeContactController>();
+        broken.Definition = new NativeContactDefinition { Model = model.transform, Breasts = null };
+        Resources.Items = [broken];
+        Check(NativeContactDiagnostics.Save("manual") && File.ReadAllText(path).Contains("Diagnostic capture failed:"), "one broken model cannot prevent report creation");
+        Resources.Items = [];
+        Resources.FailEnumeration = true;
+        Check(NativeContactDiagnostics.Save("manual") && File.ReadAllText(path).Contains("injected type load failure"), "component discovery failure still produces a minimal diagnostic file");
+        Resources.FailEnumeration = false;
+        var blockedRoot = Path.Combine(testRoot, "blocked-game"); Directory.CreateDirectory(blockedRoot);
+        File.WriteAllText(Path.Combine(blockedRoot, "UserData"), "directory deliberately blocked by file");
+        BepInEx.Paths.GameRootPath = blockedRoot;
+        NativeContactDiagnostics.Initialize();
+        fallbackDirectory = Path.GetDirectoryName(NativeContactDiagnostics.ReportPath);
+        Check(File.Exists(NativeContactDiagnostics.ReportPath) && NativeContactDiagnostics.ReportPath != path && NativeContactDiagnostics.LastError.Contains("temporary folder"), "write failure uses a visible temporary fallback");
+        Check(File.ReadAllText(NativeContactDiagnostics.ReportPath).Contains("Primary report path unavailable"), "fallback report retains original write error");
+    }
+    finally
+    {
+        // Delete only these freshly created test directories.
+        if (Path.GetDirectoryName(Path.GetFullPath(testRoot)) == Path.TrimEndingDirectorySeparator(Path.GetTempPath())) Directory.Delete(testRoot, true);
+        if (fallbackDirectory != null && Path.GetDirectoryName(Path.GetFullPath(fallbackDirectory)) == Path.Combine(Path.TrimEndingDirectorySeparator(Path.GetTempPath()), "AssetImport-Diagnostics"))
+            Directory.Delete(fallbackDirectory, true);
+    }
+}
+Console.WriteLine($"PASS: {checks} native contact adapter lifecycle, diagnostic files and KK/KKS metadata checks. Collision output was injected; game physics and visual behavior are NOT tested.");

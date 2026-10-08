@@ -159,7 +159,18 @@ namespace AssetImport
             float viewHeight = Math.Min(_mainContentHeight, Math.Max(180, Screen.height - 100));
             _mainScroll = GUI.BeginScrollView(new Rect(0, 20, 260, viewHeight), _mainScroll,
                 new Rect(0, 20, 240, _mainContentHeight));
-            var y = 0;
+            var y = 20;
+            GUI.Label(new Rect(10, y, 220, 20), "Build: " + NativeContactDiagnostics.ShortBuild);
+            if (GUI.Button(new Rect(10, y += 22, 220, 25), "Open diagnostics folder"))
+                _physicsActionStatus = OpenContactDiagnosticsFolder();
+            y += 8;
+            if (!string.IsNullOrEmpty(NativeContactDiagnostics.LastError))
+            {
+                var diagnosticStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
+                float diagnosticHeight = diagnosticStyle.CalcHeight(new GUIContent(NativeContactDiagnostics.LastError), 220);
+                GUI.Label(new Rect(10, y += 20, 220, diagnosticHeight), NativeContactDiagnostics.LastError, diagnosticStyle);
+                y += (int)diagnosticHeight;
+            }
             FilePath = GUI.TextField(new Rect(10, y += 20, 195, 20), FilePath);
             FilePath = FilePath.Replace("\\", "/");
             FilePath = FilePath.Replace("\"", "");
@@ -348,6 +359,8 @@ namespace AssetImport
             var environment = mode == GameMode.Studio ? Main.asc?.GetSelectedPhysicsEnvironment(out environmentAsset)
                 : character?.GetSelectedPhysicsEnvironment(out environmentAsset);
             DrawPhysicsEnvironment(ref y, environment, environmentAsset);
+            NativeContactDiagnostics.Select(environment, _environment == environment && _environmentDraft != null
+                ? (bool?)_environmentDraft.NativeBreastContacts : null, displayPhysicsStatus);
             if (GUI.Button(new Rect(10, y += 5, 220, 25), "Save contact diagnostics"))
                 _physicsActionStatus = SaveContactDiagnostics(environment, displayPhysicsStatus);
             y += 25;
