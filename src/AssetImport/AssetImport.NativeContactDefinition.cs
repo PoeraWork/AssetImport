@@ -11,12 +11,14 @@ namespace AssetImport
         public Quaternion Rotation = new Quaternion(0, 0, 0, 1);
         public float Radius, Height;
         public int Direction;
+        public string SourceBody;
     }
 
     [Serializable]
     internal sealed class NativeContactDefinition
     {
         public Transform Model;
+        public string RecognitionReport;
         public NativeContactShape[] Breasts = new NativeContactShape[0];
         public NativeContactShape[] Obstacles = new NativeContactShape[0];
     }

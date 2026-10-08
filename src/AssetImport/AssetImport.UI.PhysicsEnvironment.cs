@@ -29,8 +29,13 @@ namespace AssetImport
             {
                 if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.NativeBreastContacts, "Breast contacts (experimental)"))
                     _environmentDraft.NativeBreastContacts = !_environmentDraft.NativeBreastContacts;
-                GUI.Label(new Rect(10, y += 27, 220, 38), contacts.Status, new GUIStyle(GUI.skin.label) { wordWrap = true });
-                y += 16;
+                var contactStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
+                string contactStatus = contacts.Status + "\n" + contacts.DiagnosticSummary;
+                if (_environmentDraft.NativeBreastContacts != environment.Settings.NativeBreastContacts)
+                    contactStatus += "\nPending change: click Apply physics settings.";
+                float contactHeight = contactStyle.CalcHeight(new GUIContent(contactStatus), 220);
+                GUI.Label(new Rect(10, y += 27, 220, contactHeight), contactStatus, contactStyle);
+                y += (int)contactHeight - 25;
             }
             if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.Floor, "Ground collision"))
                 _environmentDraft.Floor = !_environmentDraft.Floor;
@@ -79,7 +84,7 @@ namespace AssetImport
                 _environmentDraft.FloorOffset = offset; _environmentDraft.DownwardForce = force;
                 _environment.Apply(_environmentDraft);
                 var contacts = _environment.GetComponent<NativeContactController>();
-                if (contacts) contacts.ResetContacts();
+                if (contacts) { contacts.ResetContacts(); contacts.ReportSettingsApplied(); }
                 PhysicsEnvironmentPersistence.Write(_environmentAsset, _environmentDraft);
                 _physicsActionStatus = "Physics settings applied.";
             }

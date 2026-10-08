@@ -88,4 +88,53 @@ var asset = new Asset(); Check(!PhysicsEnvironmentPersistence.Read(asset).Native
 var preference = new PhysicsEnvironmentSettings { NativeBreastContacts = true };
 PhysicsEnvironmentPersistence.Write(asset, preference);
 Check(PhysicsEnvironmentPersistence.Read(asset).NativeBreastContacts && preference.Copy().NativeBreastContacts, "opt-in survives scene/card setting copies");
+
+// Zero output and absent render callbacks must be visible without successful
+// contact. Reports must neither run the solver nor write bone positions.
+{
+    var log = global::AssetImport.AssetImport.Logger.Lines; log.Clear();
+    var host = new GameObject("diagnostic-host"); var model = Child("diagnostic-model", host.transform, new());
+    var breast = Child("breast", model, new(0, 1, 0)); var arm = Child("arm", model, new(0, 1, 0));
+    var chain = host.AddComponent<DynamicBone>(); chain.m_Root = breast;
+    var environment = host.AddComponent<AssetPhysicsEnvironment>(); environment.Chains = [chain];
+    var obstacle = new NativeContactShape { Bone = arm, Radius = .1f, Height = .4f, Direction = 1, SourceBody = "[2]arm" };
+    var definition = new NativeContactDefinition { Model = model, RecognitionReport = "breast bone=breast; result=selected",
+        Breasts = [new() { Bone = breast, Radius = .1f }], Obstacles = [obstacle] };
+    NativeContactController.Attach(host, definition); var c = host.GetComponent<NativeContactController>();
+    Invoke(c, "OnEnable"); c.Tick(1f / 60);
+    Check(log.Any(s => s.Contains("state=off")), "disabled opt-in produces a state log");
+    int lines = log.Count; for (int i = 0; i < 300; i++) c.Tick(1f / 60);
+    Check(log.Count == lines, "stable state does not log each frame");
+    environment.Settings.NativeBreastContacts = true; c.ReportSettingsApplied();
+    DynamicBone_Ver02.Output = new(); c.Tick(1f / 60);
+    Check(log.Any(s => s.Contains("selfCheck.sphereDisplacement=")), "self-check records measured response");
+    Check(log.Any(s => s.Contains("stage=SetupParticles")), "native initialization stage is logged before invocation");
+    lines = log.Count; Invoke(c, "LateUpdate");
+    Check(log.Count == lines, "periodic logging respects wall-clock interval");
+    Time.realtimeSinceStartup += 5.1f; Invoke(c, "LateUpdate");
+    Check(log.Any(s => s.Contains("summary;") && s.Contains("lastDisplacement=0") && s.Contains("state=running")), "running solver with zero response still logs a summary");
+    Check(log.Any(s => s.Contains("estimatedOverlaps=1") && s.Contains("[2]arm")), "geometry report names intersecting obstacle without claiming native contact");
+    var before = breast.position; int steps = DynamicBone_Ver02.Steps;
+    string report = c.BuildDiagnosticReport();
+    Check(report.Contains("result=selected") && report.Contains("Applied enabled: True") && report.Contains("poseWrites="), "export contains recognition, applied setting and write counters");
+    Check((breast.position - before).magnitude == 0 && DynamicBone_Ver02.Steps == steps, "capturing diagnostics never moves bones or advances native solver");
+    Time.realtimeSinceStartup += 5.1f; Invoke(c, "LateUpdate");
+    Check(c.Status.Contains("no camera update") && log.Any(s => s.Contains("ticksSinceSummary=0")), "watchdog works even when render callback never runs");
+    c.Tick(0); Check(c.BuildDiagnosticReport().Contains("state=zero-delta-time"), "paused update reports zero delta separately from running");
+    c.ResetContacts(); DynamicBone_Ver02.FailCalibration = true; c.Tick(1f / 60);
+    report = c.BuildDiagnosticReport();
+    Check(report.Contains("state=failed") && report.Contains("overlapping sphere produced no response"), "self-check failure retains exact cause for export");
+    c.ResetContacts(); Check(c.BuildDiagnosticReport().Contains("overlapping sphere produced no response"), "retry does not erase diagnostic failure evidence");
+    DynamicBone_Ver02.FailCalibration = false;
+    environment.enabled = false; c.Tick(1f / 60);
+    Check(c.BuildDiagnosticReport().Contains("state=environment-disabled"), "previously silent environment guard has explicit reason");
+    environment.enabled = true; definition.Breasts = []; c.Tick(1f / 60);
+    Check(c.BuildDiagnosticReport().Contains("state=no-breast-bodies"), "zero recognized breasts has its own diagnostic state");
+    Check(Math.Abs(NativeContactController.SurfaceGap(new(0, 1.4f, 0), .1f, obstacle) - .1f) < 1e-6f, "capsule signed gap accounts for segment length and both radii");
+    var culture = System.Globalization.CultureInfo.CurrentCulture;
+    System.Globalization.CultureInfo.CurrentCulture = new("de-DE");
+    Check(NativeContactController.Number(.125f) == "0.125", "diagnostic numbers are locale independent");
+    System.Globalization.CultureInfo.CurrentCulture = culture;
+    Invoke(c, "OnDisable");
+}
 Console.WriteLine($"PASS: {checks} native contact adapter lifecycle and KK/KKS metadata checks. Collision output was injected; game physics and visual behavior are NOT tested.");

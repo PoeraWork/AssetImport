@@ -72,6 +72,10 @@ Recognition requires weighted breast bones and PMX dynamic bodies, plus stable P
 
 The panel reports eligible and active breasts. Activation first checks a hidden proxy at rest and against a temporary sphere; the model is not changed during this check. An initialization, self-check, or update failure disables the contact layer and leaves ordinary physics active. To retry after correcting the model or settings, click **Apply physics settings**. Diagnostic lines start with `PMX native breast candidates`, `PMX native breast initialized`, `PMX native breast response`, or `PMX native breast adapter stopped`. A reported response establishes that the native proxy moved, not that visible mesh contact is correct.
 
+For missing or unexpected motion, reproduce the pose for at least 10 seconds, then click **Save contact diagnostics** below the physics controls. This writes `UserData/AssetImport/Diagnostics/breast-contacts.txt` in the game folder, replacing the previous report. Export is available even when no model or contact component is selected. The report includes the build, applied and pending settings, recognition/rejection reasons, loaded models, chain state, native initialization stages, last failure, update/write counters, displacement and sampled obstacle distances. It does not advance physics. Send this file with the game log when reporting a problem.
+
+While contacts are enabled, `PMX breast diagnostics` lines record a summary every five seconds, including zero displacement or missing camera updates. State changes are logged immediately. Surface gaps and overlap counts are geometric estimates, not confirmation that the native solver resolved a collision; changed-after-write counts may also include manual edits.
+
 ## Textures and color conversion
 
 PNG/JPEG are supported along with BMP, TGA, and common DDS formats. Supported DDS data includes BC1/2/3 and common RGB(A) layouts; BC7, HDR, cubemaps, arrays, and volume textures are not supported. Missing or unsupported textures are reported separately.

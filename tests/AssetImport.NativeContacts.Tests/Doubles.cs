@@ -68,7 +68,7 @@ namespace UnityEngine
         public static Vector3 operator *(Quaternion q, Vector3 v) { var r = System.Numerics.Vector3.Transform(new(v.x, v.y, v.z), q._v); return new(r.X, r.Y, r.Z); }
     }
     public class Camera : Object { public static event Action<Camera> onPreCull; public static void Render() => onPreCull?.Invoke(new()); }
-    public static class Time { public static int frameCount; public static float deltaTime = 1f / 60; }
+    public static class Time { public static int frameCount; public static float deltaTime = 1f / 60, realtimeSinceStartup; }
     [AttributeUsage(AttributeTargets.Class)] public sealed class DefaultExecutionOrder(int order) : Attribute { }
     [AttributeUsage(AttributeTargets.Field)] public sealed class SerializeField : Attribute { }
 }
@@ -138,7 +138,12 @@ namespace AssetImport
         internal static void Reset(DynamicBone chain) => ResetRequested?.Invoke(chain);
     }
     internal static class AssetImport { internal static Log Logger = new(); }
-    internal sealed class Log { internal void LogInfo(string text) { } internal void LogWarning(string text) { } }
+    internal sealed class Log
+    {
+        internal readonly List<string> Lines = new();
+        internal void LogInfo(string text) { Lines.Add(text); }
+        internal void LogWarning(string text) { Lines.Add(text); }
+    }
 }
 namespace MessagePack
 {

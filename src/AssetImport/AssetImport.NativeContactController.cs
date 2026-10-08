@@ -5,7 +5,7 @@ using UnityEngine;
 namespace AssetImport
 {
     [DefaultExecutionOrder(-32000)]
-    internal sealed class NativeContactController : MonoBehaviour
+    internal sealed partial class NativeContactController : MonoBehaviour
     {
         public NativeContactDefinition Definition;
         private AssetPhysicsEnvironment _environment;
@@ -33,22 +33,29 @@ namespace AssetImport
             controller.Status = "Breast contacts: Off (" + controller.EligibleCount + " eligible)";
             AssetImport.Logger.LogInfo("PMX native breast candidates: model=" + definition.Model.name + "; breasts=" +
                 definition.Breasts.Length + "; bodyObstacles=" + definition.Obstacles.Length + ". Disabled until explicitly enabled.");
+            controller.DiagnosticEvent("attached; " + controller.DiagnosticSummary.Replace('\n', ';'));
+            AssetImport.Logger.LogInfo("PMX breast recognition: model=" + definition.Model.name + "\n" + definition.RecognitionReport);
         }
         private void OnEnable() { ResetContacts(); Camera.onPreCull += BeforeCamera; AssetPhysicsEnvironment.ResetRequested += OnPhysicsReset; }
         private void OnDisable() { Camera.onPreCull -= BeforeCamera; AssetPhysicsEnvironment.ResetRequested -= OnPhysicsReset; ResetContacts(); }
         private void OnDestroy() { ResetContacts(); }
         private void OnPhysicsReset(DynamicBone chain) { if (chain && chain.gameObject == gameObject) ResetContacts(); }
         private void Update() { _readyForCamera = false; Restore(); }
-        private void LateUpdate() { _readyForCamera = true; }
+        private void LateUpdate() { _readyForCamera = true; DiagnosticHeartbeat(); }
         private void BeforeCamera(Camera camera)
         {
+            _cameraCallbacks++;
             if (!_readyForCamera || _frame == Time.frameCount || !isActiveAndEnabled) return;
             _frame = Time.frameCount;
             Tick(Time.deltaTime);
         }
 
         internal void ResetContacts()
-        { Restore(); Release(); _failed = false; _reported = false; _frame = -1; }
+        {
+            Restore(); Release(); _failed = false; _reported = false; _frame = -1;
+            _resets++; _lastDisplacement = 0; _diagnosticState = "awaiting-update";
+            _nextDiagnostic = Time.realtimeSinceStartup + 5f;
+        }
 
         private bool EnabledFor(NativeContactShape shape)
         {
@@ -65,12 +72,16 @@ namespace AssetImport
 
         internal void Tick(float elapsed)
         {
+            _ticks++; _lastElapsed = elapsed;
             Restore();
             if (!_environment) _environment = GetComponent<AssetPhysicsEnvironment>();
-            if (!_environment || !_environment.isActiveAndEnabled || Definition == null || !Definition.Model ||
-                !Definition.Model.IsChildOf(transform) || !Definition.Model.gameObject.activeInHierarchy) { Release(); return; }
+            if (!_environment) { Blocked("missing-environment", "Breast contacts: physics component missing"); return; }
+            if (!_environment.isActiveAndEnabled) { Blocked("environment-disabled", "Breast contacts: physics component disabled"); return; }
+            if (Definition == null || !Definition.Model) { Blocked("missing-definition", "Breast contacts: model data missing"); return; }
+            if (!Definition.Model.IsChildOf(transform)) { Blocked("model-owner-mismatch", "Breast contacts: model ownership changed"); return; }
+            if (!Definition.Model.gameObject.activeInHierarchy) { Blocked("model-inactive", "Breast contacts: model inactive"); return; }
             if (!_environment.Settings.NativeBreastContacts)
-            { Release(); _failed = false; _reported = false; Status = "Breast contacts: Off (" + EligibleCount + " eligible)"; return; }
+            { Release(); _failed = false; _reported = false; Status = "Breast contacts: Off (" + EligibleCount + " eligible)"; DiagnosticState("off"); return; }
             if (_failed) return;
             try
             {
@@ -79,12 +90,13 @@ namespace AssetImport
                 if (EligibleCount == 0 || Definition.Obstacles.Length == 0)
                 {
                     Status = "Breast contacts: no usable PMX bodies";
+                    DiagnosticState(EligibleCount == 0 ? "no-breast-bodies" : "no-body-obstacles");
                     if (!_reported) AssetImport.Logger.LogWarning("PMX native breast unavailable: no matching weighted breast body or stable PMX body obstacles.");
                     _reported = true; return;
                 }
                 bool enabled = false;
                 foreach (var breast in Definition.Breasts) if (breast.Bone && EnabledFor(breast)) enabled = true;
-                if (!enabled) { Release(); Status = "Breast contacts: physics is off"; return; }
+                if (!enabled) { Blocked("physics-off", "Breast contacts: physics is off"); return; }
                 if (_engines != null && Math.Abs(scale - _scale) > .00001f * scale) Release();
                 if (_engines == null) Initialize(scale);
                 // Capture every input before writing any parent or child bone.
@@ -97,6 +109,7 @@ namespace AssetImport
                     _displacements[i] = Vector3.zero;
                     if (!EnabledFor(shape)) continue;
                     _displacements[i] = _engines[i].Step(shape.Bone.TransformPoint(shape.Center), shape.Bone.rotation, elapsed);
+                    if (elapsed > 0) _solverSteps++;
                     maximum = Math.Max(maximum, _displacements[i].magnitude); active++;
                 }
                 // Import binding is sorted by ancestry. Real bone rotations and
@@ -108,6 +121,8 @@ namespace AssetImport
                     _writtenLocal[i] = Definition.Breasts[i].Bone.localPosition;
                 }
                 Status = "Breast contacts: " + active + " active / " + EligibleCount;
+                _poseWrites++; _lastDisplacement = maximum; _maximumDisplacement = Math.Max(_maximumDisplacement, maximum);
+                DiagnosticState(elapsed <= 0 ? "zero-delta-time" : "running");
                 if (!_reported && maximum > .0001f * scale)
                 {
                     _reported = true;
@@ -117,9 +132,11 @@ namespace AssetImport
             }
             catch (Exception error)
             {
-                Restore(); Release(); _failed = true;
+                Restore(); Release(); _failed = true; _lastDisplacement = 0;
                 Status = "Breast contacts unavailable; see log";
                 var detail = error.InnerException ?? error;
+                _lastFailure = detail.ToString();
+                DiagnosticState("failed");
                 AssetImport.Logger.LogWarning("PMX native breast adapter stopped; ordinary physics remains active. " + detail);
             }
         }
@@ -151,7 +168,9 @@ namespace AssetImport
                 if (!shape.Bone || !shape.Bone.IsChildOf(Definition.Model)) throw new InvalidOperationException("Invalid breast owner.");
                 float radius = shape.Radius * UniformScale(shape.Bone);
                 if (!PhysicsEnvironmentMath.Finite(radius) || radius <= .000001f) throw new InvalidOperationException("Invalid breast radius.");
-                _engines[i] = new NativeContactEngine(transform, shape.Bone.TransformPoint(shape.Center), shape.Bone.rotation, radius, _obstacles);
+                DiagnosticEvent("initializing bone=" + shape.Bone.name + "; radius=" + Number(radius) + "; obstacles=" + _obstacles.Count);
+                _engines[i] = new NativeContactEngine(transform, shape.Bone.TransformPoint(shape.Center), shape.Bone.rotation, radius, _obstacles,
+                    message => DiagnosticEvent("bone=" + shape.Bone.name + "; " + message));
                 _objects.Add(_engines[i].Host);
                 AssetImport.Logger.LogInfo("PMX native breast initialized: bone=" + shape.Bone.name + "; radius=" + radius +
                     "; obstacles=" + _obstacles.Count + "; nativeParticles=" + _engines[i].ParticleCount +
@@ -166,6 +185,7 @@ namespace AssetImport
             {
                 var bone = Definition.Breasts[i].Bone;
                 if (bone && (bone.localPosition - _writtenLocal[i]).sqrMagnitude < 1e-16f) bone.localPosition = _baseLocal[i];
+                else if (bone) _changedAfterWrite++;
             }
             _written = false;
         }

@@ -348,6 +348,9 @@ namespace AssetImport
             var environment = mode == GameMode.Studio ? Main.asc?.GetSelectedPhysicsEnvironment(out environmentAsset)
                 : character?.GetSelectedPhysicsEnvironment(out environmentAsset);
             DrawPhysicsEnvironment(ref y, environment, environmentAsset);
+            if (GUI.Button(new Rect(10, y += 5, 220, 25), "Save contact diagnostics"))
+                _physicsActionStatus = SaveContactDiagnostics(environment, displayPhysicsStatus);
+            y += 25;
             if (!string.IsNullOrEmpty(_physicsActionStatus))
             {
                 string actionFeedback = "Last action: " + _physicsActionStatus;

@@ -15,6 +15,7 @@ namespace AssetImport
                 var bones = new Dictionary<string, Transform>(StringComparer.Ordinal);
                 foreach (var bone in GameObject.GetComponentsInChildren<Transform>(true)) bones[bone.name] = bone;
                 return new NativeContactDefinition { Model = GameObject.transform,
+                    RecognitionReport = plan.Describe(_pmx),
                     Breasts = BindNativeShapes(plan.Breasts, bones), Obstacles = BindNativeShapes(plan.Obstacles, bones) };
             }
             catch (Exception error)
@@ -30,8 +31,10 @@ namespace AssetImport
             foreach (var shape in shapes)
             {
                 Transform bone;
-                if (!bones.TryGetValue(PmxModel.BoneName(shape.Bone, _pmx.Bones[shape.Bone].Name), out bone)) continue;
+                if (!bones.TryGetValue(PmxModel.BoneName(shape.Bone, _pmx.Bones[shape.Bone].Name), out bone))
+                { Logger.LogWarning("PMX breast diagnostics: binding missing for bone=" + _pmx.Bones[shape.Bone].Name + "; body=" + shape.Index); continue; }
                 result.Add(new NativeContactShape { Bone = bone,
+                    SourceBody = "[" + shape.Index + "]" + _pmx.RigidBodyData[shape.Index].Name,
                     Center = new Vector3(shape.LocalPosition.X, shape.LocalPosition.Y, shape.LocalPosition.Z),
                     Radius = shape.Radius, Height = shape.Height, Direction = shape.Direction,
                     Rotation = new Quaternion(shape.Rotation[0], shape.Rotation[1], shape.Rotation[2], shape.Rotation[3]) });

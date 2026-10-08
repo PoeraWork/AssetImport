@@ -17,11 +17,14 @@ namespace AssetImport
         private readonly float _radius;
         private Vector3 _previousInput;
         private bool _started;
+        private readonly Action<string> _diagnostic;
         internal int ParticleCount { get { return _engine.Particles.Count; } }
         internal GameObject Host { get { return _host; } }
 
-        internal NativeContactEngine(Transform owner, Vector3 center, Quaternion rotation, float radius, List<DynamicBoneCollider> colliders)
+        internal NativeContactEngine(Transform owner, Vector3 center, Quaternion rotation, float radius, List<DynamicBoneCollider> colliders,
+            Action<string> diagnostic = null)
         {
+            _diagnostic = diagnostic;
             _radius = radius;
             _host = new GameObject("AI_BreastContactProxy");
             // Keep the component inactive, including Awake/OnEnable/Start. Its
@@ -65,13 +68,16 @@ namespace AssetImport
                 _reset = Method("ResetParticlesPosition");
                 Call("InitNodeParticle");
                 Call("InitLocalPosition");
-                Method("setPtn", typeof(int), typeof(bool)).Invoke(_engine, new object[] { 0, true });
+                Report("stage=setPtn");
+                var patternResult = Method("setPtn", typeof(int), typeof(bool)).Invoke(_engine, new object[] { 0, true });
+                Report("setPtn.result=" + patternResult);
                 Call("SetupParticles");
                 bool movable = false;
                 foreach (var particle in _engine.Particles)
                     if (particle != null && particle.Transform == _body && particle.ParentIndex >= 0 && particle.Radius > 0)
                         movable = true;
                 if (!movable) throw new InvalidOperationException("Native solver did not create a movable contact particle; count=" + _engine.Particles.Count + ".");
+                Report("stage=particles-ready; count=" + _engine.Particles.Count + "; movable=true");
                 Follow(center, rotation);
                 _reset.Invoke(_engine, null);
                 ValidateResponse(center, rotation, colliders);
@@ -95,8 +101,10 @@ namespace AssetImport
             try
             {
                 _engine.Colliders = new List<DynamicBoneCollider>();
+                Report("stage=self-check-rest");
                 float drift = 0;
                 for (int i = 0; i < 8; i++) drift = Math.Max(drift, Step(center, rotation, 1f / 60f).magnitude);
+                Report("selfCheck.restDrift=" + NativeContactController.Number(drift));
                 if (drift > _radius * .01f) throw new InvalidOperationException("Native contact self-check failed: unloaded proxy drifts by " + drift / _radius + " radii.");
                 testObject = new GameObject("AI_ContactValidation");
                 testObject.transform.position = center + rotation * new Vector3(_radius * .8f, 0, 0);
@@ -104,8 +112,10 @@ namespace AssetImport
                 sphere.m_Radius = _radius * .5f; sphere.m_Height = 0;
                 sphere.m_Bound = DynamicBoneCollider.Bound.Outside;
                 _engine.Colliders.Add(sphere);
+                Report("stage=self-check-sphere");
                 float response = 0;
                 for (int i = 0; i < 8; i++) response = Math.Max(response, Step(center, rotation, 1f / 60f).magnitude);
+                Report("selfCheck.sphereDisplacement=" + NativeContactController.Number(response));
                 if (response < _radius * .02f) throw new InvalidOperationException("Native contact self-check failed: the overlapping sphere produced no response.");
             }
             finally
@@ -124,7 +134,8 @@ namespace AssetImport
             if (method == null) throw new MissingMethodException(typeof(DynamicBone_Ver02).Name, name);
             return method;
         }
-        private void Call(string name) { Method(name).Invoke(_engine, null); }
+        private void Report(string message) { if (_diagnostic != null) _diagnostic(message); }
+        private void Call(string name) { Report("stage=" + name); Method(name).Invoke(_engine, null); }
         private void Follow(Vector3 center, Quaternion rotation)
         { _host.transform.rotation = rotation; _host.transform.position = center - rotation * new Vector3(0, 0, _radius * 2f); }
 

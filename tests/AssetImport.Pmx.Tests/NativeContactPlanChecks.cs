@@ -13,7 +13,12 @@ internal static class NativeContactPlanChecks
         check(plan.Breasts.Select(s => s.Bone).SequenceEqual(new[] { 1, 3 }), "weighted breast bodies sorted parent before child, including leaf bone");
         check(plan.Obstacles.Count == 1 && plan.Obstacles[0].Bone == 2, "stable animated arm retained and dynamic descendants excluded");
         check(plan.Breasts.All(s => Math.Abs(s.Radius - .0416f) < 1e-6f), "contact radius uses existing PMX coordinate conversion");
+        var report = plan.Describe(model);
+        check(report.Contains("result=selected") && report.Contains("result=not-dynamic") && report.Contains("bone=breast_ribbon"), "recognition report covers selected, rejected and unknown-name source bodies");
         model.Vertices = []; check(PmxNativeContactPlan.Build(model).Breasts.Count == 0, "unweighted helper bones cannot be selected as deforming breasts");
+        check(PmxNativeContactPlan.Build(model).Describe(model).Contains("result=unweighted"), "unweighted rejection is diagnosed");
+        model.RigidBodyData = [];
+        check(PmxNativeContactPlan.Build(model).Describe(model).Contains("result=no-rigid-body"), "missing breast rigid body is diagnosed");
         foreach (string name in new[] { "左胸", "右乳", "左胸上", "Breast_L", "Right Breast 01", "bust.r" })
             check(PmxNativeContactPlan.IsBreast(name), "recognized breast name " + name);
         foreach (string name in new[] { "上半身", "breast ribbon", "breastplate", "胸飾り", "left arm" })

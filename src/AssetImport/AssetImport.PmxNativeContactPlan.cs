@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace AssetImport
@@ -42,6 +43,43 @@ namespace AssetImport
 
         private static int Depth(int bone, PmxModel model)
         { int depth = 0; for (; bone >= 0 && bone < model.Bones.Length && depth < model.Bones.Length; bone = model.Bones[bone].Parent) depth++; return depth; }
+
+        internal string Describe(PmxModel model)
+        {
+            var report = new StringBuilder();
+            var bodies = model.RigidBodyData ?? new PmxModel.RigidBody[0];
+            report.AppendLine("bones=" + model.Bones.Length + "; bodies=" + bodies.Length + "; selectedBreasts=" + Breasts.Count + "; selectedObstacles=" + Obstacles.Count);
+            int matches = 0;
+            for (int bone = 0; bone < model.Bones.Length; bone++)
+            {
+                if (!IsBreast(model.Bones[bone].Name)) continue;
+                matches++;
+                bool found = false;
+                for (int i = 0; i < bodies.Length; i++)
+                {
+                    var body = bodies[i]; if (body == null || body.Bone != bone) continue;
+                    found = true; PmxBodyCollider shape;
+                    string reason = !Weighted(model, bone) ? "unweighted" : model.Bones[bone].Parent < 0 ? "no-parent" :
+                        body.Mode != 1 && body.Mode != 2 ? "not-dynamic" : !PmxCollisionPlan.TryCollider(body, i, model.Bones, out shape) ? "invalid-shape" :
+                        Breasts.Exists(s => s.Index == i) ? "selected" : "duplicate-bone";
+                    report.AppendLine("breast bone=" + model.Bones[bone].Name + "; body[" + i + "]=" + body.Name + "; mode=" + body.Mode + "; result=" + reason);
+                }
+                if (!found) report.AppendLine("breast bone=" + model.Bones[bone].Name + "; result=no-rigid-body");
+            }
+            report.AppendLine("recognizedBoneNames=" + matches);
+            // Include a bounded source inventory so unknown naming conventions
+            // can be distinguished from absent physics metadata.
+            int listed = 0;
+            for (int i = 0; i < bodies.Length; i++)
+            {
+                var body = bodies[i]; if (body == null || body.Mode == 0) continue;
+                if (listed++ >= 128) continue;
+                string bone = body.Bone >= 0 && body.Bone < model.Bones.Length ? model.Bones[body.Bone].Name : "unbound";
+                report.AppendLine("source dynamic body[" + i + "]=" + body.Name + "; bone=" + bone + "; mode=" + body.Mode);
+            }
+            if (listed > 128) report.AppendLine("Source inventory truncated: " + (listed - 128) + " further dynamic bodies.");
+            return report.ToString();
+        }
 
         internal static bool IsBreast(string name)
         {
