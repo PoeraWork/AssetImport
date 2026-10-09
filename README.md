@@ -13,7 +13,7 @@ This project extends [Njaecha/AssetImport](https://github.com/Njaecha/AssetImpor
 - Generate MMDD 3 mappings for PMX bone animation and vertex morphs.
 - Create DynamicBone chains and body colliders from supported PMX metadata; control physics from the import panel.
 - Set gravity response and shape retention per physics chain, with supported PMX angular limits, ground collision, and initial settling.
-- Optionally enable experimental breast contacts for supported PMX body volumes.
+- Optionally enable experimental breast contacts, mark physics chains manually, and preview adjustable collision spheres.
 - Decode BMP, TGA, and common DDS textures, with optional `.cube` LUT conversion for diffuse colors.
 - Prepare textures asynchronously and apply them through MaterialEditor.
 

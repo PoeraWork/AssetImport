@@ -10,6 +10,7 @@ namespace AssetImport
     {
         internal readonly List<PmxBodyCollider> Breasts = new List<PmxBodyCollider>();
         internal readonly List<PmxBodyCollider> Obstacles = new List<PmxBodyCollider>();
+        internal readonly List<PmxBodyCollider> ManualCandidates = new List<PmxBodyCollider>();
 
         internal static PmxNativeContactPlan Build(PmxModel model)
         {
@@ -19,13 +20,20 @@ namespace AssetImport
             var moving = new HashSet<int>();
             foreach (var body in bodies) if (body != null && body.Mode != 0) moving.Add(body.Bone);
             var breastBones = new HashSet<int>();
+            var candidateBones = new HashSet<int>();
+            var weightedBones = new HashSet<int>();
+            foreach (var vertex in model.Vertices ?? new PmxModel.Vertex[0])
+                if (vertex != null && vertex.Bones != null && vertex.Weights != null)
+                    for (int i = 0; i < Math.Min(vertex.Bones.Length, vertex.Weights.Length); i++)
+                        if (vertex.Weights[i] > .01f) weightedBones.Add(vertex.Bones[i]);
             for (int i = 0; i < bodies.Length; i++)
             {
                 var body = bodies[i]; PmxBodyCollider shape;
                 if (body == null || body.Bone < 0 || body.Bone >= model.Bones.Length ||
                     !PmxCollisionPlan.TryCollider(body, i, model.Bones, out shape)) continue;
-                if ((body.Mode == 1 || body.Mode == 2) && IsBreast(model.Bones[body.Bone].Name) &&
-                    model.Bones[body.Bone].Parent >= 0 && Weighted(model, body.Bone) && breastBones.Add(body.Bone))
+                bool candidate = (body.Mode == 1 || body.Mode == 2) && model.Bones[body.Bone].Parent >= 0 && weightedBones.Contains(body.Bone);
+                if (candidate && candidateBones.Add(body.Bone)) result.ManualCandidates.Add(shape);
+                if (candidate && IsBreast(model.Bones[body.Bone].Name) && breastBones.Add(body.Bone))
                 {
                     // One spherical probe per deforming bone; no generated tail
                     // and no root-selection changes in the ordinary chain.
@@ -37,7 +45,24 @@ namespace AssetImport
                     ancestor = model.Bones[ancestor].Parent;
                 if (ancestor < 0) result.Obstacles.Add(shape);
             }
+            // Manual chain selection can opt in a weighted bone even without a
+            // dynamic PMX body. Its rest spacing gives an editable sphere size;
+            // no new ordinary physics root or unweighted helper is introduced.
+            foreach (int bone in weightedBones)
+            {
+                if (bone < 0 || bone >= model.Bones.Length || model.Bones[bone].Parent < 0 ||
+                    model.Bones[bone].Parent >= model.Bones.Length || candidateBones.Contains(bone)) continue;
+                var position = model.Bones[bone].Position;
+                var parent = model.Bones[model.Bones[bone].Parent].Position;
+                float x = position.X - parent.X, y = position.Y - parent.Y, z = position.Z - parent.Z;
+                float radius = (float)Math.Sqrt(x * x + y * y + z * z) * PmxCollisionPlan.UnitScale * .25f;
+                if (float.IsNaN(radius) || float.IsInfinity(radius)) radius = .005f;
+                radius = Math.Max(.005f, Math.Min(.15f, radius));
+                result.ManualCandidates.Add(new PmxBodyCollider { Index = -1, Bone = bone, Radius = radius,
+                    Rotation = new[] { 0f, 0f, 0f, 1f }, Name = "Bone spacing sphere" });
+            }
             result.Breasts.Sort((a, b) => Depth(a.Bone, model).CompareTo(Depth(b.Bone, model)));
+            result.ManualCandidates.Sort((a, b) => Depth(a.Bone, model).CompareTo(Depth(b.Bone, model)));
             return result;
         }
 

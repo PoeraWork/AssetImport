@@ -13,6 +13,7 @@ internal static class NativeContactPlanChecks
         check(plan.Breasts.Select(s => s.Bone).SequenceEqual(new[] { 1, 3 }), "weighted breast bodies sorted parent before child, including leaf bone");
         check(plan.Obstacles.Count == 1 && plan.Obstacles[0].Bone == 2, "stable animated arm retained and dynamic descendants excluded");
         check(plan.Breasts.All(s => Math.Abs(s.Radius - .0416f) < 1e-6f), "contact radius uses existing PMX coordinate conversion");
+        check(plan.ManualCandidates.Select(s => s.Bone).Order().SequenceEqual(new[] { 1, 3, 4 }), "manual candidates include weighted dynamic bones regardless of their names");
         var report = plan.Describe(model);
         check(report.Contains("result=selected") && report.Contains("result=not-dynamic") && report.Contains("bone=breast_ribbon"), "recognition report covers selected, rejected and unknown-name source bodies");
         model.Bones[1].Position = new(2, 8, 3);
@@ -34,6 +35,15 @@ internal static class NativeContactPlanChecks
         check(Math.Abs(boundBreast.Center.x + .0832f) < 1e-6f &&
             Math.Abs(boundBreast.ReferenceCenter.x - boundBreast.Center.x) > .1f,
             "source reference center remains distinct from bone-local collider offset");
+        var fallbackModel = new PmxModel { Bones = [new() { Name = "helper", Parent = -1 }, new() { Name = "part", Parent = 0, Position = new(0, 2, 0) }],
+            Vertices = [new() { Bones = [1], Weights = [1f] }], RigidBodyData = [] };
+        var fallbackPlan = PmxNativeContactPlan.Build(fallbackModel);
+        check(fallbackPlan.Breasts.Count == 0 && fallbackPlan.ManualCandidates.Count == 1 && fallbackPlan.ManualCandidates[0].Index == -1 &&
+            Math.Abs(fallbackPlan.ManualCandidates[0].Radius - .0416f) < 1e-6f, "body-less weighted bone receives a manual-only sphere based on source bone spacing");
+        var fallbackImport = new Import(fallbackModel); var fallbackDefinition = fallbackImport.BuildNativeContacts();
+        check(fallbackDefinition.ManualCandidates.Length == 1 && fallbackDefinition.ManualCandidates[0].HasReferencePose &&
+            Math.Abs(fallbackDefinition.ManualCandidates[0].ReferenceCenter.y - .1664f) < 1e-6f && fallbackDefinition.ManualCandidates[0].Center.y == 0,
+            "manual fallback binds its source reference pose and bone-local center without needing a rigid-body record");
         model.Vertices = []; check(PmxNativeContactPlan.Build(model).Breasts.Count == 0, "unweighted helper bones cannot be selected as deforming breasts");
         check(PmxNativeContactPlan.Build(model).Describe(model).Contains("result=unweighted"), "unweighted rejection is diagnosed");
         model.RigidBodyData = [];

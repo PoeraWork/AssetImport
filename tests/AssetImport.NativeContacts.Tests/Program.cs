@@ -142,7 +142,7 @@ Check(PhysicsEnvironmentPersistence.Read(asset).NativeBreastContacts && preferen
     DynamicBone_Ver02.FailCalibration = false;
     environment.enabled = false; c.Tick(1f / 60);
     Check(c.BuildDiagnosticReport().Contains("state=environment-disabled"), "previously silent environment guard has explicit reason");
-    environment.enabled = true; definition.Breasts = []; c.Tick(1f / 60);
+    environment.enabled = true; c.ResetContacts(); definition.Breasts = []; c.Tick(1f / 60);
     Check(c.BuildDiagnosticReport().Contains("state=no-breast-bodies"), "zero recognized breasts has its own diagnostic state");
     Check(Math.Abs(NativeContactController.SurfaceGap(new(0, 1.4f, 0), .1f, obstacle) - .1f) < 1e-6f, "capsule signed gap accounts for segment length and both radii");
     var culture = System.Globalization.CultureInfo.CurrentCulture;
@@ -153,6 +153,7 @@ Check(PhysicsEnvironmentPersistence.Read(asset).NativeBreastContacts && preferen
 }
 PairAndBoundChecks.Run(Check);
 SkinTimingChecks.Run(Check);
+ManualContactChecks.Run(Check);
 
 // Exercise the production report writer on disk, including the no-model and
 // unwritable-game-directory paths, without requiring a UI click or game loop.
@@ -177,7 +178,7 @@ SkinTimingChecks.Run(Check);
         Check(File.ReadAllText(path).Contains("reason: sample-two"), "multiple model events are coalesced and saved without UI");
         Check(Directory.GetFiles(Path.GetDirectoryName(path)).Length == 1, "automatic capture updates one report instead of accumulating files");
         var model = new GameObject("report-model"); var broken = model.AddComponent<NativeContactController>();
-        broken.Definition = new NativeContactDefinition { Model = model.transform, Breasts = null };
+        broken.Definition = new NativeContactDefinition { Model = model.transform, Obstacles = null };
         Resources.Items = [broken];
         Check(NativeContactDiagnostics.Save("manual") && File.ReadAllText(path).Contains("Diagnostic capture failed:"), "one broken model cannot prevent report creation");
         Resources.Items = [];

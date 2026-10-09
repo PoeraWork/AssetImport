@@ -18,7 +18,7 @@ namespace AssetImport
                 var text = new StringBuilder();
                 for (int i = 0; i < EligibleCount; i++)
                 {
-                    var shape = Definition.Breasts[i];
+                    var shape = ContactShapes[i];
                     float radius = shape.Radius * Math.Abs(shape.Bone.lossyScale.x);
                     float before = float.PositiveInfinity, after = float.PositiveInfinity;
                     string nearestBefore = "none", nearestAfter = "none";
@@ -56,7 +56,7 @@ namespace AssetImport
                         (renderer.sharedMesh ? renderer.sharedMesh.vertexCount : 0) + "; boneSlots=" + bones.Length);
                     for (int i = 0; i < EligibleCount; i++)
                     {
-                        var probe = Definition.Breasts[i].Bone;
+                        var probe = ContactShapes[i].Bone;
                         int own = 0, children = 0;
                         foreach (var bone in bones)
                             if (bone && probe)
@@ -67,7 +67,7 @@ namespace AssetImport
                     }
                 }
                 for (int i = 0; i < EligibleCount; i++)
-                    report.AppendLine("Skin binding result: bone=" + (Definition.Breasts[i].Bone ? Definition.Breasts[i].Bone.name : "missing") +
+                    report.AppendLine("Skin binding result: bone=" + (ContactShapes[i].Bone ? ContactShapes[i].Bone.name : "missing") +
                         "; directSlots=" + direct[i] + "; descendantSlots=" + inherited[i] +
                         "; result=" + (direct[i] + inherited[i] > 0 ? "bound" : "NO_RENDERER_REFERENCE"));
             }

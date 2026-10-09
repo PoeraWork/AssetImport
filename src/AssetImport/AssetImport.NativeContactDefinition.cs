@@ -14,6 +14,7 @@ namespace AssetImport
         public string SourceBody;
         public bool HasReferencePose;
         public Vector3 ReferenceCenter;
+        public string Selection, ChainRoot;
     }
 
     [Serializable]
@@ -22,6 +23,7 @@ namespace AssetImport
         public Transform Model;
         public string RecognitionReport;
         public NativeContactShape[] Breasts = new NativeContactShape[0];
+        public NativeContactShape[] ManualCandidates = new NativeContactShape[0];
         public NativeContactShape[] Obstacles = new NativeContactShape[0];
     }
 }

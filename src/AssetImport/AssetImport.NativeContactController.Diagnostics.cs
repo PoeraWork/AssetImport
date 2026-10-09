@@ -74,7 +74,7 @@ namespace AssetImport
                 if (since == 0 && !_failed) Status = "Breast contacts: no late update; save diagnostics";
                 DiagnosticEvent("summary; ticksSinceSummary=" + since + "; " + Counters());
                 if (Definition != null)
-                    foreach (var shape in Definition.Breasts) DiagnosticEvent(ContactSample(shape));
+                    foreach (var shape in ContactShapes) DiagnosticEvent(ContactSample(shape));
             }
             catch (Exception error)
             {
@@ -95,7 +95,7 @@ namespace AssetImport
                 _renderWriteError = 0;
                 for (int i = 0; i < EligibleCount; i++)
                 {
-                    var shape = Definition.Breasts[i];
+                    var shape = ContactShapes[i];
                     if (!shape.Bone) continue;
                     _renderCenters[i] = shape.Bone.TransformPoint(shape.Center);
                     _renderWriteError = Math.Max(_renderWriteError, (_renderCenters[i] - _outputCenters[i]).magnitude);
@@ -138,7 +138,7 @@ namespace AssetImport
 
         private string ProbeState(int i)
         {
-            var bone = Definition.Breasts[i].Bone;
+            var bone = ContactShapes[i].Bone;
             return "Probe: " + (bone ? bone.name : "missing") + "; boundObstacles=" + _pairCounts[i] +
                 "; nativeColliderCount=" + _engines[i].ColliderCount +
                 "; rawDisplacement=" + Number(_engines[i].LastRawDisplacement) +
@@ -160,9 +160,12 @@ namespace AssetImport
             {
                 report.AppendLine("Recognition:\n" + Definition.RecognitionReport);
                 report.AppendLine("Bound breasts=" + EligibleCount + "; obstacles=" + Definition.Obstacles.Length);
-                for (int i = 0; i < Definition.Breasts.Length; i++)
+                for (int i = 0; i < ContactShapes.Length; i++)
                 {
-                    var shape = Definition.Breasts[i];
+                    var shape = ContactShapes[i];
+                    report.AppendLine("Contact selection: bone=" + (shape.Bone ? shape.Bone.name : "missing") +
+                        "; selection=" + shape.Selection + "; chain=" + shape.ChainRoot + "; source=" + shape.SourceBody +
+                        "; radius=" + Number(shape.Radius));
                     report.AppendLine(ContactSample(shape));
                     if (_engines != null && i < _engines.Length && _engines[i] != null)
                         report.AppendLine(ProbeState(i));
@@ -188,7 +191,9 @@ namespace AssetImport
             if (_environment)
                 foreach (var chain in _environment.Chains)
                     if (chain) report.AppendLine("Chain: " + (chain.m_Root ? chain.m_Root.name : "missing root") +
-                        "; enabled=" + chain.enabled + "; weight=" + Number(chain.m_Weight) + "; mode=" + _environment.Mode(chain));
+                        "; enabled=" + chain.enabled + "; weight=" + Number(chain.m_Weight) + "; mode=" + _environment.Mode(chain) +
+                        "; breastRole=" + (_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastRole +
+                        "; breastRadiusScale=" + Number((_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastRadiusScale));
             report.AppendLine("Recent events:");
             foreach (var line in _diagnosticEvents) report.AppendLine(line);
             report.AppendLine("Surface gaps are sampled sphere/capsule approximations. Changed-after-write also includes manual edits.");

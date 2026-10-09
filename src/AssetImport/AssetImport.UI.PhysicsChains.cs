@@ -29,7 +29,7 @@ namespace AssetImport
         private void DrawChainPhysicsWindow()
         {
             if (!_chainPhysicsOpen || !_environment || _environmentDraft == null || PreloadUI) return;
-            if (_chainMarkers) DrawChainMarkers();
+            if (_chainMarkers) { DrawChainMarkers(); if (_chainBreastTab) DrawBreastContactPreview(); }
             _chainPhysicsRect.height = Math.Min(560, Math.Max(430, Screen.height - 50));
             _chainPhysicsRect.x = Mathf.Clamp(_chainPhysicsRect.x, 0, Math.Max(0, Screen.width - _chainPhysicsRect.width));
             _chainPhysicsRect.y = Mathf.Clamp(_chainPhysicsRect.y, 0, Math.Max(0, Screen.height - _chainPhysicsRect.height));
@@ -42,10 +42,11 @@ namespace AssetImport
             if (GUI.Button(new Rect(610, 1, 25, 20), "X")) _chainPhysicsOpen = false;
             GUI.Label(new Rect(12, 30, 55, 22), "Search");
             _chainSearch = GUI.TextField(new Rect(68, 30, 326, 22), _chainSearch);
-            if (CheckButton(new Rect(408, 28, 220, 25), _chainMarkers, "Show selected roots")) _chainMarkers = !_chainMarkers;
+            if (CheckButton(new Rect(408, 28, 220, 25), _chainMarkers, _chainBreastTab ? "Show contact volumes" : "Show selected roots")) _chainMarkers = !_chainMarkers;
             var visible = _environment.Chains.Where(c => c && c.m_Root &&
                 c.m_Root.name.IndexOf(_chainSearch, StringComparison.OrdinalIgnoreCase) >= 0).ToArray();
-            if (GUI.Button(new Rect(12, 60, 120, 24), "Select visible")) foreach (var chain in visible) _chainSelection.Add(chain.m_Root.name);
+            if (GUI.Button(new Rect(12, 60, 120, 24), "Select visible"))
+            { foreach (var chain in visible) _chainSelection.Add(chain.m_Root.name); LoadSingleChainSettings(); }
             if (GUI.Button(new Rect(140, 60, 95, 24), "Clear")) _chainSelection.Clear();
             GUI.Label(new Rect(250, 62, 370, 22), _chainSelection.Count + " selected / " + _environment.Chains.Length + " chains");
             float bottom = _chainPhysicsRect.height - 193;
@@ -58,18 +59,21 @@ namespace AssetImport
                 string mode = PhysicsModeName(settings == null ? 0 : settings.Mode);
                 if (CheckButton(new Rect(0, i * 29, 407, 26), _chainSelection.Contains(root), root))
                 {
-                    if (!_chainSelection.Remove(root))
-                    {
-                        _chainSelection.Add(root);
-                        if (_chainSelection.Count == 1)
-                        { _chainEditMode = settings == null ? 0 : settings.Mode; _chainForceScale = settings == null ? 1 : settings.ForceScale; _chainShapeRetention = settings == null ? 1 : settings.ShapeRetention; }
-                    }
+                    if (!_chainSelection.Remove(root)) _chainSelection.Add(root);
+                    LoadSingleChainSettings();
                 }
-                GUI.Label(new Rect(414, i * 29 + 2, 182, 24), new GUIContent(mode, "PMX joint bindings: " + _environment.JointCount(chain)));
+                string contactRole = BreastRoleName(settings == null ? 0 : settings.BreastRole);
+                GUI.Label(new Rect(414, i * 29 + 2, 182, 24), new GUIContent(_chainBreastTab ? contactRole : mode,
+                    "PMX joint bindings: " + _environment.JointCount(chain) + "; Breast contacts: " + contactRole));
             }
             GUI.EndScrollView();
             int y = (int)bottom + 6;
-            GUI.Label(new Rect(12, y, 140, 22), "Selected chains");
+            if (CheckButton(new Rect(12, y, 190, 24), !_chainBreastTab, "Motion")) _chainBreastTab = false;
+            if (CheckButton(new Rect(210, y, 200, 24), _chainBreastTab, "Breast contacts")) _chainBreastTab = true;
+            if (_chainBreastTab)
+            {
+                DrawChainBreastEditor(y); GUI.enabled = true; GUI.DragWindow(new Rect(0, 0, 606, 22)); return;
+            }
             GUI.enabled = _chainSelection.Count > 0;
             for (int mode = 0; mode < 4; mode++)
                 if (CheckButton(new Rect(12 + mode * 156, y + 25, 150, 25), _chainEditMode == mode, PhysicsModeName(mode))) _chainEditMode = mode;
@@ -89,9 +93,10 @@ namespace AssetImport
                 }
                 ApplyPhysicsDraft();
             }
-            if (GUI.Button(new Rect(240, y + 116, 170, 27), "Reset selected overrides"))
+            if (GUI.Button(new Rect(240, y + 116, 170, 27), "Reset motion settings"))
             {
-                _environmentDraft.Chains = _environmentDraft.Chains.Where(c => !_chainSelection.Contains(c.Root)).ToArray();
+                foreach (string root in _chainSelection)
+                { var settings = _environmentDraft.EditRoot(root); settings.Mode = 0; settings.ForceScale = settings.ShapeRetention = 1f; }
                 _chainEditMode = 0; _chainForceScale = _chainShapeRetention = 1; ApplyPhysicsDraft();
             }
             GUI.enabled = true;
@@ -100,6 +105,14 @@ namespace AssetImport
                 : "Free hanging and shape adjustment are unavailable with this physics runtime. Native shape retention remains active. Check the log.";
             GUI.Label(new Rect(12, y + 149, 615, 36), help, new GUIStyle(GUI.skin.label) { wordWrap = true });
             GUI.DragWindow(new Rect(0, 0, 606, 22));
+        }
+
+        private void LoadSingleChainSettings()
+        {
+            if (_chainSelection.Count != 1) return;
+            var settings = _environmentDraft.ForRoot(_chainSelection.First()) ?? new PhysicsChainSettings();
+            _chainEditMode = settings.Mode; _chainForceScale = settings.ForceScale; _chainShapeRetention = settings.ShapeRetention;
+            LoadChainBreastSettings(settings);
         }
 
         private void DrawChainMarkers()

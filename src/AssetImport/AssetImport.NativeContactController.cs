@@ -8,6 +8,7 @@ namespace AssetImport
     internal sealed partial class NativeContactController : MonoBehaviour
     {
         public NativeContactDefinition Definition;
+        [SerializeField] private NativeContactShape[] _resolvedBreasts;
         private AssetPhysicsEnvironment _environment;
         private NativeContactEngine[] _engines;
         private List<DynamicBoneCollider> _obstacles;
@@ -25,7 +26,25 @@ namespace AssetImport
         private int _frame = -1;
         private float _scale;
         internal string Status { get; private set; } = "Breast contacts: Off";
-        internal int EligibleCount { get { return Definition == null ? 0 : Definition.Breasts.Length; } }
+        internal int EligibleCount { get { return Definition == null ? 0 : ContactShapes.Length; } }
+        internal NativeContactShape[] ContactShapes
+        {
+            get
+            {
+                if (_resolvedBreasts == null)
+                {
+                    if (!_environment) _environment = GetComponent<AssetPhysicsEnvironment>();
+                    _resolvedBreasts = NativeContactSelection.Resolve(Definition, _environment ? _environment.Chains : null,
+                        _environment ? _environment.Settings : null);
+                }
+                return _resolvedBreasts;
+            }
+        }
+        internal NativeContactShape[] Preview(PhysicsEnvironmentSettings settings)
+        {
+            if (!_environment) _environment = GetComponent<AssetPhysicsEnvironment>();
+            return NativeContactSelection.Resolve(Definition, _environment ? _environment.Chains : null, settings);
+        }
 
         internal static void Attach(GameObject host, NativeContactDefinition definition)
         {
@@ -72,6 +91,7 @@ namespace AssetImport
         internal void ResetContacts()
         {
             Restore(); Release(); _failed = false; _reported = false; _frame = -1;
+            _resolvedBreasts = null;
             _resets++; _lastDisplacement = 0; _diagnosticState = "awaiting-update";
             _nextGeometrySample = 0;
             _nextDiagnostic = Time.realtimeSinceStartup + 5f;
@@ -79,13 +99,14 @@ namespace AssetImport
 
         private bool EnabledFor(NativeContactShape shape)
         {
+            var owner = NativeContactSelection.Owner(shape.Bone, _environment.Chains);
+            if (owner) return owner.enabled && owner.m_Weight > 0 && _environment.Mode(owner) != PhysicsChainMode.Animation;
             bool any = false;
             foreach (var chain in _environment.Chains)
             {
                 if (!chain || !chain.m_Root) continue;
                 bool enabled = chain.enabled && chain.m_Weight > 0 && _environment.Mode(chain) != PhysicsChainMode.Animation;
                 any |= enabled;
-                if (shape.Bone.IsChildOf(chain.m_Root)) return enabled;
             }
             return any;
         }
@@ -115,7 +136,7 @@ namespace AssetImport
                     _reported = true; return;
                 }
                 bool enabled = false;
-                foreach (var breast in Definition.Breasts) if (breast.Bone && EnabledFor(breast)) enabled = true;
+                foreach (var breast in ContactShapes) if (breast.Bone && EnabledFor(breast)) enabled = true;
                 if (!enabled) { Blocked("physics-off", "Breast contacts: physics is off"); return; }
                 if (_engines != null && Math.Abs(scale - _scale) > .00001f * scale) Release();
                 if (_engines == null) Initialize(scale);
@@ -123,7 +144,7 @@ namespace AssetImport
                 int active = 0; float maximum = 0;
                 for (int i = 0; i < EligibleCount; i++)
                 {
-                    var shape = Definition.Breasts[i];
+                    var shape = ContactShapes[i];
                     if (!shape.Bone || !shape.Bone.IsChildOf(Definition.Model)) throw new InvalidOperationException("Breast bone is no longer owned by the model.");
                     _baseLocal[i] = shape.Bone.localPosition; _baseWorld[i] = shape.Bone.position;
                     _inputCenters[i] = shape.Bone.TransformPoint(shape.Center);
@@ -141,11 +162,11 @@ namespace AssetImport
                 _written = true;
                 for (int i = 0; i < EligibleCount; i++)
                 {
-                    Definition.Breasts[i].Bone.position = _baseWorld[i] + _displacements[i];
-                    _writtenLocal[i] = Definition.Breasts[i].Bone.localPosition;
+                    ContactShapes[i].Bone.position = _baseWorld[i] + _displacements[i];
+                    _writtenLocal[i] = ContactShapes[i].Bone.localPosition;
                 }
                 for (int i = 0; i < EligibleCount; i++)
-                    _outputCenters[i] = Definition.Breasts[i].Bone.TransformPoint(Definition.Breasts[i].Center);
+                    _outputCenters[i] = ContactShapes[i].Bone.TransformPoint(ContactShapes[i].Center);
                 RecordWriteback();
                 Status = "Breast contacts: " + active + " active / " + EligibleCount;
                 _poseWrites++; _lastDisplacement = maximum; _maximumDisplacement = Math.Max(_maximumDisplacement, maximum);
@@ -201,7 +222,7 @@ namespace AssetImport
             _lastWriteFrame = -1;
             for (int i = 0; i < count; i++)
             {
-                var shape = Definition.Breasts[i];
+                var shape = ContactShapes[i];
                 if (!shape.Bone || !shape.Bone.IsChildOf(Definition.Model)) throw new InvalidOperationException("Invalid breast owner.");
                 float radius = shape.Radius * UniformScale(shape.Bone);
                 if (!PhysicsEnvironmentMath.Finite(radius) || radius <= .000001f) throw new InvalidOperationException("Invalid breast radius.");
@@ -228,9 +249,9 @@ namespace AssetImport
         internal void Restore()
         {
             if (!_written || Definition == null) return;
-            for (int i = 0; i < Definition.Breasts.Length; i++)
+            for (int i = 0; i < ContactShapes.Length; i++)
             {
-                var bone = Definition.Breasts[i].Bone;
+                var bone = ContactShapes[i].Bone;
                 if (bone && (bone.localPosition - _writtenLocal[i]).sqrMagnitude < 1e-16f) bone.localPosition = _baseLocal[i];
                 else if (bone) _changedAfterWrite++;
             }
