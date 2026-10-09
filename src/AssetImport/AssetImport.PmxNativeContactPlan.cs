@@ -11,6 +11,7 @@ namespace AssetImport
         internal readonly List<PmxBodyCollider> Breasts = new List<PmxBodyCollider>();
         internal readonly List<PmxBodyCollider> Obstacles = new List<PmxBodyCollider>();
         internal readonly List<PmxBodyCollider> ManualCandidates = new List<PmxBodyCollider>();
+        internal readonly Dictionary<int, PmxContactBounds> MeshBounds = new Dictionary<int, PmxContactBounds>();
 
         internal static PmxNativeContactPlan Build(PmxModel model)
         {
@@ -25,7 +26,18 @@ namespace AssetImport
             foreach (var vertex in model.Vertices ?? new PmxModel.Vertex[0])
                 if (vertex != null && vertex.Bones != null && vertex.Weights != null)
                     for (int i = 0; i < Math.Min(vertex.Bones.Length, vertex.Weights.Length); i++)
-                        if (vertex.Weights[i] > .01f) weightedBones.Add(vertex.Bones[i]);
+                    {
+                        int bone = vertex.Bones[i];
+                        if (vertex.Weights[i] > .01f) weightedBones.Add(bone);
+                        // Ignore weak blending tails when estimating the visible
+                        // part. Bounds are captured once in the authored pose.
+                        if (vertex.Weights[i] < .25f || !Finite(vertex.Weights[i]) || bone < 0 || bone >= model.Bones.Length ||
+                            !Finite(vertex.Position.X) || !Finite(vertex.Position.Y) || !Finite(vertex.Position.Z)) continue;
+                        PmxContactBounds bounds;
+                        if (!result.MeshBounds.TryGetValue(bone, out bounds))
+                            result.MeshBounds.Add(bone, new PmxContactBounds(vertex.Position));
+                        else bounds.Include(vertex.Position);
+                    }
             for (int i = 0; i < bodies.Length; i++)
             {
                 var body = bodies[i]; PmxBodyCollider shape;
@@ -68,6 +80,8 @@ namespace AssetImport
 
         private static int Depth(int bone, PmxModel model)
         { int depth = 0; for (; bone >= 0 && bone < model.Bones.Length && depth < model.Bones.Length; bone = model.Bones[bone].Parent) depth++; return depth; }
+
+        private static bool Finite(float value) { return !float.IsNaN(value) && !float.IsInfinity(value); }
 
         internal string Describe(PmxModel model)
         {
@@ -120,6 +134,17 @@ namespace AssetImport
                     for (int i = 0; i < Math.Min(vertex.Bones.Length, vertex.Weights.Length); i++)
                         if (vertex.Bones[i] == bone && vertex.Weights[i] > .01f) return true;
             return false;
+        }
+    }
+
+    internal sealed class PmxContactBounds
+    {
+        internal PmxModel.V3 Min, Max;
+        internal PmxContactBounds(PmxModel.V3 point) { Min = Max = point; }
+        internal void Include(PmxModel.V3 point)
+        {
+            Min = new PmxModel.V3(Math.Min(Min.X, point.X), Math.Min(Min.Y, point.Y), Math.Min(Min.Z, point.Z));
+            Max = new PmxModel.V3(Math.Max(Max.X, point.X), Math.Max(Max.Y, point.Y), Math.Max(Max.Z, point.Z));
         }
     }
 }

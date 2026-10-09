@@ -49,7 +49,7 @@ namespace AssetImport
             { foreach (var chain in visible) _chainSelection.Add(chain.m_Root.name); LoadSingleChainSettings(); }
             if (GUI.Button(new Rect(140, 60, 95, 24), "Clear")) _chainSelection.Clear();
             GUI.Label(new Rect(250, 62, 370, 22), _chainSelection.Count + " selected / " + _environment.Chains.Length + " chains");
-            float bottom = _chainPhysicsRect.height - 193;
+            float bottom = _chainPhysicsRect.height - (_chainBreastTab ? 315 : 193);
             _chainPhysicsScroll = GUI.BeginScrollView(new Rect(10, 91, 620, bottom - 91), _chainPhysicsScroll,
                 new Rect(0, 0, 600, Math.Max(bottom - 91, visible.Length * 29)));
             for (int i = 0; i < visible.Length; i++)

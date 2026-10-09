@@ -15,6 +15,8 @@ namespace AssetImport
         public bool HasReferencePose;
         public Vector3 ReferenceCenter;
         public string Selection, ChainRoot;
+        public bool HasMeshBounds;
+        public Vector3 MeshMin, MeshMax;
     }
 
     [Serializable]

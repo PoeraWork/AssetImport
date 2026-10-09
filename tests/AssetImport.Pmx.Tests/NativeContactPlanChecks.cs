@@ -44,6 +44,22 @@ internal static class NativeContactPlanChecks
         check(fallbackDefinition.ManualCandidates.Length == 1 && fallbackDefinition.ManualCandidates[0].HasReferencePose &&
             Math.Abs(fallbackDefinition.ManualCandidates[0].ReferenceCenter.y - .1664f) < 1e-6f && fallbackDefinition.ManualCandidates[0].Center.y == 0,
             "manual fallback binds its source reference pose and bone-local center without needing a rigid-body record");
+        fallbackModel.Vertices = [
+            new() { Position = new(1, 2, 3), Bones = [1], Weights = [.5f] },
+            new() { Position = new(3, 6, 7), Bones = [1], Weights = [.25f] },
+            new() { Position = new(100, 100, 100), Bones = [1], Weights = [.02f] },
+            new() { Position = new(float.NaN, 0, 0), Bones = [1], Weights = [1f] },
+            new() { Position = new(100, 100, 100), Bones = [1], Weights = [float.NaN] }];
+        var boundsPlan = PmxNativeContactPlan.Build(fallbackModel);
+        check(boundsPlan.MeshBounds[1].Min.X == 1 && boundsPlan.MeshBounds[1].Max.Z == 7 && boundsPlan.MeshBounds[1].Max.Y == 6,
+            "mesh volume bounds retain significant skin weights and reject weak tails/nonfinite vertices");
+        var meshImport = new Import(fallbackModel);
+        meshImport.Bone(1).localPosition = new(30, 40, 50);
+        var meshShape = meshImport.BuildNativeContacts().ManualCandidates.Single();
+        check(meshShape.HasMeshBounds && Math.Abs(meshShape.MeshMin.x + 3 * .0832f) < 1e-6f &&
+            Math.Abs(meshShape.MeshMax.x + .0832f) < 1e-6f && Math.Abs(meshShape.MeshMin.z + 7 * .0832f) < 1e-6f &&
+            Math.Abs(meshShape.MeshMax.y - 6 * .0832f) < 1e-6f,
+            "mesh bounds bind in stable import units with correct min/max after handedness conversion");
         model.Vertices = []; check(PmxNativeContactPlan.Build(model).Breasts.Count == 0, "unweighted helper bones cannot be selected as deforming breasts");
         check(PmxNativeContactPlan.Build(model).Describe(model).Contains("result=unweighted"), "unweighted rejection is diagnosed");
         model.RigidBodyData = [];

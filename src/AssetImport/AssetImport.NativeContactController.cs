@@ -162,7 +162,10 @@ namespace AssetImport
                 _written = true;
                 for (int i = 0; i < EligibleCount; i++)
                 {
-                    ContactShapes[i].Bone.position = _baseWorld[i] + _displacements[i];
+                    // A probe with no response must inherit its parent's
+                    // movement instead of undoing it at every child bone.
+                    if (_displacements[i].sqrMagnitude > 1e-12f * scale * scale)
+                        ContactShapes[i].Bone.position = _baseWorld[i] + _displacements[i];
                     _writtenLocal[i] = ContactShapes[i].Bone.localPosition;
                 }
                 for (int i = 0; i < EligibleCount; i++)

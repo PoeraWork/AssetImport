@@ -15,6 +15,11 @@ namespace AssetImport
         [Key("ShapeRetention")] public float ShapeRetention = 1f;
         [Key("BreastContactRole")] public int BreastRole;
         [Key("BreastRadiusScale")] public float BreastRadiusScale = 1f;
+        [Key("BreastMeshVolume")] public bool BreastMeshVolume;
+        [Key("BreastRadiusOverride")] public float BreastRadiusOverride;
+        [Key("BreastOffsetX")] public float BreastOffsetX;
+        [Key("BreastOffsetY")] public float BreastOffsetY;
+        [Key("BreastOffsetZ")] public float BreastOffsetZ;
 
         internal PhysicsChainSettings Copy()
         {
@@ -25,7 +30,12 @@ namespace AssetImport
                 ForceScale = Clean(ForceScale, 0f, 4f, 1f),
                 ShapeRetention = Clean(ShapeRetention, 0f, 1f, 1f),
                 BreastRole = BreastRole >= 0 && BreastRole <= 2 ? BreastRole : 0,
-                BreastRadiusScale = BreastRadiusScale <= 0 ? 1f : Clean(BreastRadiusScale, .1f, 4f, 1f)
+                BreastRadiusScale = BreastRadiusScale <= 0 ? 1f : Clean(BreastRadiusScale, .1f, 4f, 1f),
+                BreastMeshVolume = BreastMeshVolume,
+                BreastRadiusOverride = Clean(BreastRadiusOverride, 0f, 2f, 0f),
+                BreastOffsetX = Clean(BreastOffsetX, -2f, 2f, 0f),
+                BreastOffsetY = Clean(BreastOffsetY, -2f, 2f, 0f),
+                BreastOffsetZ = Clean(BreastOffsetZ, -2f, 2f, 0f)
             };
         }
         private static float Clean(float value, float min, float max, float fallback)

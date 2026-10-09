@@ -165,7 +165,8 @@ namespace AssetImport
                     var shape = ContactShapes[i];
                     report.AppendLine("Contact selection: bone=" + (shape.Bone ? shape.Bone.name : "missing") +
                         "; selection=" + shape.Selection + "; chain=" + shape.ChainRoot + "; source=" + shape.SourceBody +
-                        "; radius=" + Number(shape.Radius));
+                        "; radius=" + Number(shape.Radius) + "; localCenter=" + Vector(shape.Center) +
+                        "; worldRadius=" + Number(shape.Radius * (shape.Bone ? Math.Abs(shape.Bone.lossyScale.x) : 0)));
                     report.AppendLine(ContactSample(shape));
                     if (_engines != null && i < _engines.Length && _engines[i] != null)
                         report.AppendLine(ProbeState(i));
@@ -193,7 +194,9 @@ namespace AssetImport
                     if (chain) report.AppendLine("Chain: " + (chain.m_Root ? chain.m_Root.name : "missing root") +
                         "; enabled=" + chain.enabled + "; weight=" + Number(chain.m_Weight) + "; mode=" + _environment.Mode(chain) +
                         "; breastRole=" + (_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastRole +
-                        "; breastRadiusScale=" + Number((_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastRadiusScale));
+                        "; breastRadiusScale=" + Number((_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastRadiusScale) +
+                        "; meshVolume=" + (_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastMeshVolume +
+                        "; radiusOverride=" + Number((_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastRadiusOverride));
             report.AppendLine("Recent events:");
             foreach (var line in _diagnosticEvents) report.AppendLine(line);
             report.AppendLine("Surface gaps are sampled sphere/capsule approximations. Changed-after-write also includes manual edits.");

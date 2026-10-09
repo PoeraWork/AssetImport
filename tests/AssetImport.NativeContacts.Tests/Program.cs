@@ -154,6 +154,7 @@ Check(PhysicsEnvironmentPersistence.Read(asset).NativeBreastContacts && preferen
 PairAndBoundChecks.Run(Check);
 SkinTimingChecks.Run(Check);
 ManualContactChecks.Run(Check);
+ContactVolumeChecks.Run(Check);
 
 // Exercise the production report writer on disk, including the no-model and
 // unwritable-game-directory paths, without requiring a UI click or game loop.

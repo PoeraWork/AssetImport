@@ -16,8 +16,9 @@ namespace AssetImport
                 foreach (var bone in GameObject.GetComponentsInChildren<Transform>(true)) bones[bone.name] = bone;
                 return new NativeContactDefinition { Model = GameObject.transform,
                     RecognitionReport = plan.Describe(_pmx),
-                    Breasts = BindNativeShapes(plan.Breasts, bones), ManualCandidates = BindNativeShapes(plan.ManualCandidates, bones),
-                    Obstacles = BindNativeShapes(plan.Obstacles, bones) };
+                    Breasts = BindNativeShapes(plan.Breasts, bones, plan.MeshBounds),
+                    ManualCandidates = BindNativeShapes(plan.ManualCandidates, bones, plan.MeshBounds),
+                    Obstacles = BindNativeShapes(plan.Obstacles, bones, plan.MeshBounds) };
             }
             catch (Exception error)
             {
@@ -26,7 +27,8 @@ namespace AssetImport
             }
         }
 
-        private NativeContactShape[] BindNativeShapes(List<PmxBodyCollider> shapes, Dictionary<string, Transform> bones)
+        private NativeContactShape[] BindNativeShapes(List<PmxBodyCollider> shapes, Dictionary<string, Transform> bones,
+            Dictionary<int, PmxContactBounds> meshBounds)
         {
             var result = new List<NativeContactShape>();
             foreach (var shape in shapes)
@@ -35,13 +37,25 @@ namespace AssetImport
                 if (!bones.TryGetValue(PmxModel.BoneName(shape.Bone, _pmx.Bones[shape.Bone].Name), out bone))
                 { Logger.LogWarning("PMX breast diagnostics: binding missing for bone=" + _pmx.Bones[shape.Bone].Name + "; body=" + shape.Index); continue; }
                 var reference = shape.Index >= 0 ? _pmx.RigidBodyData[shape.Index].Position : _pmx.Bones[shape.Bone].Position;
-                result.Add(new NativeContactShape { Bone = bone, HasReferencePose = true,
+                var bound = new NativeContactShape { Bone = bone, HasReferencePose = true,
                     ReferenceCenter = new Vector3(-reference.X * PmxCollisionPlan.UnitScale,
                         reference.Y * PmxCollisionPlan.UnitScale, -reference.Z * PmxCollisionPlan.UnitScale),
                     SourceBody = shape.Index >= 0 ? "[" + shape.Index + "]" + _pmx.RigidBodyData[shape.Index].Name : "Bone spacing sphere",
                     Center = new Vector3(shape.LocalPosition.X, shape.LocalPosition.Y, shape.LocalPosition.Z),
                     Radius = shape.Radius, Height = shape.Height, Direction = shape.Direction,
-                    Rotation = new Quaternion(shape.Rotation[0], shape.Rotation[1], shape.Rotation[2], shape.Rotation[3]) });
+                    Rotation = new Quaternion(shape.Rotation[0], shape.Rotation[1], shape.Rotation[2], shape.Rotation[3]) };
+                PmxContactBounds bounds;
+                if (meshBounds.TryGetValue(shape.Bone, out bounds))
+                {
+                    bound.HasMeshBounds = true;
+                    // Negated X/Z swap the two bounds; all values use the same
+                    // import units and reference coordinates as PMX bodies.
+                    bound.MeshMin = new Vector3(-bounds.Max.X * PmxCollisionPlan.UnitScale,
+                        bounds.Min.Y * PmxCollisionPlan.UnitScale, -bounds.Max.Z * PmxCollisionPlan.UnitScale);
+                    bound.MeshMax = new Vector3(-bounds.Min.X * PmxCollisionPlan.UnitScale,
+                        bounds.Max.Y * PmxCollisionPlan.UnitScale, -bounds.Min.Z * PmxCollisionPlan.UnitScale);
+                }
+                result.Add(bound);
             }
             return result.ToArray();
         }
