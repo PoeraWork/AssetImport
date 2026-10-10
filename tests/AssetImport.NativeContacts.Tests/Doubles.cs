@@ -79,7 +79,12 @@ namespace UnityEngine
         public static Quaternion operator *(Quaternion a, Quaternion b) => new() { _v = a._v * b._v };
         public static Vector3 operator *(Quaternion q, Vector3 v) { var r = System.Numerics.Vector3.Transform(new(v.x, v.y, v.z), q._v); return new(r.X, r.Y, r.Z); }
     }
-    public class Camera : Object { public static event Action<Camera> onPreRender; public static void Render() => onPreRender?.Invoke(new()); }
+    public class Camera : Object
+    {
+        public static event Action<Camera> onPreRender;
+        public static int Observers => onPreRender?.GetInvocationList().Length ?? 0;
+        public static void Render() => onPreRender?.Invoke(new());
+    }
     public class Mesh : Object { public string name; public int vertexCount; }
     public class SkinnedMeshRenderer : MonoBehaviour { public Transform[] bones = []; public Mesh sharedMesh; }
     public static class Time { public static int frameCount; public static float deltaTime = 1f / 60, realtimeSinceStartup; }

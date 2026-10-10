@@ -29,7 +29,7 @@ namespace AssetImport
         private void DrawChainPhysicsWindow()
         {
             if (!_chainPhysicsOpen || !_environment || _environmentDraft == null || PreloadUI) return;
-            if (_chainMarkers) { DrawChainMarkers(); if (_chainBreastTab) DrawBreastContactPreview(); }
+            if (AssetDebug.Enabled && _chainMarkers) { DrawChainMarkers(); if (_chainBreastTab) DrawBreastContactPreview(); }
             _chainPhysicsRect.height = Math.Min(560, Math.Max(430, Screen.height - 50));
             _chainPhysicsRect.x = Mathf.Clamp(_chainPhysicsRect.x, 0, Math.Max(0, Screen.width - _chainPhysicsRect.width));
             _chainPhysicsRect.y = Mathf.Clamp(_chainPhysicsRect.y, 0, Math.Max(0, Screen.height - _chainPhysicsRect.height));
@@ -42,7 +42,7 @@ namespace AssetImport
             if (GUI.Button(new Rect(610, 1, 25, 20), "X")) _chainPhysicsOpen = false;
             GUI.Label(new Rect(12, 30, 55, 22), "Search");
             _chainSearch = GUI.TextField(new Rect(68, 30, 326, 22), _chainSearch);
-            if (CheckButton(new Rect(408, 28, 220, 25), _chainMarkers, _chainBreastTab ? "Show contact volumes" : "Show selected roots")) _chainMarkers = !_chainMarkers;
+            if (AssetDebug.Enabled && CheckButton(new Rect(408, 28, 220, 25), _chainMarkers, _chainBreastTab ? "Show contact volumes" : "Show selected roots")) _chainMarkers = !_chainMarkers;
             var visible = _environment.Chains.Where(c => c && c.m_Root &&
                 c.m_Root.name.IndexOf(_chainSearch, StringComparison.OrdinalIgnoreCase) >= 0).ToArray();
             if (GUI.Button(new Rect(12, 60, 120, 24), "Select visible"))

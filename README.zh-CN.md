@@ -55,7 +55,9 @@ PMX 支持尚不完整：未实现 PMX 2.1、完整 MMD 刚体/关节模拟、to
 
 构建环境、自动检查和打包步骤见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-请通过 [Issues](https://github.com/PoeraWork/AssetImport/issues) 报告问题，附上游戏名称、`BUILD.txt` 或启动日志中的构建标识、复现步骤，以及 `BepInEx/LogOutput.log` 中的相关日志（或 `output_log.txt`）。动作问题请补充帧数范围和导入设置。分享模型或动作前请确认其许可允许。
+主面板的 **Debug** 默认关闭，统一控制详细日志、物理可视化、诊断报告和资源转储。插件配置中的 **_General_ / Debug** 是同一个开关。调整碰撞体积或排查问题时可开启；关闭后物理功能和必要错误提示仍正常工作。报告位置见[诊断说明](docs/PMX-SUPPORT.md#debug-mode)。
+
+请通过 [Issues](https://github.com/PoeraWork/AssetImport/issues) 报告问题，附上游戏名称、`BUILD.txt` 或 Debug 面板中的构建标识、复现步骤，以及 `BepInEx/LogOutput.log` 中的相关日志（或 `output_log.txt`）。动作问题请补充帧数范围和导入设置。分享模型或动作前请确认其许可允许。
 
 ## 致谢
 

@@ -55,7 +55,9 @@ PMX support is partial: PMX 2.1, full MMD rigid-body/joint simulation, toon/sphe
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, builds, automated checks, and packaging.
 
-Report bugs through [Issues](https://github.com/PoeraWork/AssetImport/issues). Include the game, plugin build from `BUILD.txt` or the startup log, reproduction steps, and relevant `BepInEx/LogOutput.log` output (or `output_log.txt`). For animation problems, include the frame range and import settings. Share models or motions only when their license permits it.
+**Debug** in the main panel is off by default. It controls detailed logging, physics overlays, diagnostic reports and asset dumps. The same setting is available as **_General_ / Debug** in the plugin configuration. Enable it when adjusting contact volumes or investigating a problem; normal physics and error messages work with it off. See the [diagnostic guide](docs/PMX-SUPPORT.md#debug-mode) for report locations.
+
+Report bugs through [Issues](https://github.com/PoeraWork/AssetImport/issues). Include the game, plugin build from `BUILD.txt` or the Debug panel, reproduction steps, and relevant `BepInEx/LogOutput.log` output (or `output_log.txt`). For animation problems, include the frame range and import settings. Share models or motions only when their license permits it.
 
 ## Credits
 

@@ -55,7 +55,7 @@ namespace AssetImport
             // Allow Unity Start and the first physics update to initialize particles.
             yield return null;
             yield return new WaitForEndOfFrame();
-            if (!item.objectItem) yield break;
+            if (!AssetDebug.Enabled || !item.objectItem) yield break;
             var particlesField = HarmonyLib.AccessTools.Field(typeof(DynamicBone), "m_Particles");
             foreach (DynamicBone bone in bones)
             {
@@ -142,7 +142,7 @@ namespace AssetImport
 
         internal void LoadScene(SceneOperationKind operation, ReadOnlyDictionary<int, ObjectCtrlInfo> loadedItems)
         {
-            Logger.LogDebug("Scene Load started");
+            if (AssetDebug.Enabled) Logger.LogInfo("Scene Load started");
             PluginData data = GetExtendedData();
             if (operation == SceneOperationKind.Clear || operation == SceneOperationKind.Load) LoadedObjects.Clear();
             if (data == null || operation == SceneOperationKind.Clear) return;
@@ -170,10 +170,10 @@ namespace AssetImport
                         }
                         else
                         {
-                            Logger.LogDebug("No sourceFiles found in extended data.");
+                            if (AssetDebug.Enabled) Logger.LogInfo("No sourceFiles found in extended data.");
                             return;
                         }
-                        Logger.LogDebug($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
+                        if (AssetDebug.Enabled) Logger.LogInfo($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
                         foreach(AssetSource sourceFile in sourceFiles)
                         {
                             try 
@@ -210,10 +210,10 @@ namespace AssetImport
                         }
                         else
                         {
-                            Logger.LogDebug("No sourceFiles found in extended data.");
+                            if (AssetDebug.Enabled) Logger.LogInfo("No sourceFiles found in extended data.");
                             return;
                         }
-                        Logger.LogDebug($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
+                        if (AssetDebug.Enabled) Logger.LogInfo($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
                         foreach (AssetFile sourceFile in sourceFiles)
                         {
                             try
@@ -256,7 +256,7 @@ namespace AssetImport
                 }
                 else
                 {
-                    Logger.LogDebug("No assets found in extended data, aborting load...");
+                    if (AssetDebug.Enabled) Logger.LogInfo("No assets found in extended data, aborting load...");
                     return;
                 }
 
@@ -270,7 +270,7 @@ namespace AssetImport
 
                         LoadedObjects[((OCIItem)newOCI).itemInfo.dicKey] = asset;
 
-                        if (Main.dumpAssets.Value)
+                        if (AssetDebug.Enabled)
                         {
                             File.WriteAllBytes(Path.Combine(GetDumpPath(), RamCacheUtility.GetFileName(asset.SourceFile)), RamCacheUtility.GetFileBlob(asset.SourceFile));
                         }
@@ -352,7 +352,7 @@ namespace AssetImport
                 OCIItem oldItem = (OCIItem)sceneObjects[id];
                 if (!LoadedObjects.TryGetValue(oldItem.itemInfo.dicKey, out Asset oldAsset)) continue;
 
-                if (Main.dumpAssets.Value)
+                if (AssetDebug.Enabled)
                 {
                     File.WriteAllBytes(Path.Combine(GetDumpPath(), RamCacheUtility.GetFileName(oldAsset.SourceFile)), RamCacheUtility.GetFileBlob(oldAsset.SourceFile));
                 }
@@ -420,7 +420,7 @@ namespace AssetImport
                 Logger.LogInfo($"Importing [{path}] started...");
                 baseMaterial = Instantiate(ociitem.objectItem.GetComponentInChildren<MeshRenderer>().material);
                 string hash = RamCacheUtility.ToCache(path);
-                if (Main.dumpAssets.Value)
+                if (AssetDebug.Enabled)
                     File.WriteAllBytes(Path.Combine(GetDumpPath(), Path.GetFileName(path)), RamCacheUtility.GetFileBlob(hash));
 
                 import = new Import(hash, armature, baseMaterial, perRendererMaterials, loadBlendshapes);
@@ -453,10 +453,10 @@ namespace AssetImport
             AssetUI.CommonPathText = import.CommonPath;
             AssetUI.PreloadUI = true;
 
-            DynamicBoneCollider[] colliders = Resources.FindObjectsOfTypeAll<DynamicBoneCollider>();
-            foreach(DynamicBoneCollider collider in colliders)
+            if (AssetDebug.Enabled)
             {
-                Logger.LogInfo(collider.gameObject.name);
+                foreach (var collider in Resources.FindObjectsOfTypeAll<DynamicBoneCollider>())
+                    Logger.LogInfo(collider.gameObject.name);
             }
         }
 
@@ -604,8 +604,8 @@ namespace AssetImport
                     if (Hooks.IsOptionalIntegrationAvailable(Hooks.PoseEditorAssembly))
                         Hooks.RunOptionalIntegration(Hooks.PoseEditorAssembly, "studio pose controller refresh", () => RefreshPoseController(loadProcessBase));
 
-                    Logger.LogDebug($"Created {ociitem.dynamicBones.Length} dynamic bone chains on {loadProcess.Import.SourceFileName}; physics enabled={physicsEnabled}");
-                    StartCoroutine(LogDynamicBoneState(ociitem, ociitem.dynamicBones));
+                    if (AssetDebug.Enabled) Logger.LogInfo($"Created {ociitem.dynamicBones.Length} dynamic bone chains on {loadProcess.Import.SourceFileName}; physics enabled={physicsEnabled}");
+                    if (AssetDebug.Enabled) StartCoroutine(LogDynamicBoneState(ociitem, ociitem.dynamicBones));
                 }
 
             }

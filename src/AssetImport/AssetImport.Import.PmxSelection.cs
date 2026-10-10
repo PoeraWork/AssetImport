@@ -46,16 +46,16 @@ namespace AssetImport
                 }
                 added++;
                 for (var parent = node; parent != null; parent = parent.Parent) parent.SetNodeOpen(true);
-                Logger.LogInfo("PMX auto " + (hairOnly ? "hair" : "physics") + " root selected: " + node.GameObject.name);
+                if (AssetDebug.Enabled) Logger.LogInfo("PMX auto " + (hairOnly ? "hair" : "physics") + " root selected: " + node.GameObject.name);
             }
-            foreach (string diagnostic in _pmxRootSuggestions.Diagnostics)
-                if (hairOnly) Logger.LogDebug("PMX root suggestions: " + diagnostic);
-                else Logger.LogInfo("PMX root suggestions: " + diagnostic);
+            if (AssetDebug.Enabled)
+                foreach (string diagnostic in _pmxRootSuggestions.Diagnostics)
+                    Logger.LogInfo("PMX root suggestions: " + diagnostic);
             string status = roots.Length == 0
                 ? (hairOnly ? "No confident hair roots found. Select the hair chain roots manually." : "No usable PMX dynamic chains found; bone names alone do not create physics.")
                 : label + " roots: " + added + " added, " + existing + " already selected, " + skipped + " skipped. Other selections kept.";
             if (!hairOnly && (_pmxRootSuggestions.SkippedRootCount != 0 || _pmxRootSuggestions.IgnoredBodyCount != 0))
-                status += " " + _pmxRootSuggestions.SkippedRootCount + " unsupported roots and " + _pmxRootSuggestions.IgnoredBodyCount + " unbound bodies excluded (see log).";
+                status += " " + _pmxRootSuggestions.SkippedRootCount + " unsupported roots and " + _pmxRootSuggestions.IgnoredBodyCount + " unbound bodies excluded. Enable Debug for details.";
             if (skipped > 0) status += " Check overlapping parent/child roots.";
             Logger.LogInfo("PMX auto " + (hairOnly ? "hair" : "physics") + " selection: " + status);
             return status;

@@ -160,16 +160,25 @@ namespace AssetImport
             _mainScroll = GUI.BeginScrollView(new Rect(0, 20, 260, viewHeight), _mainScroll,
                 new Rect(0, 20, 240, _mainContentHeight));
             var y = 20;
-            GUI.Label(new Rect(10, y, 220, 20), "Build: " + NativeContactDiagnostics.ShortBuild);
-            if (GUI.Button(new Rect(10, y += 22, 220, 25), "Open diagnostics folder"))
-                _physicsActionStatus = OpenContactDiagnosticsFolder();
-            y += 8;
-            if (!string.IsNullOrEmpty(NativeContactDiagnostics.LastError))
+            if (CheckButton(new Rect(10, y, 220, 25), AssetDebug.Enabled, "Debug"))
             {
-                var diagnosticStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
-                float diagnosticHeight = diagnosticStyle.CalcHeight(new GUIContent(NativeContactDiagnostics.LastError), 220);
-                GUI.Label(new Rect(10, y += 20, 220, diagnosticHeight), NativeContactDiagnostics.LastError, diagnosticStyle);
-                y += (int)diagnosticHeight;
+                Main.debugMode.Value = !AssetDebug.Enabled;
+                _diagnosticActionStatus = "";
+            }
+            y += 10;
+            if (AssetDebug.Enabled)
+            {
+                GUI.Label(new Rect(10, y += 18, 220, 20), "Build: " + NativeContactDiagnostics.ShortBuild);
+                if (GUI.Button(new Rect(10, y += 22, 220, 25), "Open diagnostics folder"))
+                    _diagnosticActionStatus = OpenContactDiagnosticsFolder();
+                y += 8;
+                if (!string.IsNullOrEmpty(NativeContactDiagnostics.LastError))
+                {
+                    var diagnosticStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
+                    float diagnosticHeight = diagnosticStyle.CalcHeight(new GUIContent(NativeContactDiagnostics.LastError), 220);
+                    GUI.Label(new Rect(10, y += 20, 220, diagnosticHeight), NativeContactDiagnostics.LastError, diagnosticStyle);
+                    y += (int)diagnosticHeight;
+                }
             }
             FilePath = GUI.TextField(new Rect(10, y += 20, 195, 20), FilePath);
             FilePath = FilePath.Replace("\\", "/");
@@ -359,11 +368,20 @@ namespace AssetImport
             var environment = mode == GameMode.Studio ? Main.asc?.GetSelectedPhysicsEnvironment(out environmentAsset)
                 : character?.GetSelectedPhysicsEnvironment(out environmentAsset);
             DrawPhysicsEnvironment(ref y, environment, environmentAsset);
-            NativeContactDiagnostics.Select(environment, _environment == environment && _environmentDraft != null
-                ? (bool?)_environmentDraft.NativeBreastContacts : null, displayPhysicsStatus);
-            if (GUI.Button(new Rect(10, y += 5, 220, 25), "Save contact diagnostics"))
-                _physicsActionStatus = SaveContactDiagnostics(environment, displayPhysicsStatus);
-            y += 25;
+            if (AssetDebug.Enabled)
+            {
+                NativeContactDiagnostics.Select(environment, _environment == environment && _environmentDraft != null
+                    ? (bool?)_environmentDraft.NativeBreastContacts : null, displayPhysicsStatus);
+                if (GUI.Button(new Rect(10, y += 5, 220, 25), "Save contact diagnostics"))
+                    _diagnosticActionStatus = SaveContactDiagnostics(environment, displayPhysicsStatus);
+                y += 25;
+                if (!string.IsNullOrEmpty(_diagnosticActionStatus))
+                {
+                    float height = physicsStyle.CalcHeight(new GUIContent(_diagnosticActionStatus), 220);
+                    GUI.Label(new Rect(10, y += 5, 220, height), _diagnosticActionStatus, physicsStyle);
+                    y += (int)height;
+                }
+            }
             if (!string.IsNullOrEmpty(_physicsActionStatus))
             {
                 string actionFeedback = "Last action: " + _physicsActionStatus;

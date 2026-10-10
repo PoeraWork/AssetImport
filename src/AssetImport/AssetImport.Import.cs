@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -169,7 +169,10 @@ namespace AssetImport
             {
                 texture.Path = TextureFileResolver.Resolve(texture.Path, modelPath);
                 if (texture.Type != TextureType.Diffuse && texture.Type != TextureType.Normals) continue;
-                if (texture.PathOkay()) Logger.LogInfo($"Texture ready [{texture.Material.name}/{texture.Type}]: {texture.Path}");
+                if (texture.PathOkay())
+                {
+                    if (AssetDebug.Enabled) Logger.LogInfo($"Texture ready [{texture.Material.name}/{texture.Type}]: {texture.Path}");
+                }
                 else Logger.LogWarning($"Texture unavailable [{texture.Material.name}/{texture.Type}]: {texture.Path}. Select a PNG/JPG/JPEG/TGA/BMP/DDS file in the preload window.");
             }
             _cPath = null;
@@ -178,7 +181,7 @@ namespace AssetImport
 		public void Load()
 		{
             LoadError = null;
-            Logger.LogDebug($"Loading of {RamCacheUtility.GetFileName(SourceIdentifier)} started");
+            if (AssetDebug.Enabled) Logger.LogInfo($"Loading of {RamCacheUtility.GetFileName(SourceIdentifier)} started");
 
             List<string> extraFiles = RamCacheUtility.GetFileAdditionalFileHashes(SourceIdentifier);
             string temp = Path.GetTempPath();
@@ -336,10 +339,10 @@ namespace AssetImport
 
 		private void ProcessMaterials()
 		{
-            Logger.LogDebug("Processing Materials");
+            if (AssetDebug.Enabled) Logger.LogInfo("Processing Materials");
 			foreach(Assimp.Material material in _scene.Materials)
 			{
-                Logger.LogDebug($"Processing Material: {material.Name}");
+                if (AssetDebug.Enabled) Logger.LogInfo($"Processing Material: {material.Name}");
 				Material uMaterial = new Material(_bMat)
                 {
                     name = material.Name
@@ -447,12 +450,12 @@ namespace AssetImport
 
         private void ProcessMeshes()
         {
-            Logger.LogDebug("Processing Meshes");
+            if (AssetDebug.Enabled) Logger.LogInfo("Processing Meshes");
             if (!_scene.HasMeshes) return;
 
             foreach(Assimp.Mesh mesh in _scene.Meshes)
             {
-                Logger.LogDebug($"Converting Mesh: {mesh.Name}");
+                if (AssetDebug.Enabled) Logger.LogInfo($"Converting Mesh: {mesh.Name}");
                 var uVertices = new List<Vector3>();
                 var uNormals = new List<Vector3>();
                 var uTangents = new List<Vector4>();
@@ -465,7 +468,7 @@ namespace AssetImport
                     RestartStopwatch();
                     uVertices.AddRange(mesh.Vertices.Select(v => new Vector3(v.X, v.Y, v.Z)));
                     Stopwatch.Stop();
-                    Logger.LogDebug($"{mesh.VertexCount} Vertices Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
+                    if (AssetDebug.Enabled) Logger.LogInfo($"{mesh.VertexCount} Vertices Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
                 }
 
                 // Normals
@@ -474,7 +477,7 @@ namespace AssetImport
                     RestartStopwatch();
                     uNormals.AddRange(mesh.Normals.Select(n => new Vector3(n.X, n.Y, n.Z)));
                     Stopwatch.Stop();
-                    Logger.LogDebug($"{mesh.Normals.Count} Normals Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
+                    if (AssetDebug.Enabled) Logger.LogInfo($"{mesh.Normals.Count} Normals Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
                 }
 
                 // Triangles
@@ -491,7 +494,7 @@ namespace AssetImport
                         }
                     }
                     Stopwatch.Stop();
-                    Logger.LogDebug($"{mesh.FaceCount} Faces Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
+                    if (AssetDebug.Enabled) Logger.LogInfo($"{mesh.FaceCount} Faces Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
                 }
 
                 // Uv (texture coordinate)
@@ -500,7 +503,7 @@ namespace AssetImport
                     RestartStopwatch();
                     uUv.AddRange(mesh.TextureCoordinateChannels[0].Select(uv => new Vector2(uv.X, uv.Y)));
                     Stopwatch.Stop();
-                    Logger.LogDebug($"UV Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
+                    if (AssetDebug.Enabled) Logger.LogInfo($"UV Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
                 }
 
                 // Tangents
@@ -517,7 +520,7 @@ namespace AssetImport
                         uTangents.Add(new Vector4(tangent.x, tangent.y, tangent.z, w));
                     }
                     Stopwatch.Stop();
-                    Logger.LogDebug($"{mesh.Tangents.Count} Tangents Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
+                    if (AssetDebug.Enabled) Logger.LogInfo($"{mesh.Tangents.Count} Tangents Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
                 }
 
 #if KK
@@ -713,7 +716,7 @@ namespace AssetImport
 
                 Stopwatch.Stop();
                 total += Stopwatch.Elapsed.TotalMilliseconds;
-                Logger.LogDebug($"  >>> Blendshape {index+1}/{sourceMesh.MeshAnimationAttachmentCount} Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
+                if (AssetDebug.Enabled) Logger.LogInfo($"  >>> Blendshape {index+1}/{sourceMesh.MeshAnimationAttachmentCount} Converted in {Stopwatch.Elapsed.TotalMilliseconds} ms");
 
             }
             // Cleanup
@@ -727,7 +730,7 @@ namespace AssetImport
             meshB_Tangents.Release();
             delta_Tangents.Release();
 
-            Logger.LogDebug($"Blendshape processing completed in {total} ms");
+            if (AssetDebug.Enabled) Logger.LogInfo($"Blendshape processing completed in {total} ms");
         }
 
 #endif
@@ -763,7 +766,7 @@ namespace AssetImport
 
         private void ProcessArmature(Assimp.Mesh mesh, SkinnedMeshRenderer renderer, string name, int[] sourceVertices)
         {
-            Logger.LogDebug($"Processing Armature on Mesh: {name}");
+            if (AssetDebug.Enabled) Logger.LogInfo($"Processing Armature on Mesh: {name}");
             Mesh uMesh = renderer.sharedMesh;
             var helper = new Dictionary<int, List<BoneInfluence>>();
             var bindposes = new UnityEngine.Matrix4x4[mesh.BoneCount];

@@ -5,14 +5,18 @@ namespace AssetImport
 {
     internal partial class AssetUI
     {
+        private string _diagnosticActionStatus;
+
         private string SaveContactDiagnostics(AssetPhysicsEnvironment selected, string selectionStatus)
         {
+            if (!AssetDebug.Enabled) return "Enable Debug to save diagnostics.";
             NativeContactDiagnostics.Select(selected, _environment == selected && _environmentDraft != null
                 ? (bool?)_environmentDraft.NativeBreastContacts : null, selectionStatus);
             return NativeContactDiagnostics.Save("manual") ? "Saved: " + NativeContactDiagnostics.ReportPath : NativeContactDiagnostics.LastError;
         }
         private string OpenContactDiagnosticsFolder()
         {
+            if (!AssetDebug.Enabled) return "Enable Debug to open diagnostics.";
             if (!NativeContactDiagnostics.Save("manual")) return NativeContactDiagnostics.LastError;
             try
             {

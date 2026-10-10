@@ -25,7 +25,7 @@ namespace AssetImport
                 if (!chain || !chain.m_Root || !chain.m_Root.IsChildOf(GameObject.transform) || !names.TryGetValue(chain.m_Root.name, out index)) continue;
                 var preset = PmxPhysicsPresets.For(_pmx, index, _pmxRootSuggestions);
                 if (preset == null || !preset.Apply(chain, PhysicsProfile)) continue;
-                Logger.LogInfo("PMX physics preset v1: " + chain.m_Root.name + "; " + preset.Name +
+                if (AssetDebug.Enabled) Logger.LogInfo("PMX physics preset v1: " + chain.m_Root.name + "; " + preset.Name +
                     "; updateRate=" + chain.m_UpdateRate + "; damping=" + chain.m_Damping +
                     "; elasticity=" + chain.m_Elasticity + "; stiffness=" + chain.m_Stiffness +
                     "; inertia=" + chain.m_Inert + ". Reference-based preview; KKPE edits remain available.");

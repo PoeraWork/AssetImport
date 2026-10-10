@@ -40,7 +40,7 @@ namespace AssetImport
         // Config
         internal static ConfigEntry<KeyboardShortcut> hotkey;
         internal static ConfigEntry<string> defaultDir;
-        internal static ConfigEntry<bool> dumpAssets;
+        internal static ConfigEntry<bool> debugMode;
         internal static ConfigEntry<bool> pmxBodyCollisions;
         internal static ConfigEntry<string> mmddLibraryPath;
         internal static ConfigEntry<string> colorLutPath;
@@ -55,10 +55,14 @@ namespace AssetImport
         void Awake()
         {
             Logger = base.Logger;
+            debugMode = Config.Bind("_General_", "Debug", false,
+                "Enable detailed logs, diagnostic reports, physics previews and asset dumps. Disable for normal use.");
+            AssetDebug.Enabled = debugMode.Value;
+            debugMode.SettingChanged += (sender, args) => AssetDebug.Enabled = debugMode.Value;
             NativeContactDiagnostics.Initialize();
             var buildInfo = (System.Reflection.AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute(
                 typeof(AssetImport).Assembly, typeof(System.Reflection.AssemblyInformationalVersionAttribute));
-            Logger.LogInfo($"Runtime build {Version}; source {buildInfo?.InformationalVersion ?? "unknown"}; assembly {typeof(AssetImport).Assembly.GetName().Version}");
+            if (AssetDebug.Enabled) Logger.LogInfo($"Runtime build {Version}; source {buildInfo?.InformationalVersion ?? "unknown"}; assembly {typeof(AssetImport).Assembly.GetName().Version}");
 #if KK
             // Match the original Packed ZIP layout; do not depend on the working directory.
             string nativePath = Path.Combine(Paths.GameRootPath,
@@ -90,7 +94,6 @@ namespace AssetImport
             KeyboardShortcut defaultShortcut = new KeyboardShortcut(KeyCode.I, KeyCode.LeftAlt);
             hotkey = Config.Bind("_General_", "Hotkey", defaultShortcut, "Press this key to open the UI");
             defaultDir = Config.Bind("_General_", "Default Directory", Paths.GameRootPath, "The default directory of the file dialogue.");
-            dumpAssets = Config.Bind("Backend", "Dump Assets", false, "Dumps assets to /UserData/AssetImport/ when loading a card with assets.");
             pmxBodyCollisions = Config.Bind("PMX", "Enable Body Collisions", true,
                 "Build DynamicBone body colliders from PMX static rigid bodies. Reload the scene/model after changing this setting. Uses PMX collision masks; this is not full MMD rigid-body/joint physics.");
             mmddLibraryPath = Config.Bind("PMX", "MMDD Library Path", "",

@@ -9,6 +9,11 @@ void ApplyLate(NativeContactController c) => typeof(NativeContactLateUpdate).Get
 Transform Child(string name, Transform parent, Vector3 local)
 { var t = new GameObject(name).transform; t.SetParent(parent, false); t.localPosition = local; return t; }
 
+Check(!AssetDebug.Enabled, "Debug defaults to off independently of model physics settings");
+DebugModeChecks.Run(Check);
+// The remaining suites explicitly exercise the opt-in diagnostic paths.
+AssetDebug.Enabled = true;
+
 foreach (string target in new[] { "KK", "KKS" })
 {
     using var game = new MetadataAssembly(Path.Combine(AppContext.BaseDirectory, "Fixtures", target, "Assembly-CSharp.dll"));

@@ -8,6 +8,7 @@ namespace AssetImport
     {
         private void RecordWriteback()
         {
+            if (!AssetDebug.Enabled) return;
             _lastWriteFrame = Time.frameCount;
             // Capture input/output against the same obstacle pose. Reports can
             // be requested in Update, after the input pose has been restored.

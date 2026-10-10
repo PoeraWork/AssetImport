@@ -54,21 +54,21 @@ namespace AssetImport
             controller.Definition = definition;
             controller._environment = host.GetComponent<AssetPhysicsEnvironment>();
             controller.Status = "Breast contacts: Off (" + controller.EligibleCount + " eligible)";
-            AssetImport.Logger.LogInfo("PMX native breast candidates: model=" + definition.Model.name + "; breasts=" +
+            if (AssetDebug.Enabled) AssetImport.Logger.LogInfo("PMX native breast candidates: model=" + definition.Model.name + "; breasts=" +
                 definition.Breasts.Length + "; bodyObstacles=" + definition.Obstacles.Length + ". Disabled until explicitly enabled.");
             controller.DiagnosticEvent("attached; " + controller.DiagnosticSummary.Replace('\n', ';'));
-            AssetImport.Logger.LogInfo("PMX breast recognition: model=" + definition.Model.name + "\n" + definition.RecognitionReport);
+            if (AssetDebug.Enabled) AssetImport.Logger.LogInfo("PMX breast recognition: model=" + definition.Model.name + "\n" + definition.RecognitionReport);
         }
         private void OnEnable()
         {
             ResetContacts();
             _lateUpdater = GetComponent<NativeContactLateUpdate>() ?? gameObject.AddComponent<NativeContactLateUpdate>();
             _lateUpdater.Controller = this; _lateUpdater.enabled = true;
-            Camera.onPreRender += BeforeRender; AssetPhysicsEnvironment.ResetRequested += OnPhysicsReset;
+            SyncDiagnostics(); AssetPhysicsEnvironment.ResetRequested += OnPhysicsReset;
         }
         private void OnDisable()
         {
-            Camera.onPreRender -= BeforeRender; AssetPhysicsEnvironment.ResetRequested -= OnPhysicsReset;
+            StopDiagnosticObservation(); AssetPhysicsEnvironment.ResetRequested -= OnPhysicsReset;
             if (_lateUpdater) _lateUpdater.enabled = false;
             ResetContacts();
         }
@@ -76,7 +76,7 @@ namespace AssetImport
         private void OnPhysicsReset(DynamicBone chain) { if (chain && chain.gameObject == gameObject) ResetContacts(); }
         // Restore before animation/ordinary physics, then a separate, late
         // component writes the result before Unity updates skinned meshes.
-        private void Update() { Restore(); }
+        private void Update() { Restore(); SyncDiagnostics(); }
         private void LateUpdate()
         { if (!_lateUpdater || !_lateUpdater.isActiveAndEnabled) DiagnosticHeartbeat(); }
         internal void ApplyLateUpdate()
@@ -113,6 +113,7 @@ namespace AssetImport
 
         internal void Tick(float elapsed)
         {
+            SyncDiagnostics();
             _ticks++; _lastElapsed = elapsed;
             Restore();
             if (!_environment) _environment = GetComponent<AssetPhysicsEnvironment>();
@@ -182,7 +183,7 @@ namespace AssetImport
                 if (!_reported && maximum > .0001f * scale)
                 {
                     _reported = true;
-                    AssetImport.Logger.LogInfo("PMX native breast response: active=" + active + "; displacement=" + maximum +
+                    if (AssetDebug.Enabled) AssetImport.Logger.LogInfo("PMX native breast response: active=" + active + "; displacement=" + maximum +
                         "; obstacles=" + _obstacles.Count + ". Native response only; visible contact requires in-game verification.");
                 }
             }
@@ -251,7 +252,7 @@ namespace AssetImport
                     NativeContactGeometry.ContactHalfAxis(shape) * UniformScale(shape.Bone));
                 _objects.Add(_engines[i].Host);
                 if (_engines[i].CapsuleObstacles) _objects.Add(_engines[i].CapsuleObstacles);
-                AssetImport.Logger.LogInfo("PMX native breast initialized: bone=" + shape.Bone.name + "; radius=" + radius +
+                if (AssetDebug.Enabled) AssetImport.Logger.LogInfo("PMX native breast initialized: bone=" + shape.Bone.name + "; radius=" + radius +
                     "; obstacles=" + pairs.Count + "; nativeParticles=" + _engines[i].ParticleCount +
                     "; sphereSelfCheck=passed; engine=" + typeof(DynamicBone_Ver02).Assembly.GetName().Version + ".");
             }

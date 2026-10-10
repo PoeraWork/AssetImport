@@ -30,7 +30,8 @@ namespace AssetImport
                 if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.NativeBreastContacts, "Breast contacts (experimental)"))
                     _environmentDraft.NativeBreastContacts = !_environmentDraft.NativeBreastContacts;
                 var contactStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
-                string contactStatus = contacts.Status + "\n" + contacts.DiagnosticSummary;
+                string contactStatus = contacts.Status;
+                if (AssetDebug.Enabled) contactStatus += "\n" + contacts.DiagnosticSummary;
                 if (_environmentDraft.NativeBreastContacts != environment.Settings.NativeBreastContacts)
                     contactStatus += "\nPending change: click Apply physics settings.";
                 float contactHeight = contactStyle.CalcHeight(new GUIContent(contactStatus), 220);

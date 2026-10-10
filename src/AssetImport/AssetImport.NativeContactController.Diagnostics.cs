@@ -19,6 +19,26 @@ namespace AssetImport
         private string _diagnosticState = "awaiting-update", _lastFailure = "none";
         private readonly Queue<string> _diagnosticEvents = new Queue<string>();
         private bool _diagnosticFailureReported;
+        private bool _observingDebug;
+
+        private void SyncDiagnostics()
+        {
+            bool enabled = AssetDebug.Enabled;
+            if (_observingDebug == enabled) return;
+            StopDiagnosticObservation();
+            _observingDebug = enabled;
+            if (enabled) Camera.onPreRender += BeforeRender;
+            _diagnosticEvents.Clear(); _renderCenters = null;
+            _cameraCallbacks = _renderObservations = 0;
+            _renderWriteError = _maximumRenderWriteError = _followerRenderWriteError = 0;
+            _observedRenderFrame = _lastWriteFrame = -1;
+            _nextGeometrySample = 0; _heartbeatTicks = _ticks;
+            _nextDiagnostic = Time.realtimeSinceStartup + 5f;
+            _diagnosticFailureReported = false;
+            _writebackGeometry = "Contact geometry: not sampled";
+        }
+        private void StopDiagnosticObservation()
+        { Camera.onPreRender -= BeforeRender; _observingDebug = false; }
 
         internal string DiagnosticSummary
         {
@@ -37,11 +57,13 @@ namespace AssetImport
         {
             if (_diagnosticState == state) return;
             _diagnosticState = state;
+            if (!AssetDebug.Enabled) return;
             DiagnosticEvent("state=" + state + "; enabled=" + (_environment && _environment.Settings.NativeBreastContacts) +
                 "; breasts=" + EligibleCount + "; obstacles=" + (Definition == null ? 0 : Definition.Obstacles.Length));
         }
         private void DiagnosticEvent(string message)
         {
+            if (!AssetDebug.Enabled) return;
             // Diagnostics must not change whether the contact layer can run.
             try
             {
@@ -66,6 +88,7 @@ namespace AssetImport
         }
         private void DiagnosticHeartbeat()
         {
+            if (!AssetDebug.Enabled) return;
             if (!_environment) _environment = GetComponent<AssetPhysicsEnvironment>();
             if (!_environment || !_environment.Settings.NativeBreastContacts || Time.realtimeSinceStartup < _nextDiagnostic) return;
             _nextDiagnostic = Time.realtimeSinceStartup + 5f;
@@ -88,6 +111,7 @@ namespace AssetImport
         // pass or give different cameras different poses in the same frame.
         private void BeforeRender(Camera camera)
         {
+            if (!AssetDebug.Enabled) return;
             _cameraCallbacks++;
             if (!_written || _frame != Time.frameCount || !isActiveAndEnabled || Definition == null) return;
             try
@@ -158,6 +182,7 @@ namespace AssetImport
 
         internal string BuildDiagnosticReport()
         {
+            if (!AssetDebug.Enabled) return "Debug is disabled.";
             if (!_environment) _environment = GetComponent<AssetPhysicsEnvironment>();
             var report = new StringBuilder();
             report.AppendLine("Model: " + ModelName);

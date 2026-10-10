@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)../src/AssetImport/AssetImport.Debug.cs" Link="AssetImport.Debug.cs" />
+  </ItemGroup>
+</Project>

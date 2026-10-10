@@ -76,7 +76,7 @@ namespace AssetImport
                 script += "\n\n_register(" + result.TargetsJson + ")\n";
                 Directory.CreateDirectory(directory);
                 WriteChanged(Path.Combine(directory, name + ".json"), result.MappingJson);
-                WriteChanged(Path.Combine(directory, name + ".report.txt"), result.ReportJson);
+                if (AssetDebug.Enabled) WriteChanged(Path.Combine(directory, name + ".report.txt"), result.ReportJson);
                 string extension = "MmddExtMorphFunc_AssetImport_Pmx_" + result.ModelId + ".py";
                 WriteChanged(Path.Combine(directory, extension), script);
                 backupDirectory = directory;
@@ -101,7 +101,7 @@ namespace AssetImport
                     Logger.LogWarning(status);
                 }
                 if (result.Warnings.Length > 0)
-                    status += "\nWarnings: " + result.Warnings.Length + ". Details in the PMX mapping report/log.";
+                    status += "\nWarnings: " + result.Warnings.Length + ". See the log for details.";
                 return status;
             }
             catch (Exception e)

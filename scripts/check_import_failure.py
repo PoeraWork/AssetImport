@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Studio;
+using AssetImport;
 class Vector3 {}
 class FakeObject { public bool destroyed; public static implicit operator bool(FakeObject o) => o != null && !o.destroyed; }
 class Material : FakeObject {}
@@ -23,8 +24,7 @@ class GameObject : FakeObject { public string name="temp"; public bool active=tr
 class DynamicBoneCollider { public GameObject gameObject=new GameObject(); }
 static class Resources { public static T[] FindObjectsOfTypeAll<T>()=>new T[0]; }
 class Log { public List<string> messages=new List<string>(); public void LogInfo(object o){} public void LogError(object o)=>messages.Add(o.ToString()); public void LogWarning(object o)=>messages.Add(o.ToString()); public void LogMessage(object o)=>messages.Add(o.ToString()); }
-static class Main { public static LoadProcess currentLoadProcess; public static Setting dumpAssets=new Setting(); }
-class Setting {public bool Value;}
+static class Main { public static LoadProcess currentLoadProcess; }
 static class AssetUI { public static bool ArmatureMode,PreloadUI; public static string CommonPathText; }
 class LoadProcess { public enum LoadProcessKind { Normal } public Import Import; public OCIItem Item; public LoadProcess(GameObject b,OCIItem item,Import import,Vector3 scale,LoadProcessKind kind){Import=import;Item=item;} }
 static class RamCacheUtility { public static string ToCache(string path){if(Test.Mode=="cache")throw new IOException("Cache denied");return "hash";} public static byte[] GetFileBlob(string hash)=>new byte[0]; }
@@ -71,6 +71,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="assetimport-import-check-") as temp:
         work = Path(temp)
         (work / "Program.cs").write_text(PREAMBLE + source[start:end] + POSTAMBLE, encoding="utf-8")
+        (work / "Debug.cs").write_text((ROOT / "src/AssetImport/AssetImport.Debug.cs").read_text(encoding="utf-8"), encoding="utf-8")
         (work / "check.csproj").write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>')
         subprocess.run([args.dotnet, "run", "--project", str(work / "check.csproj"), "-c", "Release", "--disable-build-servers", "-p:UseSharedCompilation=false", "-v:q"], cwd=ROOT, check=True)
 

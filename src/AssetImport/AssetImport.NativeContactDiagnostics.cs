@@ -10,7 +10,7 @@ namespace AssetImport
     // one current report, written at most once per five seconds automatically.
     internal static class NativeContactDiagnostics
     {
-        private static bool _initialized, _pending;
+        private static bool _initialized, _pending, _active;
         private static float _nextWrite;
         private static string _reason, _primaryPath, _fallbackPath, _announcedPath;
         private static AssetPhysicsEnvironment _selected;
@@ -37,21 +37,30 @@ namespace AssetImport
                 Build = build == null ? "unknown" : build.InformationalVersion;
                 _primaryPath = Path.Combine(BepInEx.Paths.GameRootPath, "UserData/AssetImport/Diagnostics/breast-contacts.txt");
                 _fallbackPath = Path.Combine(Path.GetTempPath(), "AssetImport-Diagnostics/" + Guid.NewGuid().ToString("N") + "/breast-contacts.txt");
-                _initialized = true; _announcedPath = null; _pending = false;
-                Save("startup");
+                _initialized = true; _announcedPath = null; _pending = false; _active = AssetDebug.Enabled;
+                _nextWrite = 0;
+                if (_active) Save("startup");
             }
             catch (Exception error) { Failed(error); }
         }
         internal static void Select(AssetPhysicsEnvironment selected, bool? draft, string status)
-        { _selected = selected; _draft = draft; _selectionStatus = status; }
-        internal static void Request(string reason) { _pending = true; _reason = reason; }
+        { if (AssetDebug.Enabled) { _selected = selected; _draft = draft; _selectionStatus = status; } }
+        internal static void Request(string reason) { if (AssetDebug.Enabled) { _pending = true; _reason = reason; } }
         internal static void Poll()
         {
+            if (!AssetDebug.Enabled)
+            {
+                _active = false; _pending = false; _selected = null; _draft = null; _selectionStatus = null;
+                ReportPath = null; LastError = null;
+                return;
+            }
+            if (_initialized && !_active) { _active = true; Save("debug-enabled"); return; }
             if (_initialized && _pending && Time.realtimeSinceStartup >= _nextWrite) Save(_reason);
         }
         internal static bool Save(string reason)
         {
-            if (!_initialized) return false;
+            if (!AssetDebug.Enabled || !_initialized) return false;
+            _active = true;
             _pending = false; _nextWrite = Time.realtimeSinceStartup + 5f;
             try
             {
@@ -88,6 +97,7 @@ namespace AssetImport
         }
         private static void Failed(Exception error)
         {
+            if (!AssetDebug.Enabled) { LastError = null; return; }
             string message = "Could not save contact diagnostics: " + error.Message;
             if (LastError != message)
             {

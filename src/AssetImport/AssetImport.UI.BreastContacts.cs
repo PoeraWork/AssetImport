@@ -65,7 +65,7 @@ namespace AssetImport
 
         private NativeContactShape[] DisplayedBreastShapes(NativeContactController contacts)
         {
-            return _breastPreviewApplied ? contacts.ContactShapes.Where(s => _chainSelection.Contains(s.ChainRoot)).ToArray()
+            return AssetDebug.Enabled && _breastPreviewApplied ? contacts.ContactShapes.Where(s => _chainSelection.Contains(s.ChainRoot)).ToArray()
                 : PreviewBreastSettings(contacts);
         }
 
@@ -124,16 +124,20 @@ namespace AssetImport
             if (capsuleValid) { _chainBreastLength = length; _chainBreastRotation = new Vector3(rx, ry, rz); }
             valid &= volumeValid && (!_chainBreastCapsule || capsuleValid);
             GUI.enabled = true;
-            if (CheckButton(new Rect(12, 244, 190, 25), !_breastPreviewApplied, "Draft (cyan)")) _breastPreviewApplied = false;
-            if (CheckButton(new Rect(212, 244, 190, 25), _breastPreviewApplied, "Applied (green)")) _breastPreviewApplied = true;
-            if (CheckButton(new Rect(412, 244, 190, 25), _breastShowObstacles, "Body obstacles")) _breastShowObstacles = !_breastShowObstacles;
+            if (AssetDebug.Enabled)
+            {
+                if (CheckButton(new Rect(12, 244, 190, 25), !_breastPreviewApplied, "Draft (cyan)")) _breastPreviewApplied = false;
+                if (CheckButton(new Rect(212, 244, 190, 25), _breastPreviewApplied, "Applied (green)")) _breastPreviewApplied = true;
+                if (CheckButton(new Rect(412, 244, 190, 25), _breastShowObstacles, "Body obstacles")) _breastShowObstacles = !_breastShowObstacles;
+            }
+            else GUI.Label(new Rect(12, 244, 590, 25), "Enable Debug in the main panel to preview contact volumes.");
             string summary = "Select one or more physics chains.";
             if (contacts && _chainSelection.Count > 0)
             {
                 var shapes = DisplayedBreastShapes(contacts);
                 summary = shapes.Length + " endpoint(s), radius " + (shapes.Length == 0 ? "--" :
                     shapes.Min(s => s.Radius).ToString("0.####", CultureInfo.InvariantCulture) + " - " + shapes.Max(s => s.Radius).ToString("0.####", CultureInfo.InvariantCulture)) +
-                    (_breastPreviewApplied ? (_environment.Settings.NativeBreastContacts ? " (applied)" : " (contacts OFF)") : " (draft; click Apply)");
+                    (AssetDebug.Enabled && _breastPreviewApplied ? (_environment.Settings.NativeBreastContacts ? " (applied)" : " (contacts OFF)") : " (draft; click Apply)");
             }
             GUI.Label(new Rect(12, 274, 590, 23), summary);
             GUI.enabled = editable && valid;
@@ -152,7 +156,7 @@ namespace AssetImport
             GUI.enabled = true;
             string help = !contacts ? "Breast contacts require an imported PMX model." : !valid ? "Radius: 0-2. Length: 0-4. Offset: -2 to 2. Rotation: -180 to 180." :
                 !_environmentDraft.NativeBreastContacts ? "Enable Breast contacts in Selected model physics to use these settings." :
-                "Select one chain to adjust each side separately. Capsule length includes both caps. Yellow: allowed body obstacles. Apply activates edits.";
+                "Select one chain to adjust each side separately. Capsule length includes both caps. Apply activates edits.";
             GUI.Label(new Rect(12, 335, 590, 42), help, new GUIStyle(GUI.skin.label) { wordWrap = true });
         }
 
@@ -177,7 +181,7 @@ namespace AssetImport
 
         private void DrawBreastContactPreview()
         {
-            if (Event.current.type != EventType.Repaint || _chainSelection.Count == 0) return;
+            if (!AssetDebug.Enabled || Event.current.type != EventType.Repaint || _chainSelection.Count == 0) return;
             var contacts = _environment.GetComponent<NativeContactController>(); var camera = Camera.main;
             if (!contacts || !camera) return;
             Color old = GUI.color;

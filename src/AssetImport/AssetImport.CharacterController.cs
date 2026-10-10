@@ -196,7 +196,7 @@ namespace AssetImport
         {
             int cSet = ChaControl.fileStatus.coordinateType;
             if (!loadedObjects.ContainsKey(cSet)) return;
-            Logger.LogDebug("Accessory Transfer Event");
+            if (AssetDebug.Enabled) Logger.LogInfo("Accessory Transfer Event");
             if (loadedObjects[cSet].ContainsKey(source))
             {
                 CaptureAccessoryPhysics(cSet, source);
@@ -215,7 +215,7 @@ namespace AssetImport
                 PhysicsEnvironmentPersistence.Write(asset, PhysicsEnvironmentPersistence.Read(loadedObjects[cSet][source]));
                 loadedObjects[cSet][destination] = asset;
                 RestoreAccessoryPhysics(cSet, destination);
-                Logger.LogDebug($"Source slot {source} --> Destination slot {destination}");
+                if (AssetDebug.Enabled) Logger.LogInfo($"Source slot {source} --> Destination slot {destination}");
             }
             else if (loadedObjects[cSet].ContainsKey(destination))
             {
@@ -259,7 +259,7 @@ namespace AssetImport
                     PhysicsEnvironmentPersistence.Write(asset, PhysicsEnvironmentPersistence.Read(loadedObjects[source][slot]));
                     loadedObjects[destination][slot] = asset;
                     RestoreAccessoryPhysics(destination, slot);
-                    Logger.LogDebug($"Source: Type {source}, Slot {slot} --> Destination: Type {destination}");
+                    if (AssetDebug.Enabled) Logger.LogInfo($"Source: Type {source}, Slot {slot} --> Destination: Type {destination}");
                 }
                 else if (loadedObjects[destination].ContainsKey(slot))
                 {
@@ -316,13 +316,13 @@ namespace AssetImport
             data.data.Add("Version", (byte)3);
 
             SetExtendedData(data);
-            Logger.LogDebug("Set Extended data");
+            if (AssetDebug.Enabled) Logger.LogInfo("Set Extended data");
         }
 
         internal void LoadCharacter(GameMode currentGameMode, bool MaintainState)
         {
             if (MaintainState || (currentGameMode == GameMode.Maker && MakerAPI.GetCharacterLoadFlags()?.Clothes == false)) return;
-            Logger.LogDebug($"Character Load Started {ChaControl.fileParam.fullname}");
+            if (AssetDebug.Enabled) Logger.LogInfo($"Character Load Started {ChaControl.fileParam.fullname}");
             loadedObjects.Clear();
             if (currentGameMode == GameMode.Maker)
             {
@@ -354,10 +354,10 @@ namespace AssetImport
                             }
                             else
                             {
-                                Logger.LogDebug($"No sourceFiles found in extended data for clothing slot {cSet}");
+                                if (AssetDebug.Enabled) Logger.LogInfo($"No sourceFiles found in extended data for clothing slot {cSet}");
                                 continue;
                             }
-                            Logger.LogDebug($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
+                            if (AssetDebug.Enabled) Logger.LogInfo($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
                             foreach (AssetSource sourceFile in sourceFiles)
                             {
                                 try
@@ -394,10 +394,10 @@ namespace AssetImport
                             }
                             else
                             {
-                                Logger.LogDebug("No sourceFiles found in extended data.");
+                                if (AssetDebug.Enabled) Logger.LogInfo("No sourceFiles found in extended data.");
                                 return;
                             }
-                            Logger.LogDebug($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
+                            if (AssetDebug.Enabled) Logger.LogInfo($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
                             foreach (AssetFile sourceFile in sourceFiles)
                             {
                                 try
@@ -440,7 +440,7 @@ namespace AssetImport
                     }
                     else
                     {
-                        Logger.LogDebug($"No assets found in extended data for clothing slot {cSet}");
+                        if (AssetDebug.Enabled) Logger.LogInfo($"No assets found in extended data for clothing slot {cSet}");
                         continue;
                     }
                     foreach (Asset asset in assets)
@@ -495,7 +495,7 @@ namespace AssetImport
             data.data.Add("Assets", MessagePackSerializer.Serialize(assets));
 
             SetCoordinateExtendedData(coordinate, data);
-            Logger.LogDebug("Set Coordinate Extended data");
+            if (AssetDebug.Enabled) Logger.LogInfo("Set Coordinate Extended data");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -511,7 +511,7 @@ namespace AssetImport
                         entry.CoordinateIndex.Equals(dboneData.CoordinateIndex)
                         && entry.Slot.Equals(dboneData.Slot)
                         && entry.BoneName.Equals(dboneData.BoneName))) continue;
-                Logger.LogDebug($"Compatibility Mode: Added back DynamicBoneEditor data for slot {dboneData.Slot}: {dboneData.BoneName}");
+                if (AssetDebug.Enabled) Logger.LogInfo($"Compatibility Mode: Added back DynamicBoneEditor data for slot {dboneData.Slot}: {dboneData.BoneName}");
                 data.Add(dboneData);
             }
         }
@@ -531,16 +531,16 @@ namespace AssetImport
 #endif
             if (Chainloader.PluginInfos.ContainsKey(coordinateLoadOptionGuid))
             {
-                Logger.LogDebug("Coordinate Load Option deducted");
+                if (AssetDebug.Enabled) Logger.LogInfo("Coordinate Load Option deducted");
                 if (GameObject.Find("CoordinateTooglePanel")?.activeInHierarchy == true)
                 {
-                    Logger.LogDebug("Coordinate Load Option enabled");
+                    if (AssetDebug.Enabled) Logger.LogInfo("Coordinate Load Option enabled");
                     bool? accEnabled = GameObject.Find("CoordinateTooglePanel/accessories")?.GetComponent<Toggle>()?.isOn;
                     switch (accEnabled)
                     {
                         case true:
                         {
-                            Logger.LogDebug("Coordinate Load Option accessory load enabled, entering compatibility mode");
+                            if (AssetDebug.Enabled) Logger.LogInfo("Coordinate Load Option accessory load enabled, entering compatibility mode");
                             cMode = true;
 
                             if (GameObject.Find("CoordinateTooglePanel/AccessoriesTooglePanel/BtnChangeAccLoadMode")?.GetComponentInChildren<Text>()?.text != "Replace Mode")
@@ -566,7 +566,7 @@ namespace AssetImport
                         }
                         case false:
                         {
-                            Logger.LogDebug("Coordinate Load Option accessory load disabled -> stopping asset load.");
+                            if (AssetDebug.Enabled) Logger.LogInfo("Coordinate Load Option accessory load disabled -> stopping asset load.");
                             if (Chainloader.PluginInfos.ContainsKey("com.deathweasel.bepinex.dynamicboneeditor") &&
                                 Hooks.IsOptionalIntegrationAvailable(Hooks.DynamicBoneEditorAssembly))
                                 Hooks.RunOptionalIntegration(Hooks.DynamicBoneEditorAssembly, "dynamic bone data restore", () => LoadCoordinateCompatibilityDynamicBoneEditor(cSet));
@@ -586,7 +586,7 @@ namespace AssetImport
             if (coordinate == null) return;
             CoordinateCardNames[cSet] = (coordinate.coordinateFileName ?? "").Replace(".png", "");
 
-            Logger.LogDebug($"Coordinate Load Started {cSet} on {ChaControl.fileParam.fullname}");
+            if (AssetDebug.Enabled) Logger.LogInfo($"Coordinate Load Started {cSet} on {ChaControl.fileParam.fullname}");
             if (loadedObjects.ContainsKey(cSet) && !cMode)
             {
                 loadedObjects.Remove(cSet);
@@ -641,10 +641,10 @@ namespace AssetImport
                         }
                         else
                         {
-                            AssetImport.Logger.LogDebug("No sourceFiles found in extended data.");
+                            if (AssetDebug.Enabled) AssetImport.Logger.LogInfo("No sourceFiles found in extended data.");
                             return;
                         }
-                        Logger.LogDebug($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
+                        if (AssetDebug.Enabled) Logger.LogInfo($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
                         foreach (AssetSource sourceFile in sourceFiles)
                         {
                             try
@@ -682,10 +682,10 @@ namespace AssetImport
                         }
                         else
                         {
-                            Logger.LogDebug("No sourceFiles found in extended data.");
+                            if (AssetDebug.Enabled) Logger.LogInfo("No sourceFiles found in extended data.");
                             return;
                         }
-                        Logger.LogDebug($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
+                        if (AssetDebug.Enabled) Logger.LogInfo($"{sourceFiles.Count} sourceFiles found, extracting to cache...");
                         foreach (AssetFile sourceFile in sourceFiles)
                         {
                             try
@@ -728,7 +728,7 @@ namespace AssetImport
                 }
                 else
                 {
-                    Logger.LogDebug("No assets found in extended data, aborting load...");
+                    if (AssetDebug.Enabled) Logger.LogInfo("No assets found in extended data, aborting load...");
                     return;
                 }
 
@@ -739,12 +739,12 @@ namespace AssetImport
                     // ignore Asset Data of accessories that are not being loaded
                     if (cMode && !cloImportAccessories.Contains(asset.Identifier))
                     {
-                        Logger.LogDebug($"Compatibilty Mode: Accessory in slot {asset.Identifier} is not being loaded -> discarding data.");
+                        if (AssetDebug.Enabled) Logger.LogInfo($"Compatibilty Mode: Accessory in slot {asset.Identifier} is not being loaded -> discarding data.");
                         continue;
                     }
 
                     loadedObjects[cSet][asset.Identifier] = asset;
-                    Logger.LogDebug($"Loading dat of asset for accessory in slot {asset.Identifier}");
+                    if (AssetDebug.Enabled) Logger.LogInfo($"Loading dat of asset for accessory in slot {asset.Identifier}");
                 }
             }
 
@@ -776,7 +776,7 @@ namespace AssetImport
         internal void LoadData()
         {
             if (_hasBeenLoadedAlready) return;
-            Logger.LogDebug("Reloading Assets");
+            if (AssetDebug.Enabled) Logger.LogInfo("Reloading Assets");
             int cSet = ChaControl.fileStatus.coordinateType;
             if (!loadedObjects.ContainsKey(cSet)) return;
             foreach(int slot in loadedObjects[cSet].Keys)
@@ -790,7 +790,7 @@ namespace AssetImport
                     continue;
                 }
 
-                if (Main.dumpAssets.Value)
+                if (AssetDebug.Enabled)
                 {
                     File.WriteAllBytes(Path.Combine(GetDumpPath(cSet), RamCacheUtility.GetFileName(asset.SourceFile)), RamCacheUtility.GetFileBlob(asset.SourceFile));
                 }
@@ -905,7 +905,7 @@ namespace AssetImport
                 return;
             }
 
-            Logger.LogDebug($"Accessory Import started on slot {slot} with type [{type}] and parentNode [{parent}]");
+            if (AssetDebug.Enabled) Logger.LogInfo($"Accessory Import started on slot {slot} with type [{type}] and parentNode [{parent}]");
 
             ChaAccessoryComponent accessory = ChaControl.GetAccessoryComponent(slot);
             if (!accessory)
@@ -921,7 +921,7 @@ namespace AssetImport
 
             string identifierHash = RamCacheUtility.ToCache(path);
 
-            if (Main.dumpAssets.Value)
+            if (AssetDebug.Enabled)
             {
                 File.WriteAllBytes(Path.Combine(GetDumpPath(), Path.GetFileName(path)), RamCacheUtility.GetFileBlob(identifierHash));
             }
@@ -1033,7 +1033,7 @@ namespace AssetImport
                     AssetPhysicsEnvironment.Attach(loadProcessBase, importObject.transform, physics.Chains, import.PhysicsEnvironment, import.JointPhysicsBindings);
                     NativeContactController.Attach(loadProcessBase, import.BuildNativeContacts());
                     physics.SetEnabled(enablePhysics);
-                    Logger.LogDebug($"Created {dBones.Count} dynamic bone chains on {loadProcess.Import.SourceFileName}; physics {(enablePhysics ? "ON" : "OFF")}");
+                    if (AssetDebug.Enabled) Logger.LogInfo($"Created {dBones.Count} dynamic bone chains on {loadProcess.Import.SourceFileName}; physics {(enablePhysics ? "ON" : "OFF")}");
                 }
             }
 

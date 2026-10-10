@@ -40,11 +40,11 @@ namespace AssetImport
                     });
                 }
                 binding.Joints = joints.ToArray(); bindings.Add(binding);
-                Logger.LogInfo("PMX angular constraints: root=" + chain.m_Root.name + "; mapped=" + joints.Count + ". Translational/coupled joint dynamics require a rigid-body solver.");
+                if (AssetDebug.Enabled) Logger.LogInfo("PMX angular constraints: root=" + chain.m_Root.name + "; mapped=" + joints.Count + ". Translational/coupled joint dynamics require a rigid-body solver.");
             }
             JointPhysicsBindings = bindings.ToArray();
-            foreach (var warning in plan.Warnings) Logger.LogDebug("PMX joints: " + warning);
-            if (plan.Warnings.Count > 0) Logger.LogWarning("PMX joints: " + plan.Warnings.Count + " unsupported/invalid bindings; keeping shape retention for these parts. See debug log for joint IDs.");
+            if (AssetDebug.Enabled) foreach (var warning in plan.Warnings) Logger.LogInfo("PMX joints: " + warning);
+            if (plan.Warnings.Count > 0) Logger.LogWarning("PMX joints: " + plan.Warnings.Count + " unsupported/invalid bindings; keeping shape retention for these parts. Enable Debug for joint IDs.");
         }
     }
 }

@@ -61,7 +61,7 @@ namespace AssetImport
                     collider.m_Direction = (DynamicBoneCollider.Direction)body.Direction;
                     collider.m_Bound = DynamicBoneCollider.Bound.Outside;
                     colliders.Add(index, collider);
-                    Logger.LogDebug($"PMX collider: {obj.name}; bone={body.Bone}; radius={body.Radius}; height={body.Height}; boxApproximation={body.BoxApproximation}");
+                    if (AssetDebug.Enabled) Logger.LogInfo($"PMX collider: {obj.name}; bone={body.Bone}; radius={body.Radius}; height={body.Height}; boxApproximation={body.BoxApproximation}");
                 }
                 for (int i = 0; i < chains.Count; i++)
                 {
@@ -90,8 +90,8 @@ namespace AssetImport
                                     "; model/physics host scale must be finite and nonzero. Existing radius was preserved.");
                         }
                     }
-                    Logger.LogInfo($"PMX collision binding: root={chain.m_Root.name}; bodyColliders={binding.ColliderIndices.Length}; particleRadius={chain.m_Radius}; metadata={binding.HasPhysicsMetadata}; mixedFilters={binding.MixedFilters}; hairAssistAdded={binding.AssistedColliderIndices.Length}");
-                    if (binding.AssistedColliderIndices.Length != 0)
+                    if (AssetDebug.Enabled) Logger.LogInfo($"PMX collision binding: root={chain.m_Root.name}; bodyColliders={binding.ColliderIndices.Length}; particleRadius={chain.m_Radius}; metadata={binding.HasPhysicsMetadata}; mixedFilters={binding.MixedFilters}; hairAssistAdded={binding.AssistedColliderIndices.Length}");
+                    if (AssetDebug.Enabled && binding.AssistedColliderIndices.Length != 0)
                         Logger.LogInfo("PMX hair collision assist: root=" + chain.m_Root.name + "; PMX group override added bodies=" +
                             string.Join(", ", binding.AssistedColliderIndices.Select(index => plan.Colliders[index].Index + ":" + plan.Colliders[index].Name).ToArray()));
                     if (!binding.HasPhysicsMetadata)
@@ -99,7 +99,7 @@ namespace AssetImport
                     else if (binding.ColliderIndices.Length == 0)
                         Logger.LogWarning("No permitted body colliders for " + chain.m_Root.name + ". PMX collision masks and chain ownership were preserved.");
                     if (binding.MixedFilters)
-                        Logger.LogWarning("PMX chain uses mixed collision filters: " + chain.m_Root.name + ". Original bindings require every dynamic body to allow the obstacle; explicit hair-assist additions are logged separately.");
+                        Logger.LogWarning("PMX chain uses mixed collision filters: " + chain.m_Root.name + ". Original bindings require every dynamic body to allow the obstacle; enable Debug to inspect hair-assist additions.");
                 }
                 var collisionScale = physicsProfile == 1 ? GameObject.transform.lossyScale : importScale;
                 if (Math.Abs(Math.Abs(collisionScale.x) - Math.Abs(collisionScale.y)) > .0001f ||
