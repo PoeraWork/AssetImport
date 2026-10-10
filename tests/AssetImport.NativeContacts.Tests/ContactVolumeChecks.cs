@@ -26,15 +26,15 @@ internal static class ContactVolumeChecks
         var settings = new PhysicsEnvironmentSettings { NativeBreastContacts = true };
         var pref = settings.EditRoot(root.name); pref.BreastRole = 1; pref.BreastRadiusScale = 4;
         var legacy = NativeContactSelection.Resolve(definition, env.Chains, settings);
-        check(legacy.Length == 2 && Math.Abs(legacy[0].Radius - .004f) < 1e-6f, "old scene source volumes and 400 percent retain their exact baseline");
+        check(legacy.Length == 1 && legacy[0].Bone == tip && Math.Abs(legacy[0].Radius - .004f) < 1e-6f, "source mode retains saved endpoint size while removing intermediate probes");
         pref.BreastMeshVolume = true; pref.BreastRadiusScale = 1;
         var fit = NativeContactSelection.Resolve(definition, env.Chains, settings);
-        check(fit.Length == 1 && fit[0].Bone == part && Math.Abs(fit[0].Radius - .1f) < 1e-6f,
-            "dense parent-child helpers form one mesh-sized contact independent of tiny PMX bodies");
-        check((fit[0].ReferenceCenter - new Vector3(.2f, 0, .1f)).magnitude < 1e-6f &&
-            (fit[0].Center - new Vector3(.16f, 0, .1f)).magnitude < 1e-6f,
+        check(fit.Length == 1 && fit[0].Bone == tip && Math.Abs(fit[0].Radius - .05f) < 1e-6f,
+            "mesh fitting sizes only the endpoint and cannot reintroduce a root probe");
+        check((fit[0].ReferenceCenter - new Vector3(.25f, .05f, .15f)).magnitude < 1e-6f &&
+            (fit[0].Center - new Vector3(.25f, .05f, .15f)).magnitude < 1e-6f,
             "mesh fit moves both reference and local centers to the visible region");
-        check(fit[0].Radius < 1 && fit[0].SourceBody.Contains("2 bones"), "independent nested chain cannot inflate the parent's mesh volume");
+        check(fit[0].Radius < 1 && fit[0].SourceBody == "Endpoint weighted mesh region", "independent nested chain cannot inflate the endpoint volume");
         part.position = new(5, 6, 7);
         var posed = NativeContactSelection.Resolve(definition, env.Chains, settings);
         check((posed[0].Center - fit[0].Center).magnitude < 1e-6f, "fitting uses source mesh bounds rather than an animated or scaled pose");
@@ -53,10 +53,10 @@ internal static class ContactVolumeChecks
         var native = DynamicBone_Ver02.Created[^1];
         check(preview.Length == controller.ContactShapes.Length && Math.Abs(native.Patterns[0].Params[1].CollisionRadius - .48f) < 1e-6f,
             "preview and actual native solver share the custom radius with model scale applied exactly once");
-        check((part.position - original - DynamicBone_Ver02.Output).magnitude < 1e-5f &&
+        check((part.position - original).magnitude < 1e-5f &&
             (tip.position - originalTip - DynamicBone_Ver02.Output).magnitude < 1e-5f,
-            "one fitted contact carries all deforming children without counter-writing the parent displacement");
-        check(controller.BuildDiagnosticReport().Contains("Weighted mesh region (2 bones)") &&
+            "endpoint contact leaves the chain's parent transforms under ordinary physics control");
+        check(controller.BuildDiagnosticReport().Contains("Endpoint weighted mesh region") &&
             controller.BuildDiagnosticReport().Contains("worldRadius=0.48"), "diagnostic report contains actual fitted geometry and scaled radius");
         controller.ResetContacts();
         check((part.position - original).magnitude < 1e-5f && (tip.position - originalTip).magnitude < 1e-5f,
@@ -66,11 +66,11 @@ internal static class ContactVolumeChecks
         check(saved.BreastMeshVolume && saved.BreastRadiusOverride == .24f && saved.BreastOffsetZ == .04f,
             "mesh fitting, absolute radius and center offsets survive scene persistence");
         pref.BreastMeshVolume = false; pref.BreastRadiusOverride = 0; pref.BreastOffsetX = pref.BreastOffsetY = pref.BreastOffsetZ = 0;
-        check(NativeContactSelection.Resolve(definition, env.Chains, settings).Length == 2,
-            "source volume mode restores independent spheres without losing chain role");
+        check(NativeContactSelection.Resolve(definition, env.Chains, settings).Length == 1,
+            "source volume mode cannot reintroduce intermediate spheres");
         mainShape.MeshMax = mainShape.MeshMin; tipShape.HasMeshBounds = false; pref.BreastMeshVolume = true;
-        check(NativeContactSelection.Resolve(definition, env.Chains, settings).Length == 2,
-            "missing or degenerate mesh regions retain valid source volumes");
+        check(NativeContactSelection.Resolve(definition, env.Chains, settings).Length == 1,
+            "missing or degenerate mesh regions retain valid endpoint source volumes");
         var clean = new PhysicsChainSettings { BreastRadiusOverride = float.NaN, BreastOffsetX = float.PositiveInfinity,
             BreastOffsetY = -99, BreastOffsetZ = 99 }.Copy();
         check(clean.BreastRadiusOverride == 0 && clean.BreastOffsetX == 0 && clean.BreastOffsetY == -2 && clean.BreastOffsetZ == 2,

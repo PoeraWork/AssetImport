@@ -6,19 +6,20 @@ namespace AssetImport
     internal static class NativeContactPairPolicy
     {
         // A volume carried by this breast cannot be an independent obstacle.
-        // A supporting ancestor that overlaps it in the PMX reference pose is
-        // part of the authored rest arrangement, not an incoming contact.
-        // Independent branches (including arms) remain eligible even if the
-        // user enables contact while they already touch the breast.
+        // Authored overlap also occurs between sibling append/deformation
+        // branches. Those shapes are not incoming contacts. Reference data is
+        // never recaptured when enabling in an animated pose.
         internal static string Exclusion(NativeContactShape breast, NativeContactShape obstacle)
         {
             if (!breast.Bone || !obstacle.Bone) return "missing-bone";
             if (obstacle.Bone.IsChildOf(breast.Bone)) return "moves-with-breast";
-            if (!breast.Bone.IsChildOf(obstacle.Bone)) return null;
-            if (!breast.HasReferencePose || !obstacle.HasReferencePose) return "ancestor-without-reference-pose";
+            if (breast.ContactRoot && (obstacle.Bone.IsChildOf(breast.ContactRoot) ||
+                (obstacle.Driver && obstacle.Driver.IsChildOf(breast.ContactRoot)))) return "same-physics-chain";
+            bool ancestor = breast.Bone.IsChildOf(obstacle.Bone);
+            if (!breast.HasReferencePose || !obstacle.HasReferencePose) return ancestor ? "ancestor-without-reference-pose" : null;
             float gap = ReferenceGap(breast, obstacle);
             if (!PhysicsEnvironmentMath.Finite(gap)) return "invalid-reference-geometry";
-            return gap < 0 ? "ancestor-overlaps-reference-pose" : null;
+            return gap < 0 ? (ancestor ? "ancestor-overlaps-reference-pose" : "overlaps-reference-pose") : null;
         }
 
         internal static float ReferenceGap(NativeContactShape breast, NativeContactShape obstacle)

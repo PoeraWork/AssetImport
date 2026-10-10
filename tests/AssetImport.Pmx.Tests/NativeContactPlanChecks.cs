@@ -60,6 +60,25 @@ internal static class NativeContactPlanChecks
             Math.Abs(meshShape.MeshMax.x + .0832f) < 1e-6f && Math.Abs(meshShape.MeshMin.z + 7 * .0832f) < 1e-6f &&
             Math.Abs(meshShape.MeshMax.y - 6 * .0832f) < 1e-6f,
             "mesh bounds bind in stable import units with correct min/max after handedness conversion");
+        var followers = new PmxModel { Bones = [
+            new() { Name = "root", Parent = -1 }, new() { Name = "joint", Parent = 0 },
+            new() { Name = "append", Parent = 0, Flags = 0x300, GrantParent = 1, GrantWeight = 1 },
+            new() { Name = "weighted leaf", Parent = 0, Flags = 0x300, GrantParent = 2, GrantWeight = 1, Position = new(0, 2, 0) }],
+            Vertices = [new() { Bones = [3], Weights = [1f] }], RigidBodyData = [] };
+        var appendImport = new Import(followers);
+        var follower = appendImport.BuildNativeContacts().ManualCandidates.Single();
+        check(follower.Bone == appendImport.Bone(3) && follower.Driver == appendImport.Bone(1) &&
+            Math.Abs(follower.ReferenceCenter.y - .1664f) < 1e-6f,
+            "transitive PMX append dependencies identify the logical endpoint driver without changing weighted output or reference geometry");
+        followers.Bones[3].GrantWeight = 0;
+        check(appendImport.BuildNativeContacts().ManualCandidates.Single().Driver == appendImport.Bone(3),
+            "zero-weight append operation does not collapse an independent contact branch");
+        followers.Bones[3].GrantWeight = 1; followers.Bones[2].GrantParent = 3;
+        check(appendImport.BuildNativeContacts().ManualCandidates.Single().Driver == appendImport.Bone(3),
+            "disabled cyclic append operation retains the weighted bone as endpoint driver");
+        followers.Bones[3].GrantParent = 99;
+        check(appendImport.BuildNativeContacts().ManualCandidates.Single().Driver == appendImport.Bone(3),
+            "out-of-range append parent cannot break optional contact metadata binding");
         model.Vertices = []; check(PmxNativeContactPlan.Build(model).Breasts.Count == 0, "unweighted helper bones cannot be selected as deforming breasts");
         check(PmxNativeContactPlan.Build(model).Describe(model).Contains("result=unweighted"), "unweighted rejection is diagnosed");
         model.RigidBodyData = [];

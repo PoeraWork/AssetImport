@@ -7,6 +7,7 @@ namespace AssetImport
     internal sealed class NativeContactShape
     {
         public Transform Bone;
+        public Transform Driver, ContactRoot;
         public Vector3 Center;
         public Quaternion Rotation = new Quaternion(0, 0, 0, 1);
         public float Radius, Height;

@@ -97,7 +97,7 @@ namespace AssetImport
             if (contacts && _chainSelection.Count > 0)
             {
                 var shapes = DisplayedBreastShapes(contacts);
-                summary = shapes.Length + " sphere(s), radius " + (shapes.Length == 0 ? "--" :
+                summary = shapes.Length + " endpoint(s), radius " + (shapes.Length == 0 ? "--" :
                     shapes.Min(s => s.Radius).ToString("0.####", CultureInfo.InvariantCulture) + " - " + shapes.Max(s => s.Radius).ToString("0.####", CultureInfo.InvariantCulture)) +
                     (_breastPreviewApplied ? (_environment.Settings.NativeBreastContacts ? " (applied)" : " (contacts OFF)") : " (draft; click Apply)");
             }
@@ -122,7 +122,7 @@ namespace AssetImport
             GUI.enabled = true;
             string help = !contacts ? "Breast contacts require an imported PMX model." : !valid ? "Radius: 0 to 2. Offsets: -2 to 2. Scale: 10% to 400%." :
                 !_environmentDraft.NativeBreastContacts ? "Enable Breast contacts in Selected model physics to use these settings." :
-                "Fit groups deforming bones by mesh region. Yellow: allowed body obstacles (max 64). Up to 16 spheres shown; Apply activates edits.";
+                "Contacts use branch endpoints only. Fit adjusts each endpoint's mesh region. Yellow: allowed body obstacles (max 64); Apply activates edits.";
             GUI.Label(new Rect(12, y + 269, 615, 36), help, new GUIStyle(GUI.skin.label) { wordWrap = true });
         }
 

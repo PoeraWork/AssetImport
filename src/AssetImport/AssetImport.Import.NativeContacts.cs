@@ -12,13 +12,14 @@ namespace AssetImport
             try
             {
                 var plan = PmxNativeContactPlan.Build(_pmx);
+                var animation = PmxAnimationPlan.Build(_pmx);
                 var bones = new Dictionary<string, Transform>(StringComparer.Ordinal);
                 foreach (var bone in GameObject.GetComponentsInChildren<Transform>(true)) bones[bone.name] = bone;
                 return new NativeContactDefinition { Model = GameObject.transform,
                     RecognitionReport = plan.Describe(_pmx),
-                    Breasts = BindNativeShapes(plan.Breasts, bones, plan.MeshBounds),
-                    ManualCandidates = BindNativeShapes(plan.ManualCandidates, bones, plan.MeshBounds),
-                    Obstacles = BindNativeShapes(plan.Obstacles, bones, plan.MeshBounds) };
+                    Breasts = BindNativeShapes(plan.Breasts, bones, plan.MeshBounds, animation),
+                    ManualCandidates = BindNativeShapes(plan.ManualCandidates, bones, plan.MeshBounds, animation),
+                    Obstacles = BindNativeShapes(plan.Obstacles, bones, plan.MeshBounds, animation) };
             }
             catch (Exception error)
             {
@@ -28,7 +29,7 @@ namespace AssetImport
         }
 
         private NativeContactShape[] BindNativeShapes(List<PmxBodyCollider> shapes, Dictionary<string, Transform> bones,
-            Dictionary<int, PmxContactBounds> meshBounds)
+            Dictionary<int, PmxContactBounds> meshBounds, PmxAnimationPlan animation)
         {
             var result = new List<NativeContactShape>();
             foreach (var shape in shapes)
@@ -44,6 +45,18 @@ namespace AssetImport
                     Center = new Vector3(shape.LocalPosition.X, shape.LocalPosition.Y, shape.LocalPosition.Z),
                     Radius = shape.Radius, Height = shape.Height, Direction = shape.Direction,
                     Rotation = new Quaternion(shape.Rotation[0], shape.Rotation[1], shape.Rotation[2], shape.Rotation[3]) };
+                // Weighted append followers may be separate leaf transforms at
+                // every joint. Resolve their authored driving bone so those
+                // leaves do not all masquerade as chain endpoints.
+                int driver = shape.Bone;
+                for (int depth = 0; depth < _pmx.Bones.Length && animation.Grant[driver]; depth++)
+                {
+                    int next = _pmx.Bones[driver].GrantParent;
+                    if (next < 0 || next >= _pmx.Bones.Length || next == driver) break;
+                    driver = next;
+                }
+                Transform driverBone;
+                if (bones.TryGetValue(PmxModel.BoneName(driver, _pmx.Bones[driver].Name), out driverBone)) bound.Driver = driverBone;
                 PmxContactBounds bounds;
                 if (meshBounds.TryGetValue(shape.Bone, out bounds))
                 {

@@ -159,14 +159,26 @@ namespace AssetImport
             if (Definition != null)
             {
                 report.AppendLine("Recognition:\n" + Definition.RecognitionReport);
+                report.AppendLine("Contact policy: branch-endpoints; authored-reference-overlap excluded");
                 report.AppendLine("Bound breasts=" + EligibleCount + "; obstacles=" + Definition.Obstacles.Length);
+                var selected = new HashSet<Transform>();
+                foreach (var shape in ContactShapes) selected.Add(shape.Bone);
+                foreach (var candidate in NativeContactSelection.Candidates(Definition,
+                    _environment ? _environment.Chains : null, _environment ? _environment.Settings : null))
+                    report.AppendLine("Endpoint candidate: bone=" + candidate.Bone.name +
+                        "; parent=" + (candidate.Bone.parent ? candidate.Bone.parent.name : "none") +
+                        "; driver=" + (candidate.Driver ? candidate.Driver.name : "none") +
+                        "; endpointNode=" + NativeContactSelection.EndpointNode(candidate).name +
+                        "; chain=" + candidate.ChainRoot + "; result=" + (selected.Contains(candidate.Bone) ? "endpoint" : "intermediate"));
                 for (int i = 0; i < ContactShapes.Length; i++)
                 {
                     var shape = ContactShapes[i];
                     report.AppendLine("Contact selection: bone=" + (shape.Bone ? shape.Bone.name : "missing") +
                         "; selection=" + shape.Selection + "; chain=" + shape.ChainRoot + "; source=" + shape.SourceBody +
                         "; radius=" + Number(shape.Radius) + "; localCenter=" + Vector(shape.Center) +
-                        "; worldRadius=" + Number(shape.Radius * (shape.Bone ? Math.Abs(shape.Bone.lossyScale.x) : 0)));
+                        "; worldRadius=" + Number(shape.Radius * (shape.Bone ? Math.Abs(shape.Bone.lossyScale.x) : 0)) +
+                        "; endpointNode=" + (NativeContactSelection.EndpointNode(shape) ? NativeContactSelection.EndpointNode(shape).name : "missing") +
+                        "; parent=" + (shape.Bone && shape.Bone.parent ? shape.Bone.parent.name : "none"));
                     report.AppendLine(ContactSample(shape));
                     if (_engines != null && i < _engines.Length && _engines[i] != null)
                         report.AppendLine(ProbeState(i));
@@ -181,7 +193,9 @@ namespace AssetImport
                     foreach (var obstacle in Definition.Obstacles)
                         report.AppendLine("Pair: breast=" + (shape.Bone ? shape.Bone.name : "missing") + "; obstacle=" + obstacle.SourceBody +
                             "; result=" + (NativeContactPairPolicy.Exclusion(shape, obstacle) ?? "allowed") +
-                            "; referenceGap=" + (shape.HasReferencePose && obstacle.HasReferencePose ? Number(NativeContactPairPolicy.ReferenceGap(shape, obstacle)) : "unavailable"));
+                            "; referenceGap=" + (shape.HasReferencePose && obstacle.HasReferencePose ? Number(NativeContactPairPolicy.ReferenceGap(shape, obstacle)) : "unavailable") +
+                            "; liveGap=" + (shape.Bone && obstacle.Bone ? Number(SurfaceGap(shape.Bone.TransformPoint(shape.Center),
+                                shape.Radius * Math.Abs(shape.Bone.lossyScale.x), obstacle)) : "unavailable"));
                 }
                 foreach (var shape in Definition.Obstacles)
                     report.AppendLine("Obstacle: " + shape.SourceBody + "; bone=" + (shape.Bone ? shape.Bone.name : "missing") +
