@@ -19,13 +19,46 @@ namespace AssetImport
                     RecognitionReport = plan.Describe(_pmx),
                     Breasts = BindNativeShapes(plan.Breasts, bones, plan.MeshBounds, animation),
                     ManualCandidates = BindNativeShapes(plan.ManualCandidates, bones, plan.MeshBounds, animation),
-                    Obstacles = BindNativeShapes(plan.Obstacles, bones, plan.MeshBounds, animation) };
+                    Obstacles = BindNativeShapes(plan.Obstacles, bones, plan.MeshBounds, animation),
+                    PositionGrants = BindContactGrants(bones, animation) };
             }
             catch (Exception error)
             {
                 Logger.LogWarning("Optional breast contact metadata could not be prepared; ordinary import continues. " + error.Message);
                 return null;
             }
+        }
+
+        private NativeContactGrant[] BindContactGrants(Dictionary<string, Transform> bones, PmxAnimationPlan animation)
+        {
+            var pending = new List<NativeContactGrant>();
+            for (int i = 0; i < _pmx.Bones.Length; i++)
+            {
+                var data = _pmx.Bones[i]; Transform target, source;
+                // A positional contact cannot generate a rotation grant. Local
+                // grants are not implemented by the PMX animation bridge either.
+                if (!animation.Grant[i] || (data.Flags & 0x200) == 0 || (data.Flags & 0x80) != 0 ||
+                    data.GrantParent < 0 || data.GrantParent >= _pmx.Bones.Length ||
+                    float.IsNaN(data.GrantWeight) || float.IsInfinity(data.GrantWeight) ||
+                    !bones.TryGetValue(PmxModel.BoneName(i, data.Name), out target) ||
+                    !bones.TryGetValue(PmxModel.BoneName(data.GrantParent, _pmx.Bones[data.GrantParent].Name), out source)) continue;
+                pending.Add(new NativeContactGrant { Bone = target, Source = source, Rate = data.GrantWeight });
+            }
+            var ordered = new List<NativeContactGrant>();
+            var targets = new HashSet<Transform>();
+            foreach (var grant in pending) targets.Add(grant.Bone);
+            while (pending.Count > 0)
+            {
+                bool progressed = false;
+                for (int i = 0; i < pending.Count;)
+                {
+                    var grant = pending[i];
+                    if (targets.Contains(grant.Source)) { i++; continue; }
+                    ordered.Add(grant); targets.Remove(grant.Bone); pending.RemoveAt(i); progressed = true;
+                }
+                if (!progressed) break; // Cyclic optional metadata cannot block import.
+            }
+            return ordered.ToArray();
         }
 
         private NativeContactShape[] BindNativeShapes(List<PmxBodyCollider> shapes, Dictionary<string, Transform> bones,

@@ -53,7 +53,7 @@ namespace AssetImport
 
         // Only the last deforming target of each branch gets a probe. PMX
         // append followers use their source joint for this topology decision;
-        // output still goes to the actual weighted transform.
+        // if that source is itself eligible, sibling followers share its probe.
         private static void KeepEndpoints(List<NativeContactShape> shapes)
         {
             var keep = new List<NativeContactShape>();
@@ -64,7 +64,8 @@ namespace AssetImport
                 {
                     if (i == j || candidate.ChainRoot != shapes[j].ChainRoot) continue;
                     var other = EndpointNode(shapes[j]);
-                    if ((other != node && other.IsChildOf(node)) ||
+                    if ((other == node && shapes[j].Bone == node && candidate.Bone != node) ||
+                        (other != node && other.IsChildOf(node)) ||
                         (other == node && shapes[j].Bone != candidate.Bone && shapes[j].Bone.IsChildOf(candidate.Bone)))
                     { terminal = false; break; }
                 }

@@ -58,7 +58,8 @@ namespace AssetImport
             return "state=" + _diagnosticState + "; writePhase=LateUpdate; lateUpdates=" + _lateUpdates +
                 "; cameraCallbacks=" + _cameraCallbacks + "; renderObservations=" + _renderObservations +
                 "; observedRenderFrame=" + _observedRenderFrame + "; renderWriteError=" + Number(_renderWriteError) +
-                "; maxRenderWriteError=" + Number(_maximumRenderWriteError) + "; ticks=" + _ticks +
+                "; maxRenderWriteError=" + Number(_maximumRenderWriteError) +
+                "; followerRenderWriteError=" + Number(_followerRenderWriteError) + "; ticks=" + _ticks +
                 "; solverSteps=" + _solverSteps + "; poseWrites=" + _poseWrites + "; dt=" + Number(_lastElapsed) +
                 "; lastDisplacement=" + Number(_lastDisplacement) + "; maxDisplacement=" + Number(_maximumDisplacement) +
                 "; changedAfterWrite=" + _changedAfterWrite + "; resets=" + _resets;
@@ -101,6 +102,7 @@ namespace AssetImport
                     _renderWriteError = Math.Max(_renderWriteError, (_renderCenters[i] - _outputCenters[i]).magnitude);
                 }
                 _maximumRenderWriteError = Math.Max(_maximumRenderWriteError, _renderWriteError);
+                ObserveContactGrants();
                 _observedRenderFrame = Time.frameCount; _renderObservations++;
             }
             catch (Exception error)
@@ -159,7 +161,7 @@ namespace AssetImport
             if (Definition != null)
             {
                 report.AppendLine("Recognition:\n" + Definition.RecognitionReport);
-                report.AppendLine("Contact policy: branch-endpoints; authored-reference-overlap excluded");
+                report.AppendLine("Contact policy: branch-endpoints; shared-driver deduplicated; authored-reference-overlap excluded");
                 report.AppendLine("Bound breasts=" + EligibleCount + "; obstacles=" + Definition.Obstacles.Length);
                 var selected = new HashSet<Transform>();
                 foreach (var shape in ContactShapes) selected.Add(shape.Bone);
@@ -169,7 +171,8 @@ namespace AssetImport
                         "; parent=" + (candidate.Bone.parent ? candidate.Bone.parent.name : "none") +
                         "; driver=" + (candidate.Driver ? candidate.Driver.name : "none") +
                         "; endpointNode=" + NativeContactSelection.EndpointNode(candidate).name +
-                        "; chain=" + candidate.ChainRoot + "; result=" + (selected.Contains(candidate.Bone) ? "endpoint" : "intermediate"));
+                        "; chain=" + candidate.ChainRoot + "; result=" + (selected.Contains(candidate.Bone) ? "endpoint" :
+                            selected.Contains(NativeContactSelection.EndpointNode(candidate)) ? "shared-driver" : "intermediate"));
                 for (int i = 0; i < ContactShapes.Length; i++)
                 {
                     var shape = ContactShapes[i];
@@ -200,6 +203,7 @@ namespace AssetImport
                 foreach (var shape in Definition.Obstacles)
                     report.AppendLine("Obstacle: " + shape.SourceBody + "; bone=" + (shape.Bone ? shape.Bone.name : "missing") +
                         "; localCenter=" + Vector(shape.Center) + "; radius=" + Number(shape.Radius) + "; height=" + Number(shape.Height));
+                AppendGrantDiagnostics(report);
             }
             report.AppendLine(_writebackGeometry);
             AppendSkinBindings(report);

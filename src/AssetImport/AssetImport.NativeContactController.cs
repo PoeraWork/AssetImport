@@ -159,6 +159,7 @@ namespace AssetImport
                 { Status = "Breast contacts: no independent contact pairs"; DiagnosticState("no-contact-pairs"); return; }
                 // Import binding is sorted by ancestry. Real bone rotations and
                 // scales remain the original animation/ordinary physics output.
+                CaptureGrantInputs();
                 _written = true;
                 for (int i = 0; i < EligibleCount; i++)
                 {
@@ -168,8 +169,12 @@ namespace AssetImport
                         ContactShapes[i].Bone.position = _baseWorld[i] + _displacements[i];
                     _writtenLocal[i] = ContactShapes[i].Bone.localPosition;
                 }
+                ApplyContactGrants();
                 for (int i = 0; i < EligibleCount; i++)
+                {
+                    _writtenLocal[i] = ContactShapes[i].Bone.localPosition;
                     _outputCenters[i] = ContactShapes[i].Bone.TransformPoint(ContactShapes[i].Center);
+                }
                 RecordWriteback();
                 Status = "Breast contacts: " + active + " active / " + EligibleCount;
                 _poseWrites++; _lastDisplacement = maximum; _maximumDisplacement = Math.Max(_maximumDisplacement, maximum);
@@ -223,6 +228,7 @@ namespace AssetImport
             _writtenLocal = new Vector3[count]; _displacements = new Vector3[count];
             _inputCenters = new Vector3[count]; _outputCenters = new Vector3[count];
             _lastWriteFrame = -1;
+            BindGrantPoses();
             for (int i = 0; i < count; i++)
             {
                 var shape = ContactShapes[i];
@@ -252,6 +258,7 @@ namespace AssetImport
         internal void Restore()
         {
             if (!_written || Definition == null) return;
+            RestoreContactGrants();
             for (int i = 0; i < ContactShapes.Length; i++)
             {
                 var bone = ContactShapes[i].Bone;
@@ -266,6 +273,7 @@ namespace AssetImport
             _engines = null;
             foreach (var obj in _objects) if (obj && obj.transform.IsChildOf(transform)) UnityEngine.Object.Destroy(obj);
             _objects.Clear(); _obstacles = null; _obstacleShapes = null;
+            _grantPoses = null;
         }
         private static float UniformScale(Transform bone)
         {

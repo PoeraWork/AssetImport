@@ -66,16 +66,37 @@ internal static class NativeContactPlanChecks
             new() { Name = "weighted leaf", Parent = 0, Flags = 0x300, GrantParent = 2, GrantWeight = 1, Position = new(0, 2, 0) }],
             Vertices = [new() { Bones = [3], Weights = [1f] }], RigidBodyData = [] };
         var appendImport = new Import(followers);
-        var follower = appendImport.BuildNativeContacts().ManualCandidates.Single();
+        var appendDefinition = appendImport.BuildNativeContacts();
+        var follower = appendDefinition.ManualCandidates.Single();
         check(follower.Bone == appendImport.Bone(3) && follower.Driver == appendImport.Bone(1) &&
             Math.Abs(follower.ReferenceCenter.y - .1664f) < 1e-6f,
             "transitive PMX append dependencies identify the logical endpoint driver without changing weighted output or reference geometry");
+        check(appendDefinition.PositionGrants.Length == 2 && appendDefinition.PositionGrants[0].Bone == appendImport.Bone(2) &&
+            appendDefinition.PositionGrants[1].Source == appendImport.Bone(2), "contact position grants bind in dependency order");
+        followers.Bones[2].GrantWeight = .5f; followers.Bones[3].GrantWeight = -.25f;
+        appendDefinition = appendImport.BuildNativeContacts();
+        check(appendDefinition.PositionGrants[0].Rate == .5f && appendDefinition.PositionGrants[1].Rate == -.25f,
+            "contact propagation retains authored fractional and negative grant rates");
+        followers.Bones[2].Flags = 0x100;
+        check(appendImport.BuildNativeContacts().PositionGrants.All(g => g.Bone != appendImport.Bone(2)),
+            "rotation-only grants do not manufacture positional deformation");
+        followers.Bones[2].Flags = 0x380;
+        check(appendImport.BuildNativeContacts().PositionGrants.All(g => g.Bone != appendImport.Bone(2)),
+            "unsupported local grants do not acquire guessed contact propagation");
+        followers.Bones[2].Flags = 0x300;
+        followers.Bones[2].GrantParent = 3; followers.Bones[3].GrantParent = 1;
+        appendDefinition = appendImport.BuildNativeContacts();
+        check(appendDefinition.PositionGrants[0].Bone == appendImport.Bone(3) && appendDefinition.PositionGrants[1].Bone == appendImport.Bone(2),
+            "forward-index grant sources are emitted before dependent followers");
+        followers.Bones[2].GrantParent = 1; followers.Bones[3].GrantParent = 2;
         followers.Bones[3].GrantWeight = 0;
         check(appendImport.BuildNativeContacts().ManualCandidates.Single().Driver == appendImport.Bone(3),
             "zero-weight append operation does not collapse an independent contact branch");
         followers.Bones[3].GrantWeight = 1; followers.Bones[2].GrantParent = 3;
         check(appendImport.BuildNativeContacts().ManualCandidates.Single().Driver == appendImport.Bone(3),
             "disabled cyclic append operation retains the weighted bone as endpoint driver");
+        check(appendImport.BuildNativeContacts().PositionGrants.Length == 0,
+            "cyclic append operations cannot enter the contact propagation graph");
         followers.Bones[3].GrantParent = 99;
         check(appendImport.BuildNativeContacts().ManualCandidates.Single().Driver == appendImport.Bone(3),
             "out-of-range append parent cannot break optional contact metadata binding");

@@ -21,6 +21,13 @@ namespace AssetImport
     }
 
     [Serializable]
+    internal sealed class NativeContactGrant
+    {
+        public Transform Bone, Source;
+        public float Rate;
+    }
+
+    [Serializable]
     internal sealed class NativeContactDefinition
     {
         public Transform Model;
@@ -28,5 +35,6 @@ namespace AssetImport
         public NativeContactShape[] Breasts = new NativeContactShape[0];
         public NativeContactShape[] ManualCandidates = new NativeContactShape[0];
         public NativeContactShape[] Obstacles = new NativeContactShape[0];
+        public NativeContactGrant[] PositionGrants = new NativeContactGrant[0];
     }
 }
