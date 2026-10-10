@@ -40,10 +40,10 @@ namespace AssetImport
         private void StopDiagnosticObservation()
         { Camera.onPreRender -= BeforeRender; _observingDebug = false; }
 
-        internal string DiagnosticSummary
+        internal LocalizedText DiagnosticSummary
         {
-            get { return "Bodies: " + EligibleCount + " breast / " + (Definition == null ? 0 : Definition.Obstacles.Length) +
-                " obstacles\nUpdates: " + _ticks + "; shift: " + Number(_lastDisplacement); }
+            get { return L.Message("Bodies: {0} breast / {1} obstacles\nUpdates: {2}; shift: {3}",
+                EligibleCount, Definition == null ? 0 : Definition.Obstacles.Length, _ticks, Number(_lastDisplacement)); }
         }
         internal static string Number(float value) { return value.ToString("G6", CultureInfo.InvariantCulture); }
         private static string Vector(Vector3 v) { return "(" + Number(v.x) + "," + Number(v.y) + "," + Number(v.z) + ")"; }
@@ -51,7 +51,7 @@ namespace AssetImport
         internal void ReportSettingsApplied()
         { DiagnosticEvent("settings-applied; enabled=" + (_environment && _environment.Settings.NativeBreastContacts)); }
 
-        private void Blocked(string state, string status)
+        private void Blocked(string state, LocalizedText status)
         { Release(); _lastDisplacement = 0; Status = status; DiagnosticState(state); }
         private void DiagnosticState(string state)
         {
@@ -95,7 +95,7 @@ namespace AssetImport
             try
             {
                 long since = _ticks - _heartbeatTicks; _heartbeatTicks = _ticks;
-                if (since == 0 && !_failed) Status = "Breast contacts: no late update; save diagnostics";
+                if (since == 0 && !_failed) Status = L.Message("Breast contacts: no late update; save diagnostics");
                 DiagnosticEvent("summary; ticksSinceSummary=" + since + "; " + Counters());
                 if (Definition != null)
                     foreach (var shape in ContactShapes) DiagnosticEvent(ContactSample(shape));
@@ -186,7 +186,7 @@ namespace AssetImport
             if (!_environment) _environment = GetComponent<AssetPhysicsEnvironment>();
             var report = new StringBuilder();
             report.AppendLine("Model: " + ModelName);
-            report.AppendLine("Status: " + Status);
+            report.AppendLine("Status: " + Status.English);
             report.AppendLine("Controller active: " + isActiveAndEnabled + "; environment present: " + (bool)_environment);
             report.AppendLine("Applied enabled: " + (_environment && _environment.Settings.NativeBreastContacts));
             report.AppendLine(Counters());

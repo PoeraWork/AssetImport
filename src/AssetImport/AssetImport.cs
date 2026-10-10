@@ -41,6 +41,7 @@ namespace AssetImport
         internal static ConfigEntry<KeyboardShortcut> hotkey;
         internal static ConfigEntry<string> defaultDir;
         internal static ConfigEntry<bool> debugMode;
+        internal static ConfigEntry<InterfaceLanguage> language;
         internal static ConfigEntry<bool> pmxBodyCollisions;
         internal static ConfigEntry<string> mmddLibraryPath;
         internal static ConfigEntry<string> colorLutPath;
@@ -55,8 +56,12 @@ namespace AssetImport
         void Awake()
         {
             Logger = base.Logger;
+            language = Config.Bind("_General_", "Language", InterfaceLanguage.English,
+                "Interface language. Changes apply immediately.\n界面语言，切换后立即生效。English / 简体中文");
+            L.Language = language.Value;
+            language.SettingChanged += (sender, args) => L.Language = language.Value;
             debugMode = Config.Bind("_General_", "Debug", false,
-                "Enable detailed logs, diagnostic reports, physics previews and asset dumps. Disable for normal use.");
+                "Enable detailed logs, diagnostic reports, physics previews and asset dumps. Disable for normal use.\n开启详细日志、诊断报告、物理预览与资源导出。通常请关闭。");
             AssetDebug.Enabled = debugMode.Value;
             debugMode.SettingChanged += (sender, args) => AssetDebug.Enabled = debugMode.Value;
             NativeContactDiagnostics.Initialize();
@@ -92,15 +97,15 @@ namespace AssetImport
 #endif
             
             KeyboardShortcut defaultShortcut = new KeyboardShortcut(KeyCode.I, KeyCode.LeftAlt);
-            hotkey = Config.Bind("_General_", "Hotkey", defaultShortcut, "Press this key to open the UI");
-            defaultDir = Config.Bind("_General_", "Default Directory", Paths.GameRootPath, "The default directory of the file dialogue.");
+            hotkey = Config.Bind("_General_", "Hotkey", defaultShortcut, "Press this key to open the UI.\n打开界面的快捷键。");
+            defaultDir = Config.Bind("_General_", "Default Directory", Paths.GameRootPath, "The default directory of the file dialogue.\n文件选择窗口的默认目录。");
             pmxBodyCollisions = Config.Bind("PMX", "Enable Body Collisions", true,
-                "Build DynamicBone body colliders from PMX static rigid bodies. Reload the scene/model after changing this setting. Uses PMX collision masks; this is not full MMD rigid-body/joint physics.");
+                "Build DynamicBone body colliders from PMX static rigid bodies. Reload the scene/model after changing this setting. Uses PMX collision masks; this is not full MMD rigid-body/joint physics.\n按 PMX 静态刚体及碰撞分组创建身体碰撞体。修改后需重载模型或场景；并非完整 MMD 刚体物理。");
             mmddLibraryPath = Config.Bind("PMX", "MMDD Library Path", "",
-                "Optional MMDD Lib folder. Leave empty to discover a unique MMDD installation under BepInEx/plugins. Relative paths start at the game root. Re-export PMX Auto after changing this setting.");
+                "Optional MMDD Lib folder. Leave empty to discover a unique MMDD installation under BepInEx/plugins. Relative paths start at the game root. Re-export PMX Auto after changing this setting.\n可选的 MMDD Lib 路径；留空自动查找。相对路径以游戏根目录为起点。修改后请重新生成 PMX Auto 映射。");
 
             colorLutPath = Config.Bind("Textures", "KK Color LUT", Path.Combine(Paths.GameRootPath, "UserData/AssetImport/PS转KK色.cube"),
-                "PS-to-KK 3D .cube LUT used only when Convert diffuse to KK color is checked. Original texture files are never overwritten.");
+                "PS-to-KK 3D .cube LUT used only when Convert diffuse to KK color is checked. Original texture files are never overwritten.\nPS 转 KK 的 .cube 色彩查找表，仅在开启贴图转色时使用，不修改原贴图。");
             Import.InstallMmddRuntime();
             UI = this.GetOrAddComponent<AssetUI>();
 

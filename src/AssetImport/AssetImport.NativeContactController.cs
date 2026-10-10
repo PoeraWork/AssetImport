@@ -25,7 +25,7 @@ namespace AssetImport
         private bool _failed, _reported;
         private int _frame = -1;
         private float _scale;
-        internal string Status { get; private set; } = "Breast contacts: Off";
+        internal LocalizedText Status { get; private set; } = L.Message("Breast contacts: Off");
         internal int EligibleCount { get { return Definition == null ? 0 : ContactShapes.Length; } }
         internal NativeContactShape[] ContactShapes
         {
@@ -53,10 +53,10 @@ namespace AssetImport
             controller.ResetContacts();
             controller.Definition = definition;
             controller._environment = host.GetComponent<AssetPhysicsEnvironment>();
-            controller.Status = "Breast contacts: Off (" + controller.EligibleCount + " eligible)";
+            controller.Status = L.Message("Breast contacts: Off ({0} eligible)", controller.EligibleCount);
             if (AssetDebug.Enabled) AssetImport.Logger.LogInfo("PMX native breast candidates: model=" + definition.Model.name + "; breasts=" +
                 definition.Breasts.Length + "; bodyObstacles=" + definition.Obstacles.Length + ". Disabled until explicitly enabled.");
-            controller.DiagnosticEvent("attached; " + controller.DiagnosticSummary.Replace('\n', ';'));
+            controller.DiagnosticEvent("attached; " + controller.DiagnosticSummary.English.Replace('\n', ';'));
             if (AssetDebug.Enabled) AssetImport.Logger.LogInfo("PMX breast recognition: model=" + definition.Model.name + "\n" + definition.RecognitionReport);
         }
         private void OnEnable()
@@ -123,7 +123,7 @@ namespace AssetImport
             if (!Definition.Model.IsChildOf(transform)) { Blocked("model-owner-mismatch", "Breast contacts: model ownership changed"); return; }
             if (!Definition.Model.gameObject.activeInHierarchy) { Blocked("model-inactive", "Breast contacts: model inactive"); return; }
             if (!_environment.Settings.NativeBreastContacts)
-            { Release(); _failed = false; _reported = false; Status = "Breast contacts: Off (" + EligibleCount + " eligible)"; DiagnosticState("off"); return; }
+            { Release(); _failed = false; _reported = false; Status = L.Message("Breast contacts: Off ({0} eligible)", EligibleCount); DiagnosticState("off"); return; }
             if (_failed) return;
             try
             {
@@ -131,7 +131,7 @@ namespace AssetImport
                 UniformScale(transform);
                 if (EligibleCount == 0 || Definition.Obstacles.Length == 0)
                 {
-                    Status = "Breast contacts: no usable PMX bodies";
+                    Status = L.Message("Breast contacts: no usable PMX bodies");
                     DiagnosticState(EligibleCount == 0 ? "no-breast-bodies" : "no-body-obstacles");
                     if (!_reported) AssetImport.Logger.LogWarning("PMX native breast unavailable: no matching weighted breast body or stable PMX body obstacles.");
                     _reported = true; return;
@@ -157,7 +157,7 @@ namespace AssetImport
                     maximum = Math.Max(maximum, _displacements[i].magnitude); active++;
                 }
                 if (active == 0)
-                { Status = "Breast contacts: no independent contact pairs"; DiagnosticState("no-contact-pairs"); return; }
+                { Status = L.Message("Breast contacts: no independent contact pairs"); DiagnosticState("no-contact-pairs"); return; }
                 // Import binding is sorted by ancestry. Real bone rotations and
                 // scales remain the original animation/ordinary physics output.
                 CaptureGrantInputs();
@@ -177,7 +177,7 @@ namespace AssetImport
                     _outputCenters[i] = ContactShapes[i].Bone.TransformPoint(ContactShapes[i].Center);
                 }
                 RecordWriteback();
-                Status = "Breast contacts: " + active + " active / " + EligibleCount;
+                Status = L.Message("Breast contacts: {0} active / {1}", active, EligibleCount);
                 _poseWrites++; _lastDisplacement = maximum; _maximumDisplacement = Math.Max(_maximumDisplacement, maximum);
                 DiagnosticState(elapsed <= 0 ? "zero-delta-time" : "running");
                 if (!_reported && maximum > .0001f * scale)
@@ -197,7 +197,7 @@ namespace AssetImport
                     for (int i = 0; i < _engines.Length; i++)
                         if (_engines[i] != null) _lastFailure += "\nfailure snapshot; " + ProbeState(i);
                 Restore(); Release(); _failed = true; _lastDisplacement = 0;
-                Status = "Breast contacts unavailable; see log";
+                Status = L.Message("Breast contacts unavailable; see log");
                 DiagnosticState("failed");
                 AssetImport.Logger.LogWarning("PMX native breast adapter stopped; ordinary physics remains active. " + detail);
             }

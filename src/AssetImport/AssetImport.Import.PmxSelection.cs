@@ -7,23 +7,23 @@ namespace AssetImport
     {
         private PmxPhysicsRootSuggestions _pmxRootSuggestions;
 
-        internal string SelectPmxHairRoots()
+        internal LocalizedText SelectPmxHairRoots()
         {
             return SelectPmxSuggestedRoots(true);
         }
 
-        internal string SelectPmxPhysicsRoots()
+        internal LocalizedText SelectPmxPhysicsRoots()
         {
             return SelectPmxSuggestedRoots(false);
         }
 
-        private string SelectPmxSuggestedRoots(bool hairOnly)
+        private LocalizedText SelectPmxSuggestedRoots(bool hairOnly)
         {
             if (!IsPmx || !ImportBones || _pmx == null)
-                return "Enable Import Armature to select PMX physics roots.";
+                return L.Message("Enable Import Armature to select PMX physics roots.");
             if (_pmxRootSuggestions == null) _pmxRootSuggestions = PmxPhysicsRootSuggestions.Build(_pmx);
             var roots = hairOnly ? _pmxRootSuggestions.HairRoots : _pmxRootSuggestions.PhysicsRoots;
-            string label = hairOnly ? "Hair" : "Physics";
+            LocalizedText label = L.Message(hairOnly ? "Hair" : "Physics");
             var names = BoneNodes.ToDictionary(n => n.GameObject.name, StringComparer.Ordinal);
             int added = 0, existing = 0, skipped = 0;
             foreach (int index in roots)
@@ -51,13 +51,13 @@ namespace AssetImport
             if (AssetDebug.Enabled)
                 foreach (string diagnostic in _pmxRootSuggestions.Diagnostics)
                     Logger.LogInfo("PMX root suggestions: " + diagnostic);
-            string status = roots.Length == 0
-                ? (hairOnly ? "No confident hair roots found. Select the hair chain roots manually." : "No usable PMX dynamic chains found; bone names alone do not create physics.")
-                : label + " roots: " + added + " added, " + existing + " already selected, " + skipped + " skipped. Other selections kept.";
+            LocalizedText status = roots.Length == 0
+                ? (hairOnly ? L.Message("No confident hair roots found. Select the hair chain roots manually.") : L.Message("No usable PMX dynamic chains found; bone names alone do not create physics."))
+                : L.Message("{0} roots: {1} added, {2} already selected, {3} skipped. Other selections kept.", label, added, existing, skipped);
             if (!hairOnly && (_pmxRootSuggestions.SkippedRootCount != 0 || _pmxRootSuggestions.IgnoredBodyCount != 0))
-                status += " " + _pmxRootSuggestions.SkippedRootCount + " unsupported roots and " + _pmxRootSuggestions.IgnoredBodyCount + " unbound bodies excluded. Enable Debug for details.";
-            if (skipped > 0) status += " Check overlapping parent/child roots.";
-            Logger.LogInfo("PMX auto " + (hairOnly ? "hair" : "physics") + " selection: " + status);
+                status += L.Message(" {0} unsupported roots and {1} unbound bodies excluded. Enable Debug for details.", _pmxRootSuggestions.SkippedRootCount, _pmxRootSuggestions.IgnoredBodyCount);
+            if (skipped > 0) status += L.Message(" Check overlapping parent/child roots.");
+            Logger.LogInfo("PMX auto " + (hairOnly ? "hair" : "physics") + " selection: " + status.English);
             return status;
         }
 

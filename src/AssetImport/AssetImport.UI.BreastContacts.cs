@@ -22,7 +22,7 @@ namespace AssetImport
         private string _breastLengthText = "0", _breastRotXText = "0", _breastRotYText = "0", _breastRotZText = "0";
 
         private static string BreastRoleName(int role)
-        { return role == 1 ? "Breast" : role == 2 ? "Exclude" : "Automatic"; }
+        { return role == 1 ? L.Text("Breast") : role == 2 ? L.Text("Exclude") : L.Text("Automatic"); }
 
         private void LoadChainBreastSettings(PhysicsChainSettings settings)
         {
@@ -84,17 +84,17 @@ namespace AssetImport
             GUI.enabled = editable;
             for (int role = 0; role < 3; role++)
                 if (CheckButton(new Rect(12 + role * 200, 0, 192, 25), _chainBreastRole == role, BreastRoleName(role))) _chainBreastRole = role;
-            if (CheckButton(new Rect(12, 30, 190, 25), !_chainBreastMeshVolume, "Source volumes")) ResetBreastVolume(false);
-            if (CheckButton(new Rect(212, 30, 190, 25), _chainBreastMeshVolume, "Fit to mesh")) ResetBreastVolume(true);
-            GUI.Label(new Rect(410, 32, 195, 22), "Resets size and center");
-            if (CheckButton(new Rect(12, 60, 100, 25), !_chainBreastCapsule, "Sphere")) _chainBreastCapsule = false;
-            if (CheckButton(new Rect(120, 60, 110, 25), _chainBreastCapsule, "Capsule")) _chainBreastCapsule = true;
+            if (CheckButton(new Rect(12, 30, 190, 25), !_chainBreastMeshVolume, L.Text("Source volumes"))) ResetBreastVolume(false);
+            if (CheckButton(new Rect(212, 30, 190, 25), _chainBreastMeshVolume, L.Text("Fit to mesh"))) ResetBreastVolume(true);
+            GUI.Label(new Rect(410, 32, 195, 22), L.Text("Resets size and center"));
+            if (CheckButton(new Rect(12, 60, 100, 25), !_chainBreastCapsule, L.Text("Sphere"))) _chainBreastCapsule = false;
+            if (CheckButton(new Rect(120, 60, 110, 25), _chainBreastCapsule, L.Text("Capsule"))) _chainBreastCapsule = true;
             GUI.enabled = editable && _chainBreastCapsule;
-            GUI.Label(new Rect(245, 62, 110, 22), "Total length");
+            GUI.Label(new Rect(245, 62, 110, 22), L.Text("Total length"));
             _breastLengthText = GUI.TextField(new Rect(360, 60, 100, 23), _breastLengthText);
-            GUI.Label(new Rect(470, 62, 135, 22), "Min: 2 x radius");
+            GUI.Label(new Rect(470, 62, 135, 22), L.Text("Min: 2 x radius"));
             GUI.enabled = editable;
-            GUI.Label(new Rect(12, 92, 160, 22), "Radius (%)");
+            GUI.Label(new Rect(12, 92, 160, 22), L.Text("Radius (%)"));
             GUI.enabled = editable && _chainBreastRadiusOverride == 0;
             float value = GUI.HorizontalSlider(new Rect(180, 100, 315, 20), _chainBreastRadiusScale, .1f, 4f);
             if (value != _chainBreastRadiusScale)
@@ -104,15 +104,15 @@ namespace AssetImport
             bool valid = ReadContactValue(_chainBreastRadiusText, 10, 400, out percent);
             if (valid) _chainBreastRadiusScale = percent / 100f;
             GUI.enabled = editable;
-            GUI.Label(new Rect(12, 122, 185, 22), "Radius (0 = scaled)");
+            GUI.Label(new Rect(12, 122, 185, 22), L.Text("Radius (0 = scaled)"));
             _breastAbsoluteText = GUI.TextField(new Rect(200, 120, 90, 23), _breastAbsoluteText);
-            GUI.Label(new Rect(302, 122, 300, 22), "Model units; 0 uses percentage");
-            DrawContactVectorFields(150, "Center offset", ref _breastXText, ref _breastYText, ref _breastZText);
+            GUI.Label(new Rect(302, 122, 300, 22), L.Text("Model units; 0 uses percentage"));
+            DrawContactVectorFields(150, L.Text("Center offset"), ref _breastXText, ref _breastYText, ref _breastZText);
             GUI.enabled = editable && _chainBreastCapsule;
-            DrawContactVectorFields(180, "Rotation (deg)", ref _breastRotXText, ref _breastRotYText, ref _breastRotZText);
+            DrawContactVectorFields(180, L.Text("Rotation (deg)"), ref _breastRotXText, ref _breastRotYText, ref _breastRotZText);
             GUI.enabled = editable;
-            if (CheckButton(new Rect(12, 210, 158, 25), _chainBreastMirror, "Mirror across X")) _chainBreastMirror = !_chainBreastMirror;
-            GUI.Label(new Rect(180, 208, 425, 32), "When mirrored: negative X moves inward, positive outward; Y/Z rotations reflect.", new GUIStyle(GUI.skin.label) { wordWrap = true });
+            if (CheckButton(new Rect(12, 210, 158, 25), _chainBreastMirror, L.Text("Mirror across X"))) _chainBreastMirror = !_chainBreastMirror;
+            GUI.Label(new Rect(180, 208, 425, 32), L.Text("When mirrored: negative X moves inward, positive outward; Y/Z rotations reflect."), new GUIStyle(GUI.skin.label) { wordWrap = true });
             float absolute, x, z, offsetY, length, rx, ry, rz;
             bool volumeValid = ReadContactValue(_breastAbsoluteText, 0, 2, out absolute) &
                 ReadContactValue(_breastXText, -2, 2, out x) & ReadContactValue(_breastYText, -2, 2, out offsetY) &
@@ -126,37 +126,37 @@ namespace AssetImport
             GUI.enabled = true;
             if (AssetDebug.Enabled)
             {
-                if (CheckButton(new Rect(12, 244, 190, 25), !_breastPreviewApplied, "Draft (cyan)")) _breastPreviewApplied = false;
-                if (CheckButton(new Rect(212, 244, 190, 25), _breastPreviewApplied, "Applied (green)")) _breastPreviewApplied = true;
-                if (CheckButton(new Rect(412, 244, 190, 25), _breastShowObstacles, "Body obstacles")) _breastShowObstacles = !_breastShowObstacles;
+                if (CheckButton(new Rect(12, 244, 190, 25), !_breastPreviewApplied, L.Text("Draft (cyan)"))) _breastPreviewApplied = false;
+                if (CheckButton(new Rect(212, 244, 190, 25), _breastPreviewApplied, L.Text("Applied (green)"))) _breastPreviewApplied = true;
+                if (CheckButton(new Rect(412, 244, 190, 25), _breastShowObstacles, L.Text("Body obstacles"))) _breastShowObstacles = !_breastShowObstacles;
             }
-            else GUI.Label(new Rect(12, 244, 590, 25), "Enable Debug in the main panel to preview contact volumes.");
-            string summary = "Select one or more physics chains.";
+            else GUI.Label(new Rect(12, 244, 590, 25), L.Text("Enable Debug in the main panel to preview contact volumes."));
+            string summary = L.Text("Select one or more physics chains.");
             if (contacts && _chainSelection.Count > 0)
             {
                 var shapes = DisplayedBreastShapes(contacts);
-                summary = shapes.Length + " endpoint(s), radius " + (shapes.Length == 0 ? "--" :
+                summary = L.Format("{0} endpoint(s), radius {1}", shapes.Length, shapes.Length == 0 ? "--" :
                     shapes.Min(s => s.Radius).ToString("0.####", CultureInfo.InvariantCulture) + " - " + shapes.Max(s => s.Radius).ToString("0.####", CultureInfo.InvariantCulture)) +
-                    (AssetDebug.Enabled && _breastPreviewApplied ? (_environment.Settings.NativeBreastContacts ? " (applied)" : " (contacts OFF)") : " (draft; click Apply)");
+                    (AssetDebug.Enabled && _breastPreviewApplied ? (_environment.Settings.NativeBreastContacts ? L.Text(" (applied)") : L.Text(" (contacts OFF)")) : L.Text(" (draft; click Apply)"));
             }
             GUI.Label(new Rect(12, 274, 590, 23), summary);
             GUI.enabled = editable && valid;
-            if (GUI.Button(new Rect(12, 302, 218, 27), "Apply breast settings"))
+            if (GUI.Button(new Rect(12, 302, 218, 27), L.Text("Apply breast settings")))
             {
                 foreach (string root in _chainSelection) WriteBreastFields(_environmentDraft.EditRoot(root));
                 ApplyPhysicsDraft();
             }
             GUI.enabled = editable;
-            if (GUI.Button(new Rect(240, 302, 185, 27), "Reset breast settings"))
+            if (GUI.Button(new Rect(240, 302, 185, 27), L.Text("Reset breast settings")))
             {
                 LoadChainBreastSettings(null);
                 foreach (string root in _chainSelection) WriteBreastFields(_environmentDraft.EditRoot(root));
                 ApplyPhysicsDraft();
             }
             GUI.enabled = true;
-            string help = !contacts ? "Breast contacts require an imported PMX model." : !valid ? "Radius: 0-2. Length: 0-4. Offset: -2 to 2. Rotation: -180 to 180." :
-                !_environmentDraft.NativeBreastContacts ? "Enable Breast contacts in Selected model physics to use these settings." :
-                "Select one chain to adjust each side separately. Capsule length includes both caps. Apply activates edits.";
+            string help = !contacts ? L.Text("Breast contacts require an imported PMX model.") : !valid ? L.Text("Radius: 0-2. Length: 0-4. Offset: -2 to 2. Rotation: -180 to 180.") :
+                !_environmentDraft.NativeBreastContacts ? L.Text("Enable Breast contacts in Selected model physics to use these settings.") :
+                L.Text("Select one chain to adjust each side separately. Capsule length includes both caps. Apply activates edits.");
             GUI.Label(new Rect(12, 335, 590, 42), help, new GUIStyle(GUI.skin.label) { wordWrap = true });
         }
 

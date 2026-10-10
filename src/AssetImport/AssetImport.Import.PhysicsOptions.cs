@@ -6,7 +6,7 @@ namespace AssetImport
         internal int PhysicsProfile { get; set; }
         internal bool PmxHairCollisionAssist { get; set; }
         internal PhysicsEnvironmentSettings PhysicsEnvironment { get; set; } = new PhysicsEnvironmentSettings();
-        internal string InitialPhysicsSelectionStatus { get; private set; } = "";
+        internal LocalizedText InitialPhysicsSelectionStatus { get; private set; } = "";
 
         // Called only for a fresh file import. Loading/copying saved assets must
         // preserve their stored roots and enabled state instead of UI defaults.
@@ -17,7 +17,7 @@ namespace AssetImport
             PhysicsProfile = usePreset ? 1 : 0;
             PmxHairCollisionAssist = hairCollisionAssist;
             PhysicsEnvironment = (environment ?? new PhysicsEnvironmentSettings()).Copy();
-            InitialPhysicsSelectionStatus = autoSelect ? SelectPmxPhysicsRoots() : "Automatic selection is off. Select the physics roots manually.";
+            InitialPhysicsSelectionStatus = autoSelect ? SelectPmxPhysicsRoots() : L.Message("Automatic selection is off. Select the physics roots manually.");
         }
     }
 }

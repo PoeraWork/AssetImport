@@ -26,27 +26,27 @@ namespace AssetImport
                 if (bone && bone.m_Root) bone.enabled = enabled;
         }
 
-        internal string GetSelectedPhysicsStatus()
+        internal LocalizedText GetSelectedPhysicsStatus()
         {
             return SelectedPhysicsStatus(null);
         }
 
-        internal string SetSelectedPhysicsEnabled(bool enabled)
+        internal LocalizedText SetSelectedPhysicsEnabled(bool enabled)
         {
             return SelectedPhysicsStatus(enabled);
         }
 
-        internal string ResetSelectedPhysics()
+        internal LocalizedText ResetSelectedPhysics()
         {
             return SelectedPhysicsStatus(null, true);
         }
 
-        private string SelectedPhysicsStatus(bool? enabled, bool reset = false)
+        private LocalizedText SelectedPhysicsStatus(bool? enabled, bool reset = false)
         {
             var studio = Studio.Studio.Instance;
             var selected = studio.treeNodeCtrl.selectNodes;
             if (selected == null || selected.Length == 0)
-                return "Select imported items in the Studio workspace to control physics.";
+                return L.Message("Select imported items in the Studio workspace to control physics.");
 
             int items = 0, chains = 0, on = 0, inactive = 0, fk = 0, skipped = 0, failed = 0;
             var visited = new HashSet<int>();
@@ -99,20 +99,19 @@ namespace AssetImport
                 if (item.isFK) fk++;
             }
             if (items == 0)
-                return "No selected AssetImport items have physics chains. Select the item itself; choose physics roots during import first.";
-            string state = on == 0 ? "OFF" : on == chains ? "ON" : "MIXED";
-            string status = "Physics " + state + ": " + items + " item(s), " + chains + " chain(s), " + on + " enabled.";
+                return L.Message("No selected AssetImport items have physics chains. Select the item itself; choose physics roots during import first.");
+            LocalizedText state = L.Message(on == 0 ? "OFF" : on == chains ? "ON" : "MIXED");
+            LocalizedText status = L.Message("Physics {0}: {1} item(s), {2} chain(s), {3} enabled.", state, items, chains, on);
             if (reset)
             {
                 var result = PhysicsReset.Reset(resetChains);
                 foreach (string message in result.FailureMessages) Logger.LogWarning("Cannot reset imported physics: " + message);
-                status = "Physics reset: " + result.ResetCount + " chain(s); " + result.InactiveCount +
-                    " inactive, " + result.InvalidCount + " invalid, " + result.FailedCount + " failed. Settings retained.";
+                status = L.Message("Physics reset: {0} chain(s); {1} inactive, {2} invalid, {3} failed. Settings retained.", result.ResetCount, result.InactiveCount, result.InvalidCount, result.FailedCount);
             }
-            if (skipped > 0) status += " Skipped " + skipped + " selection(s) without imported physics.";
-            if (failed > 0) status += " Failed to switch " + failed + " item(s); check the log.";
-            if (inactive > 0) status += " " + inactive + " enabled chain(s) are on inactive objects.";
-            if (fk > 0) status += " FK is ON for " + fk + " item(s). Use PMX Auto to keep VMD off physics chains.";
+            if (skipped > 0) status += L.Message(" Skipped {0} selection(s) without imported physics.", skipped);
+            if (failed > 0) status += L.Message(" Failed to switch {0} item(s); check the log.", failed);
+            if (inactive > 0) status += L.Message(" {0} enabled chain(s) are on inactive objects.", inactive);
+            if (fk > 0) status += L.Message(" FK is ON for {0} item(s). Use PMX Auto to keep VMD off physics chains.", fk);
             return status;
         }
     }

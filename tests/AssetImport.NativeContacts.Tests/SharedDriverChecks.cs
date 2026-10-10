@@ -50,7 +50,7 @@ internal static class SharedDriverChecks
         DynamicBone_Ver02.Output = new(.03f, .01f, 0);
         int instances = DynamicBone_Ver02.Instances;
         controller.Tick(1f / 60);
-        check(DynamicBone_Ver02.Instances - instances == 2 && controller.Status.Contains("2 active / 2"),
+        check(DynamicBone_Ver02.Instances - instances == 2 && controller.Status.English.Contains("2 active / 2"),
             "only the two retained endpoints initialize native state; followers have no separate springs");
         foreach (var group in groups)
         {
@@ -106,7 +106,7 @@ internal static class SharedDriverChecks
         controller.ResetContacts(); environment.Chains = chains.ToArray();
         definition.PositionGrants = [new() { Bone = groups[0][0], Source = groups[0][5], Rate = float.MaxValue }];
         controller.Tick(1f / 60);
-        check(controller.Status.Contains("unavailable") && original.All(p => (p.Key.localPosition - p.Value).magnitude < 1e-6f),
+        check(controller.Status.English.Contains("unavailable") && original.All(p => (p.Key.localPosition - p.Value).magnitude < 1e-6f),
             "nonfinite amplified grant is rejected and restores already written endpoint poses");
         controller.ResetContacts(); definition.PositionGrants = grants.ToArray();
         Time.frameCount++; controller.ApplyLateUpdate(); Camera.Render();

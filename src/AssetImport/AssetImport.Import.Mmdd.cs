@@ -24,11 +24,11 @@ namespace AssetImport
             catch (Exception e) { Logger.LogWarning("Could not install MMDD runtime extension: " + e.Message); }
         }
 
-        internal string LastMmddExportStatus { get; private set; } = "";
+        internal LocalizedText LastMmddExportStatus { get; private set; } = "";
 
-        internal string ExportMmddMapping()
+        internal LocalizedText ExportMmddMapping()
         {
-            if (!IsPmx || !ImportBones) return "Select an imported PMX item with bones.";
+            if (!IsPmx || !ImportBones) return L.Message("Select an imported PMX item with bones.");
             LastMmddExportStatus = ExportMmddMapping(SourceIdentifier, _pmx, Renderers.OfType<SkinnedMeshRenderer>(),
                 BoneNodes.Where(n => n.IsDynamicRoot).Select(n => n.GameObject.name));
             return LastMmddExportStatus;
@@ -36,7 +36,7 @@ namespace AssetImport
 
         // Rebuild an existing item's files using its saved PMX bytes and actual
         // renderer/physics selection. No new meshes, FK entries or materials.
-        internal static string RepairMmddMapping(string sourceIdentifier, IEnumerable<SkinnedMeshRenderer> renderers, IEnumerable<string> roots)
+        internal static LocalizedText RepairMmddMapping(string sourceIdentifier, IEnumerable<SkinnedMeshRenderer> renderers, IEnumerable<string> roots)
         {
             try
             {
@@ -47,7 +47,7 @@ namespace AssetImport
             catch (Exception e) { return MmddExportFailure(e); }
         }
 
-        private static string ExportMmddMapping(string sourceIdentifier, PmxModel model,
+        private static LocalizedText ExportMmddMapping(string sourceIdentifier, PmxModel model,
             IEnumerable<SkinnedMeshRenderer> renderers, IEnumerable<string> dynamicRootNames)
         {
             string backupDirectory = null;
@@ -83,25 +83,22 @@ namespace AssetImport
                 string problem;
                 string configured = AssetImport.mmddLibraryPath == null ? "" : AssetImport.mmddLibraryPath.Value;
                 string lib = MmddExportPaths.FindLibrary(BepInEx.Paths.GameRootPath, BepInEx.Paths.PluginPath, configured, out problem);
-                string status;
+                LocalizedText status;
                 if (lib != null)
                 {
                     Directory.CreateDirectory(Path.Combine(lib, "mmdd"));
                     WriteChanged(Path.Combine(Path.Combine(lib, "mmdd"), name + ".json"), result.MappingJson);
                     WriteChanged(Path.Combine(lib, extension), script);
-                    status = "Ready: " + label + " / AssetImport PMX Auto\n"
-                        + name + ".json\nInstalled to: " + lib + "\n"
-                        + "After updating AssetImport, restart MMDD once to load its runtime extension. Then select this ITEM and this model's PMX Auto definition.";
+                    status = L.Message("Ready: {0} / AssetImport PMX Auto\n{1}.json\nInstalled to: {2}\nAfter updating AssetImport, restart MMDD once to load its runtime extension. Then select this ITEM and this model's PMX Auto definition.", label, name, lib);
                     Logger.LogInfo($"MMDD Auto mapping ready: {sourceFileName}; {result.BoneCount} bones, {result.IkCount} IK, {result.MorphCount} morphs; {name}; Lib={lib}. Open/restart MMDD after import, then choose this model's 'PMX Auto' definition.");
                 }
                 else
                 {
-                    status = "Mapping saved, but NOT installed into MMDD.\n" + problem
-                        + "\nBackup: " + directory + "\nCopy JSON to MMDD Lib/mmdd and PY to Lib, or set the path and repair again.";
-                    Logger.LogWarning(status);
+                    status = L.Message("Mapping saved, but NOT installed into MMDD.\n{0}\nBackup: {1}\nCopy JSON to MMDD Lib/mmdd and PY to Lib, or set the path and repair again.", problem, directory);
+                    Logger.LogWarning(status.English);
                 }
                 if (result.Warnings.Length > 0)
-                    status += "\nWarnings: " + result.Warnings.Length + ". See the log for details.";
+                    status += L.Message("\nWarnings: {0}. See the log for details.", result.Warnings.Length);
                 return status;
             }
             catch (Exception e)
@@ -111,11 +108,11 @@ namespace AssetImport
             }
         }
 
-        private static string MmddExportFailure(Exception error, string backupDirectory = null)
+        private static LocalizedText MmddExportFailure(Exception error, string backupDirectory = null)
         {
-            string status = "PMX Auto export failed: " + error.Message;
-            if (backupDirectory != null) status += "\nBackup saved: " + backupDirectory;
-            Logger.LogWarning(status);
+            LocalizedText status = L.Message("PMX Auto export failed: {0}", error.Message);
+            if (backupDirectory != null) status += L.Message("\nBackup saved: {0}", backupDirectory);
+            Logger.LogWarning(status.English);
             return status;
         }
 

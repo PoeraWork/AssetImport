@@ -30,20 +30,20 @@ namespace AssetImport
 
         internal string SceneName = "";
 
-        internal string RepairSelectedPmxAuto()
+        internal LocalizedText RepairSelectedPmxAuto()
         {
             var studio = Studio.Studio.Instance;
             var selected = studio.treeNodeCtrl.selectNodes;
             if (selected == null || selected.Length != 1)
-                return "Select one imported PMX item in the Studio workspace, then repair again.";
+                return L.Message("Select one imported PMX item in the Studio workspace, then repair again.");
             ObjectCtrlInfo selectedObject;
             if (!studio.dicInfo.TryGetValue(selected[0], out selectedObject) || !(selectedObject is OCIItem))
-                return "Select the imported PMX ITEM itself in the Studio workspace.";
+                return L.Message("Select the imported PMX ITEM itself in the Studio workspace.");
             var item = (OCIItem)selectedObject;
             Asset asset;
             if (!LoadedObjects.TryGetValue(item.itemInfo.dicKey, out asset) || !asset.HasBones
                 || !string.Equals(Path.GetExtension(RamCacheUtility.GetFileName(asset.SourceFile)), ".pmx", StringComparison.OrdinalIgnoreCase))
-                return "The selected item is not an AssetImport PMX with bones.";
+                return L.Message("The selected item is not an AssetImport PMX with bones.");
             var roots = (item.dynamicBones ?? new DynamicBone[0])
                 .Where(b => b && b.m_Root).Select(b => b.m_Root.name);
             return global::AssetImport.Import.RepairMmddMapping(asset.SourceFile,
@@ -401,7 +401,7 @@ namespace AssetImport
 
             if (!(File.Exists(path)))
             {
-                Logger.LogMessage($"File {path} does not exist");
+                Logger.LogMessage(L.Format("File {0} does not exist", path));
                 return;
             }
             
@@ -427,7 +427,7 @@ namespace AssetImport
                 import.Load();
                 if (!import.IsLoaded)
                 {
-                    Logger.LogMessage($"Import failed: {Path.GetFileName(path)}. {import.LoadError ?? "See the AssetImport error in the log."}");
+                    Logger.LogMessage(L.Format("Import failed: {0}. {1}", Path.GetFileName(path), import.LoadError ?? L.Text("See the AssetImport error in the log.")));
                     return;
                 }
                 import.ResolveTextureFiles(path);
@@ -436,7 +436,7 @@ namespace AssetImport
             catch (Exception e)
             {
                 Logger.LogError($"Importing [{path}] failed: {e}");
-                Logger.LogMessage($"Import failed: {Path.GetFileName(path)}. {e.Message}");
+                Logger.LogMessage(L.Format("Import failed: {0}. {1}", Path.GetFileName(path), e.Message));
                 return;
             }
             finally

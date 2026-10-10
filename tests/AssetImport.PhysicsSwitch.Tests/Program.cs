@@ -42,9 +42,9 @@ studio.dicInfo["second"] = second;
 studio.dicInfo["unrelated"] = unrelated;
 studio.dicInfo["empty"] = noChains;
 studio.dicInfo["character"] = new ObjectCtrlInfo();
-Check(controller.GetSelectedPhysicsStatus().Contains("Select imported items"), "empty selection guidance");
+Check(controller.GetSelectedPhysicsStatus().English.Contains("Select imported items"), "empty selection guidance");
 studio.treeNodeCtrl.selectNodes = ["unrelated", "empty", "character", "bone-not-an-item"];
-Check(controller.SetSelectedPhysicsEnabled(true).Contains("No selected AssetImport"), "unsupported selections rejected");
+Check(controller.SetSelectedPhysicsEnabled(true).English.Contains("No selected AssetImport"), "unsupported selections rejected");
 Check(!unrelated.itemInfo.enableDynamicBone && unrelated.SwitchCalls == 0 && noChains.SwitchCalls == 0,
     "unrelated items and chainless imports remain unchanged");
 
@@ -114,10 +114,10 @@ Check(AssetSceneController.EditorSyncCalls == editorCallsBeforeButton + 2, "expl
 Check(first.isFK && first.dynamicBones[0].Enabled && second.dynamicBones[0].Enabled,
     "explicit ON enables imported chains even with FK while preserving the FK setting");
 first.dynamicBones[0].Enabled = false; // KKPE per-chain edit without changing native preference.
-Check(controller.GetSelectedPhysicsStatus().Contains("Physics MIXED"), "status reads actual components after KKPE edits");
+Check(controller.GetSelectedPhysicsStatus().English.Contains("Physics MIXED"), "status reads actual components after KKPE edits");
 first.dynamicBones[0].Enabled = true;
 first.dynamicBones[0].gameObject.activeInHierarchy = false;
-Check(controller.GetSelectedPhysicsStatus().Contains("1 enabled chain(s) are on inactive objects"), "enabled but hidden hosts are identified");
+Check(controller.GetSelectedPhysicsStatus().English.Contains("1 enabled chain(s) are on inactive objects"), "enabled but hidden hosts are identified");
 first.dynamicBones[0].gameObject.activeInHierarchy = true;
 first.ThrowOnSwitch = true;
 string partial = controller.SetSelectedPhysicsEnabled(false);
@@ -127,13 +127,13 @@ first.ThrowOnSwitch = false;
 first.isFK = false;
 first.ActiveDynamicBone(true);
 second.ActiveDynamicBone(false);
-Check(controller.ResetSelectedPhysics().Contains("Physics reset: 1 chain(s); 1 inactive"), "selected reset skips disabled chains and deduplicates items");
+Check(controller.ResetSelectedPhysics().English.Contains("Physics reset: 1 chain(s); 1 inactive"), "selected reset skips disabled chains and deduplicates items");
 Check(first.dynamicBones[0].ResetCalls == 1 && second.dynamicBones[0].ResetCalls == 0 && unrelated.dynamicBones[0].ResetCalls == 0,
     "reset is scoped to active selected AssetImport chains");
 Check(first.itemInfo.enableDynamicBone && !second.itemInfo.enableDynamicBone && first.dynamicBones[0].Colliders == colliders,
     "reset keeps switch state and collision settings");
 studio.treeNodeCtrl.selectNodes = ["unrelated", "character"];
-Check(controller.ResetSelectedPhysics().Contains("No selected AssetImport"), "reset rejects unrelated selections");
+Check(controller.ResetSelectedPhysics().English.Contains("No selected AssetImport"), "reset rejects unrelated selections");
 Console.WriteLine("PASS: " + checks + " physics switch/API checks. Runtime uses inert Studio objects; Unity physics and actual native serialization require game testing.");
 
 static OCIItem MakeItem(int id, bool enabled) => new()

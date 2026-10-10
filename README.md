@@ -45,6 +45,8 @@ Package instructions: [KK](docs/INSTALL-KK.txt) · [KKS](docs/INSTALL-KKS.txt).
 
 ## Usage
 
+In the plugin settings list (BepInEx Configuration Manager), open **KK_AssetImport / KKS_AssetImport → _General_ → Language** to choose **English** or **简体中文**. English is the default; changes apply immediately, including pending status messages. No translation plugin is required. The same setting is available in `BepInEx/config/org.njaecha.plugins.assetimport.cfg`. Diagnostic logs retain their original identifiers and technical details.
+
 Choose a model, adjust the import options and scale, then inspect the preview and finish importing. Keep companion textures beside the model in their original folders. Wait for **Textures ready** before saving, copying the object, or switching coordinates.
 
 For PMX, start with **PMX / VMD preset** and a scaling factor of **1**. In Studio, use MMDD's **Load VMD Advanced** to select the generated **AssetImport PMX Auto** definition. See the [PMX guide](docs/PMX-SUPPORT.md) for mapping, physics, texture conversion, and troubleshooting.

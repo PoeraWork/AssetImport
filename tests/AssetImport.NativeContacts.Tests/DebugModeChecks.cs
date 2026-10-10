@@ -67,7 +67,7 @@ internal static class DebugModeChecks
             check(File.ReadAllText(path) != enabledReport && Camera.Observers == observers + 1 && DynamicBone_Ver02.Instances == instances,
                 "re-enabling refreshes diagnostics without duplicate observers or solver instances");
             AssetDebug.Enabled = false; controller.ResetContacts(); DynamicBone_Ver02.FailCalibration = true; controller.Tick(1f / 60);
-            check(controller.Status.Contains("unavailable") && AssetImport.AssetImport.Logger.Lines.Any(s => s.Contains("adapter stopped")),
+            check(controller.Status.English.Contains("unavailable") && AssetImport.AssetImport.Logger.Lines.Any(s => s.Contains("adapter stopped")),
                 "actual physics failure still stops the contact layer and reports a warning when Debug is off");
         }
         finally

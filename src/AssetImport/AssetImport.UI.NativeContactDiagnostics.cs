@@ -5,26 +5,26 @@ namespace AssetImport
 {
     internal partial class AssetUI
     {
-        private string _diagnosticActionStatus;
+        private LocalizedText _diagnosticActionStatus;
 
-        private string SaveContactDiagnostics(AssetPhysicsEnvironment selected, string selectionStatus)
+        private LocalizedText SaveContactDiagnostics(AssetPhysicsEnvironment selected, string selectionStatus)
         {
-            if (!AssetDebug.Enabled) return "Enable Debug to save diagnostics.";
+            if (!AssetDebug.Enabled) return L.Message("Enable Debug to save diagnostics.");
             NativeContactDiagnostics.Select(selected, _environment == selected && _environmentDraft != null
                 ? (bool?)_environmentDraft.NativeBreastContacts : null, selectionStatus);
-            return NativeContactDiagnostics.Save("manual") ? "Saved: " + NativeContactDiagnostics.ReportPath : NativeContactDiagnostics.LastError;
+            return NativeContactDiagnostics.Save("manual") ? L.Message("Saved: {0}", NativeContactDiagnostics.ReportPath) : (LocalizedText)NativeContactDiagnostics.LastError;
         }
-        private string OpenContactDiagnosticsFolder()
+        private LocalizedText OpenContactDiagnosticsFolder()
         {
-            if (!AssetDebug.Enabled) return "Enable Debug to open diagnostics.";
+            if (!AssetDebug.Enabled) return L.Message("Enable Debug to open diagnostics.");
             if (!NativeContactDiagnostics.Save("manual")) return NativeContactDiagnostics.LastError;
             try
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
                     FileName = Path.GetDirectoryName(NativeContactDiagnostics.ReportPath), UseShellExecute = true });
-                return "Report: " + NativeContactDiagnostics.ReportPath;
+                return L.Message("Report: {0}", NativeContactDiagnostics.ReportPath);
             }
-            catch (Exception error) { return "Report: " + NativeContactDiagnostics.ReportPath + ". Could not open folder: " + error.Message; }
+            catch (Exception error) { return L.Message("Report: {0}. Could not open folder: {1}", NativeContactDiagnostics.ReportPath, error.Message); }
         }
     }
 }

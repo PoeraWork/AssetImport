@@ -45,6 +45,8 @@ Windows 64 位系统，以及对应游戏的前置插件：
 
 ## 使用
 
+在插件设置列表（BepInEx Configuration Manager）中，展开 **KK_AssetImport / KKS_AssetImport → _General_ → Language**，可选择 **English** 或 **简体中文**。默认英文，切换后立即生效，已有状态提示也会更新。无需安装翻译插件；也可修改 `BepInEx/config/org.njaecha.plugins.assetimport.cfg` 中的同一设置。诊断日志保留原有标识与技术详情。
+
 选择模型，调整导入选项和比例，检查预览后完成导入。模型配套贴图应保留原来的相对目录。保存、复制物件或切换坐标前，请等待面板显示 **Textures ready**。
 
 PMX 建议先使用 **PMX / VMD preset**，比例设为 **1**。在 Studio 中，通过 MMDD 的 **Load VMD Advanced** 选择生成的 **AssetImport PMX Auto** 定义。映射、物理、贴图转色及排错方法见 [PMX 使用指南](docs/PMX-SUPPORT.md)。

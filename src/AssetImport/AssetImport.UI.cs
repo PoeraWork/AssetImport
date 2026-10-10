@@ -32,8 +32,8 @@ namespace AssetImport
         internal static CubeLut ImportColorLut;
         private bool _convertKkColor;
         private string _colorLutPath = "";
-        private string _colorLutError = "";
-        
+        private LocalizedText _colorLutError = "";
+
         // preload
         internal static bool PreloadUI = false;
         internal static Rect PreloadWindowRect = new Rect(Screen.width / 2f - 250, Screen.height / 2f - 350, 500, 600);
@@ -49,9 +49,9 @@ namespace AssetImport
         private Import _armatureImport;
         private string _boneSearch = "";
         private bool _selectedRootsOnly;
-        private string _physicsSelectionStatus = "";
-        private string _mmddStatus = "";
-        private string _physicsActionStatus = "";
+        private LocalizedText _physicsSelectionStatus = "";
+        private LocalizedText _mmddStatus = "";
+        private LocalizedText _physicsActionStatus = "";
         private Vector2 _mainScroll = Vector2.zero;
         private float _mainContentHeight = 140;
 
@@ -77,7 +77,7 @@ namespace AssetImport
             }
             if (KoikatuAPI.GetCurrentGameMode() != GameMode.Studio && KoikatuAPI.GetCurrentGameMode() != GameMode.Maker)
                 UIActive = false;
-    
+
         }
 
         void OnGUI()
@@ -90,7 +90,7 @@ namespace AssetImport
             var wasEnabled = GUI.enabled;
             try
             {
-                GUI.skin = KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin;
+                GUI.skin = InterfaceSkin();
                 GUI.color = GUI.contentColor = GUI.backgroundColor = Color.white;
                 GUI.enabled = true;
                 if (UIActive)
@@ -106,7 +106,7 @@ namespace AssetImport
                         PreloadWindowRect,
                         PreLoadWindowFunction,
                         Main.currentLoadProcess.Import.SourceFileName,
-                        KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin.window
+                        GUI.skin.window
                     );
                     KKAPI.Utilities.IMGUIUtils.EatInputInRect(PreloadWindowRect);
                 }
@@ -160,7 +160,7 @@ namespace AssetImport
             _mainScroll = GUI.BeginScrollView(new Rect(0, 20, 260, viewHeight), _mainScroll,
                 new Rect(0, 20, 240, _mainContentHeight));
             var y = 20;
-            if (CheckButton(new Rect(10, y, 220, 25), AssetDebug.Enabled, "Debug"))
+            if (CheckButton(new Rect(10, y, 220, 25), AssetDebug.Enabled, L.Text("Debug")))
             {
                 Main.debugMode.Value = !AssetDebug.Enabled;
                 _diagnosticActionStatus = "";
@@ -168,8 +168,8 @@ namespace AssetImport
             y += 10;
             if (AssetDebug.Enabled)
             {
-                GUI.Label(new Rect(10, y += 18, 220, 20), "Build: " + NativeContactDiagnostics.ShortBuild);
-                if (GUI.Button(new Rect(10, y += 22, 220, 25), "Open diagnostics folder"))
+                GUI.Label(new Rect(10, y += 18, 220, 20), L.Format("Build: {0}", NativeContactDiagnostics.ShortBuild));
+                if (GUI.Button(new Rect(10, y += 22, 220, 25), L.Text("Open diagnostics folder")))
                     _diagnosticActionStatus = OpenContactDiagnosticsFolder();
                 y += 8;
                 if (!string.IsNullOrEmpty(NativeContactDiagnostics.LastError))
@@ -186,9 +186,9 @@ namespace AssetImport
             if (GUI.Button(new Rect(205, y, 25, 20), "..."))
             {
                 string dir = (FilePath == "") ? Main.defaultDir.Value : FilePath.Replace(FilePath.Substring(FilePath.LastIndexOf("/")), "");
-                string[] file = KKAPI.Utilities.OpenFileDialog.ShowDialog("Open 3D file", dir,
-                        "3D files (*.pmx; *.fbx; *.dae; *.gltf; *.3ds; *.ase; *.obj; *.ifc; *.xgl; *.ply; *.dxf; *.lwo; *.lws; *.lxo; *.stl; *.x; *.ac; *.ms3d; *.smd) " +
-                        "|*.pmx; *.fbx; *.dae; *.gltf; *.3ds; *.ase; *.obj; *.ifc; *.xgl; *.ply; *.dxf; *.lwo; *.lws; *.lxo; *.stl; *.x; *.ac; *.ms3d; *.smd | All files (*.*)|*.*",
+                string[] file = KKAPI.Utilities.OpenFileDialog.ShowDialog(L.Text("Open 3D file"), dir,
+                        L.Text("3D files") + " (*.pmx; *.fbx; *.dae; *.gltf; *.3ds; *.ase; *.obj; *.ifc; *.xgl; *.ply; *.dxf; *.lwo; *.lws; *.lxo; *.stl; *.x; *.ac; *.ms3d; *.smd) " +
+                        "|*.pmx; *.fbx; *.dae; *.gltf; *.3ds; *.ase; *.obj; *.ifc; *.xgl; *.ply; *.dxf; *.lwo; *.lws; *.lxo; *.stl; *.x; *.ac; *.ms3d; *.smd |" + L.Text("All files") + " (*.*)|*.*",
                         "obj", SingleFileFlags);
                 if (file != null)
                 {
@@ -197,7 +197,7 @@ namespace AssetImport
             }
 
             if (FilePath.EndsWith(".pmx", StringComparison.OrdinalIgnoreCase) &&
-                GUI.Button(new Rect(10, y += 25, 220, 25), "PMX / VMD preset"))
+                GUI.Button(new Rect(10, y += 25, 220, 25), L.Text("PMX / VMD preset")))
             {
                 ImportBones = true;
                 LoadBlendshapes = true;
@@ -208,67 +208,60 @@ namespace AssetImport
                 UsePmxPhysicsPreset = true;
                 NewPhysicsEnvironment = PhysicsEnvironmentSettings.NewImport();
             }
-            if (CheckButton(new Rect(10, y += 25, 220, 25), ImportBones, "Import Armature"))
+            if (CheckButton(new Rect(10, y += 25, 220, 25), ImportBones, L.Text("Import Armature")))
             {
                 ImportBones = !ImportBones;
             }
-            if (CheckButton(new Rect(10, y += 25, 220, 25), LoadBlendshapes, "Import Blendshapes"))
+            if (CheckButton(new Rect(10, y += 25, 220, 25), LoadBlendshapes, L.Text("Import Blendshapes")))
             {
                 LoadBlendshapes = !LoadBlendshapes;
             }
 
-            if (CheckButton(new Rect(10, y += 25, 220, 25), PerRendererMaterials, "Material per Renderer"))
+            if (CheckButton(new Rect(10, y += 25, 220, 25), PerRendererMaterials, L.Text("Material per Renderer")))
             {
                 PerRendererMaterials = !PerRendererMaterials;
             }
-            if (CheckButton(new Rect(10, y += 25, 220, 25), _convertKkColor, "Convert diffuse to KK color"))
+            if (CheckButton(new Rect(10, y += 25, 220, 25), _convertKkColor, L.Text("Convert diffuse to KK color")))
                 _convertKkColor = !_convertKkColor;
             if (_convertKkColor)
             {
                 _colorLutPath = GUI.TextField(new Rect(10, y += 25, 195, 22), _colorLutPath);
                 if (GUI.Button(new Rect(205, y, 25, 22), "..."))
                 {
-                    string[] files = KKAPI.Utilities.OpenFileDialog.ShowDialog("Select PS to KK color LUT", Main.defaultDir.Value,
-                        "3D LUT (*.cube)|*.cube", "cube", SingleFileFlags);
+                    string[] files = KKAPI.Utilities.OpenFileDialog.ShowDialog(L.Text("Select PS to KK color LUT"), Main.defaultDir.Value,
+                        L.Text("3D LUT") + " (*.cube)|*.cube", "cube", SingleFileFlags);
                     if (files != null && files.Length > 0) _colorLutPath = files[0];
                 }
-                GUI.Label(new Rect(10, y += 25, 220, 38), "Select PS-to-KK .cube. Already converted textures: leave OFF.", new GUIStyle(GUI.skin.label) { wordWrap = true });
-                y += 18;
+                var lutHelpStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
+                string lutHelp = L.Text("Select PS-to-KK .cube. Already converted textures: leave OFF.");
+                float lutHelpHeight = lutHelpStyle.CalcHeight(new GUIContent(lutHelp), 220);
+                GUI.Label(new Rect(10, y += 25, 220, lutHelpHeight), lutHelp, lutHelpStyle);
+                y += (int)lutHelpHeight - 20;
             }
             if (FilePath.EndsWith(".pmx", StringComparison.OrdinalIgnoreCase))
             {
                 GUI.enabled = ImportBones;
-                if (CheckButton(new Rect(10, y += 25, 220, 25), AutoSelectPmxPhysics, "Auto PMX physics chains"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), AutoSelectPmxPhysics, L.Text("Auto PMX physics chains")))
                     AutoSelectPmxPhysics = !AutoSelectPmxPhysics;
-                if (CheckButton(new Rect(10, y += 25, 220, 25), EnablePhysicsAfterImport, "Enable physics after import"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), EnablePhysicsAfterImport, L.Text("Enable physics after import")))
                     EnablePhysicsAfterImport = !EnablePhysicsAfterImport;
-                if (CheckButton(new Rect(10, y += 25, 220, 25), UsePmxPhysicsPreset, "PMX physics preset"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), UsePmxPhysicsPreset, L.Text("PMX physics preset")))
                     UsePmxPhysicsPreset = !UsePmxPhysicsPreset;
-                if (CheckButton(new Rect(10, y += 25, 220, 25), PmxHairCollisionAssist, "Hair body collision assist"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), PmxHairCollisionAssist, L.Text("Hair body collision assist")))
                     PmxHairCollisionAssist = !PmxHairCollisionAssist;
-                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.Floor, "Ground collision"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.Floor, L.Text("Ground collision")))
                     NewPhysicsEnvironment.Floor = !NewPhysicsEnvironment.Floor;
-                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.DownwardForce > 0f, "Downward force"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.DownwardForce > 0f, L.Text("Downward force")))
                     NewPhysicsEnvironment.DownwardForce = NewPhysicsEnvironment.DownwardForce > 0f ? 0f : .001f;
-                if (GUI.Button(new Rect(10, y += 25, 220, 25), "Physics: " + PhysicsModeName(NewPhysicsEnvironment.DefaultMode)))
+                if (GUI.Button(new Rect(10, y += 25, 220, 25), L.Format("Physics: {0}", PhysicsModeName(NewPhysicsEnvironment.DefaultMode))))
                     NewPhysicsEnvironment.NaturalDrape = !NewPhysicsEnvironment.NaturalDrape;
-                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.Settle, "Settle on load / reset"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), NewPhysicsEnvironment.Settle, L.Text("Settle on load / reset")))
                     NewPhysicsEnvironment.Settle = !NewPhysicsEnvironment.Settle;
                 GUI.enabled = true;
             }
-            
-            // no longer used as of v4.0.0
-            /*
-            if (Path.GetExtension(FilePath).ToLower() == ".fbx")
-            {
-                if (CheckButton(new Rect(10, y += 25, 220, 25), DoFbxTranslation, "Ignore Root translation"))
-                {
-                    DoFbxTranslation = !DoFbxTranslation;
-                }
-            }
-            */
 
-            GUI.Label(new Rect(10, y+=30, 160, 25), $"Scaling-factor: {Scales[ScaleSelection]}");
+
+            GUI.Label(new Rect(10, y+=30, 160, 25), L.Format("Scaling-factor: {0}", Scales[ScaleSelection]));
             if (ScaleSelection == 0) GUI.enabled = false;
             if (GUI.Button(new Rect(190, y, 20, 20), "+"))
             {
@@ -282,7 +275,7 @@ namespace AssetImport
             }
             GUI.enabled = true;
             if (string.IsNullOrEmpty(FilePath)) GUI.enabled = false;
-            if (GUI.Button(new Rect(10, y+=25, 220, 30), "Import"))
+            if (GUI.Button(new Rect(10, y+=25, 220, 30), L.Text("Import")))
             {
                 ImportColorLut = null;
                 _colorLutError = "";
@@ -294,7 +287,7 @@ namespace AssetImport
                         Main.colorLutPath.Value = _colorLutPath;
                     }
                 }
-                catch (Exception error) { _colorLutError = "Color LUT: " + error.Message; }
+                catch (Exception error) { _colorLutError = L.Message("Color LUT: {0}", error.Message); }
                 if (_colorLutError.Length == 0)
                 {
                     _mmddStatus = "";
@@ -318,7 +311,7 @@ namespace AssetImport
                                 PerRendererMaterials,
                                 LoadBlendshapes);
                         }
-                        else Main.Logger.LogMessage("Please select an accessory which you want to replace!");
+                        else Main.Logger.LogMessage(L.Text("Please select an accessory which you want to replace!"));
                     }
                 }
             }
@@ -335,8 +328,8 @@ namespace AssetImport
             {
                 var textureStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
                 string status = ImportTextureData.PendingImports > 1
-                    ? ImportTextureData.PendingImports + " imports pending. " + ImportTextureData.Status
-                    : ImportTextureData.Status;
+                    ? L.Format("{0} imports pending. {1}", ImportTextureData.PendingImports, ImportTextureData.Status)
+                    : (string)ImportTextureData.Status;
                 float height = textureStyle.CalcHeight(new GUIContent(status), 220);
                 GUI.Label(new Rect(10, y += 32, 220, height), status, textureStyle);
                 y += (int)height;
@@ -345,21 +338,21 @@ namespace AssetImport
             var mode = KoikatuAPI.GetCurrentGameMode();
             AssetCharaController character = mode == GameMode.Maker
                 ? MakerAPI.GetCharacterControl()?.gameObject.GetComponentInChildren<AssetCharaController>() : null;
-            string physicsStatus = mode == GameMode.Studio ? Main.asc?.GetSelectedPhysicsStatus()
+            LocalizedText physicsStatus = mode == GameMode.Studio ? Main.asc?.GetSelectedPhysicsStatus()
                 : character?.GetSelectedAccessoryPhysicsStatus();
             var physicsStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
-            string displayPhysicsStatus = physicsStatus ?? "Select an imported model to control its physics.";
+            string displayPhysicsStatus = physicsStatus ?? L.Text("Select an imported model to control its physics.");
             float physicsHeight = physicsStyle.CalcHeight(new GUIContent(displayPhysicsStatus), 220);
             GUI.Label(new Rect(10, y += 35, 220, physicsHeight), displayPhysicsStatus, physicsStyle);
             y += (int)physicsHeight;
             GUI.enabled = !PreloadUI && (mode == GameMode.Studio ? Main.asc != null : character != null);
-            if (GUI.Button(new Rect(10, y += 5, 107, 25), "Physics ON"))
+            if (GUI.Button(new Rect(10, y += 5, 107, 25), L.Text("Physics ON")))
                 _physicsActionStatus = mode == GameMode.Studio ? Main.asc.SetSelectedPhysicsEnabled(true)
                     : character.SetSelectedAccessoryPhysicsEnabled(true);
-            if (GUI.Button(new Rect(122, y, 108, 25), "Physics OFF"))
+            if (GUI.Button(new Rect(122, y, 108, 25), L.Text("Physics OFF")))
                 _physicsActionStatus = mode == GameMode.Studio ? Main.asc.SetSelectedPhysicsEnabled(false)
                     : character.SetSelectedAccessoryPhysicsEnabled(false);
-            if (GUI.Button(new Rect(10, y += 30, 220, 25), "Reset physics motion"))
+            if (GUI.Button(new Rect(10, y += 30, 220, 25), L.Text("Reset physics motion")))
                 _physicsActionStatus = mode == GameMode.Studio ? Main.asc.ResetSelectedPhysics()
                     : character.ResetSelectedAccessoryPhysics();
             GUI.enabled = true;
@@ -371,9 +364,9 @@ namespace AssetImport
             if (AssetDebug.Enabled)
             {
                 NativeContactDiagnostics.Select(environment, _environment == environment && _environmentDraft != null
-                    ? (bool?)_environmentDraft.NativeBreastContacts : null, displayPhysicsStatus);
-                if (GUI.Button(new Rect(10, y += 5, 220, 25), "Save contact diagnostics"))
-                    _diagnosticActionStatus = SaveContactDiagnostics(environment, displayPhysicsStatus);
+                    ? (bool?)_environmentDraft.NativeBreastContacts : null, physicsStatus == null ? "No selection" : physicsStatus.English);
+                if (GUI.Button(new Rect(10, y += 5, 220, 25), L.Text("Save contact diagnostics")))
+                    _diagnosticActionStatus = SaveContactDiagnostics(environment, physicsStatus == null ? "No selection" : physicsStatus.English);
                 y += 25;
                 if (!string.IsNullOrEmpty(_diagnosticActionStatus))
                 {
@@ -384,7 +377,7 @@ namespace AssetImport
             }
             if (!string.IsNullOrEmpty(_physicsActionStatus))
             {
-                string actionFeedback = "Last action: " + _physicsActionStatus;
+                string actionFeedback = L.Format("Last action: {0}", _physicsActionStatus);
                 float height = physicsStyle.CalcHeight(new GUIContent(actionFeedback), 220);
                 GUI.Label(new Rect(10, y += 5, 220, height), actionFeedback, physicsStyle);
                 y += (int)height;
@@ -393,7 +386,7 @@ namespace AssetImport
             if (KoikatuAPI.GetCurrentGameMode() == GameMode.Studio)
             {
                 GUI.enabled = !PreloadUI && Main.asc != null;
-                if (GUI.Button(new Rect(10, y += 35, 220, 25), "Repair selected PMX Auto"))
+                if (GUI.Button(new Rect(10, y += 35, 220, 25), L.Text("Repair selected PMX Auto")))
                     _mmddStatus = Main.asc.RepairSelectedPmxAuto();
                 GUI.enabled = true;
                 if (!string.IsNullOrEmpty(_mmddStatus))
@@ -427,7 +420,7 @@ namespace AssetImport
             }
 
             if (!(Main.currentLoadProcess.Import.HasBones && Main.currentLoadProcess.Import.HasTextures)) GUI.enabled = false;
-            if (GUI.Button(new Rect(10, 20, 480, 25), ArmatureMode ? "Switch to Textures" : "Switch to Armature"))
+            if (GUI.Button(new Rect(10, 20, 480, 25), ArmatureMode ? L.Text("Switch to Textures") : L.Text("Switch to Armature")))
             {
                 ArmatureMode = !ArmatureMode;
             }
@@ -445,7 +438,7 @@ namespace AssetImport
                     ScrollPosition = Vector2.zero;
                 }
                 // custom button styles
-                GUIStyle normal = new GUIStyle(KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin.button);
+                GUIStyle normal = new GUIStyle(GUI.skin.button);
                 normal.normal.background = _buttonBase;
                 normal.hover.background = _buttonHover;
                 normal.active.background = ButtonPressed;
@@ -463,52 +456,52 @@ namespace AssetImport
                 arrow.alignment = TextAnchor.MiddleCenter;
                 arrow.hover.textColor = new Color(1, 1, 0);
 
-                GUI.Label(new Rect(10, 48, 480, 40), "All bones are already imported. Click a name to select a PHYSICS ROOT.\nGreen = physics root; yellow-green = children. Do not select the whole skeleton.");
+                GUI.Label(new Rect(10, 48, 480, 40), L.Text("All bones are already imported. Click a name to select a PHYSICS ROOT.\nGreen = physics root; yellow-green = children. Do not select the whole skeleton."));
 
                 float controlsY = 92;
                 if (import.IsPmx)
                 {
-                    if (GUI.Button(new Rect(10, controlsY, 235, 25), "All PMX physics chains"))
+                    if (GUI.Button(new Rect(10, controlsY, 235, 25), L.Text("All PMX physics chains")))
                     {
                         _physicsSelectionStatus = import.SelectPmxPhysicsRoots();
                         ScrollPosition = Vector2.zero;
                     }
-                    if (GUI.Button(new Rect(250, controlsY, 240, 25), "Add hair roots (incl. ponytails)"))
+                    if (GUI.Button(new Rect(250, controlsY, 240, 25), L.Text("Add hair roots (incl. ponytails)")))
                     {
                         _physicsSelectionStatus = import.SelectPmxHairRoots();
                         ScrollPosition = Vector2.zero;
                     }
                     controlsY += 29;
-                    if (GUI.Button(new Rect(10, controlsY, 200, 25), "Clear physics roots"))
+                    if (GUI.Button(new Rect(10, controlsY, 200, 25), L.Text("Clear physics roots")))
                     {
                         import.ClearPhysicsRoots();
-                        _physicsSelectionStatus = "Physics roots cleared. The full skeleton is still imported.";
+                        _physicsSelectionStatus = L.Message("Physics roots cleared. The full skeleton is still imported.");
                     }
-                    if (CheckButton(new Rect(215, controlsY, 275, 25), import.PhysicsEnabledAfterImport, "Enable physics after import"))
+                    if (CheckButton(new Rect(215, controlsY, 275, 25), import.PhysicsEnabledAfterImport, L.Text("Enable physics after import")))
                         import.PhysicsEnabledAfterImport = !import.PhysicsEnabledAfterImport;
                     controlsY += 29;
-                    if (GUI.Button(new Rect(10, controlsY, 480, 25), "Physics settings: " + (import.PhysicsProfile == 1 ? "PMX preset (preview)" : "Legacy defaults")))
+                    if (GUI.Button(new Rect(10, controlsY, 480, 25), L.Format("Physics settings: {0}", import.PhysicsProfile == 1 ? L.Text("PMX preset (preview)") : L.Text("Legacy defaults"))))
                         import.PhysicsProfile = import.PhysicsProfile == 1 ? 0 : 1;
                     controlsY += 29;
-                    if (CheckButton(new Rect(10, controlsY, 480, 25), import.PmxHairCollisionAssist, "Hair body collision assist (override PMX groups)"))
+                    if (CheckButton(new Rect(10, controlsY, 480, 25), import.PmxHairCollisionAssist, L.Text("Hair body collision assist (override PMX groups)")))
                         import.PmxHairCollisionAssist = !import.PmxHairCollisionAssist;
                     controlsY += 29;
 
                 }
-                GUI.Label(new Rect(10, controlsY, 50, 25), "Search:");
+                GUI.Label(new Rect(10, controlsY, 50, 25), L.Text("Search:"));
                 string search = GUI.TextField(new Rect(60, controlsY, 235, 25), _boneSearch);
                 if (search != _boneSearch) { _boneSearch = search; ScrollPosition = Vector2.zero; }
-                if (CheckButton(new Rect(300, controlsY, 190, 25), _selectedRootsOnly, "Selected roots only"))
+                if (CheckButton(new Rect(300, controlsY, 190, 25), _selectedRootsOnly, L.Text("Selected roots only")))
                 {
                     _selectedRootsOnly = !_selectedRootsOnly;
                     ScrollPosition = Vector2.zero;
                 }
                 controlsY += 29;
-                if (GUI.Button(new Rect(10, controlsY, 110, 25), "Expand all"))
+                if (GUI.Button(new Rect(10, controlsY, 110, 25), L.Text("Expand all")))
                     foreach (var node in import.BoneNodes.OrderBy(n => n.Depth)) node.SetNodeOpen(true);
-                if (GUI.Button(new Rect(125, controlsY, 110, 25), "Collapse all"))
+                if (GUI.Button(new Rect(125, controlsY, 110, 25), L.Text("Collapse all")))
                     foreach (var node in import.BoneNodes.OrderByDescending(n => n.Depth)) node.SetNodeOpen(false);
-                GUI.Label(new Rect(245, controlsY, 245, 25), "Selected physics roots: " + import.BoneNodes.Count(n => n.IsDynamicRoot));
+                GUI.Label(new Rect(245, controlsY, 245, 25), L.Format("Selected physics roots: {0}", import.BoneNodes.Count(n => n.IsDynamicRoot)));
                 controlsY += 29;
                 if (!string.IsNullOrEmpty(_physicsSelectionStatus))
                 {
@@ -545,8 +538,8 @@ namespace AssetImport
             }
             else
             {
-                // custom styles 
-                GUIStyle goodPath = new GUIStyle(KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin.textField);
+                // custom styles
+                GUIStyle goodPath = new GUIStyle(GUI.skin.textField);
                 goodPath.normal.textColor = Color.green;
                 goodPath.hover.textColor = Color.green;
                 goodPath.focused.textColor = Color.green;
@@ -556,13 +549,13 @@ namespace AssetImport
                 badPath.hover.textColor = Color.red;
                 badPath.focused.textColor = Color.red;
 
-                GUIStyle label = new GUIStyle(KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin.label);
+                GUIStyle label = new GUIStyle(GUI.skin.label);
                 label.alignment = TextAnchor.MiddleCenter;
 
-                GUIStyle box = new GUIStyle(KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin.box);
+                GUIStyle box = new GUIStyle(GUI.skin.box);
                 box.alignment = TextAnchor.MiddleCenter;
-                
-                if (GUI.Button(new Rect(10, 50, 480, 25), Replacer ? "◀ Replace in all paths ▶" : "◀ Replace common or full Path: ▶", KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin.button))
+
+                if (GUI.Button(new Rect(10, 50, 480, 25), Replacer ? L.Text("◀ Replace in all paths ▶") : L.Text("◀ Replace common or full Path: ▶"), GUI.skin.button))
                 {
                     Replacer = !Replacer;
                 }
@@ -571,11 +564,11 @@ namespace AssetImport
                     CommonPathText = GUI.TextField(new Rect(10, 75, 335, 25), CommonPathText, Directory.Exists(CommonPathText) ? goodPath : badPath);
 
                     if (!Directory.Exists(CommonPathText)) GUI.enabled = false;
-                    if (GUI.Button(new Rect(350, 75, 480 - 350 - 70, 25), "Common"))
+                    if (GUI.Button(new Rect(350, 75, 480 - 350 - 70, 25), L.Text("Common")))
                     {
                         Main.currentLoadProcess.Import.CommonPath = CommonPathText;
                     }
-                    if (GUI.Button(new Rect(350+70, 75, 480 - 350 - 70, 25), "Full"))
+                    if (GUI.Button(new Rect(350+70, 75, 480 - 350 - 70, 25), L.Text("Full")))
                     {
                         Main.currentLoadProcess.Import.ReplacePathInAllTextures(CommonPathText);
                     }
@@ -584,9 +577,9 @@ namespace AssetImport
                 else
                 {
                     if (ReplaceString == null) ReplaceString = CommonPathText;
-                    ReplaceString = GUI.TextField(new Rect(10, 75, 215, 25), ReplaceString, KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin.textField);
-                    if (GUI.Button(new Rect(230, 75, 40, 25), "with")) 
-                    { 
+                    ReplaceString = GUI.TextField(new Rect(10, 75, 215, 25), ReplaceString, GUI.skin.textField);
+                    if (GUI.Button(new Rect(230, 75, 40, 25), L.Text("with")))
+                    {
                         foreach (Material mat in Main.currentLoadProcess.Import.MaterialTextures.Keys)
                         {
                             foreach (TexturePath tPath in Main.currentLoadProcess.Import.MaterialTextures[mat])
@@ -595,7 +588,7 @@ namespace AssetImport
                             }
                         }
                     }
-                    ReplaceWith = GUI.TextField(new Rect(275, 75, 215, 25), ReplaceWith, KKAPI.Utilities.IMGUIUtils.SolidBackgroundGuiSkin.textField);
+                    ReplaceWith = GUI.TextField(new Rect(275, 75, 215, 25), ReplaceWith, GUI.skin.textField);
                 }
 
                 Rect scrollContentRect = new Rect(0, 0, 470, 0);
@@ -626,7 +619,7 @@ namespace AssetImport
                         }
                         GUI.enabled = true;
                         GUI.Box(new Rect(35, y, 100, 25), "");
-                        GUI.Label(new Rect(35, y, 100, 25), tPath.Type.ToString(), label);
+                        GUI.Label(new Rect(35, y, 100, 25), L.Text(tPath.Type.ToString()), label);
                         tPath.Path = GUI.TextField(
                             new Rect(135, y, 470 - 160, 25),
                             tPath.Path,
@@ -634,8 +627,8 @@ namespace AssetImport
                         );
                         if (!GUI.Button(new Rect(470 - 25, y, 25, 25), "...")) continue;
                         tPath.Path = tPath.Path.Replace("\\", "/");
-                        string[] file = KKAPI.Utilities.OpenFileDialog.ShowDialog("Select Texture", Main.currentLoadProcess.Import.SourceIdentifier,
-                            "Image files (*.png; *.jpg; *.jpeg; *.tga; *.bmp; *.dds) |*.png; *.jpg; *.jpeg; *.tga; *.bmp; *.dds | All files (*.*)|*.*", "png", SingleFileFlags);
+                        string[] file = KKAPI.Utilities.OpenFileDialog.ShowDialog(L.Text("Select Texture"), Main.currentLoadProcess.Import.SourceIdentifier,
+                            L.Text("Image files") + " (*.png; *.jpg; *.jpeg; *.tga; *.bmp; *.dds) |*.png; *.jpg; *.jpeg; *.tga; *.bmp; *.dds |" + L.Text("All files") + " (*.*)|*.*", "png", SingleFileFlags);
                         if (file != null)
                         {
                             tPath.Path = file[0];
@@ -651,7 +644,7 @@ namespace AssetImport
             GUI.enabled = true;
 
             if (!GUI.Button(new Rect(10, PreloadWindowRect.height - 45, PreloadWindowRect.width - 20, 40),
-                    "Finish")) return;
+                    L.Text("Finish"))) return;
             if (KoikatuAPI.GetCurrentGameMode() == GameMode.Studio)
             {
                 Main.asc.FinishLoadProcess(Main.currentLoadProcess);

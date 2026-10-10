@@ -24,7 +24,7 @@ internal static class PhysicsImportOptionsChecks
             AssetUI.PmxHairCollisionAssist = true;
             var fresh = new Import(model);
             var process = Create(fresh, accessory, LoadProcess.LoadProcessKind.Normal);
-            check(ReferenceEquals(process.Import, fresh) && fresh.InitialPhysicsSelectionStatus.Contains("2 added"), "new import constructor auto-selects all usable chains for " + (accessory ? "accessory" : "item"));
+            check(ReferenceEquals(process.Import, fresh) && fresh.InitialPhysicsSelectionStatus.English.Contains("2 added"), "new import constructor auto-selects all usable chains for " + (accessory ? "accessory" : "item"));
             check(fresh.PmxHairCollisionAssist, "new import copies explicit hair collision assistance option");
             check(fresh.PhysicsEnvironment.Floor && fresh.PhysicsEnvironment.Settle && !fresh.PhysicsEnvironment.NaturalDrape && fresh.PhysicsEnvironment.DownwardForce == .001f,
                 "new PMX import receives ground, force and settling defaults");
@@ -42,7 +42,7 @@ internal static class PhysicsImportOptionsChecks
             Create(manual, accessory, LoadProcess.LoadProcessKind.Normal);
             check(!manual.PmxHairCollisionAssist, "new import preserves original PMX collision rules when assist is off");
             check(manual.PhysicsProfile == 0, "new PMX import can retain legacy defaults");
-            check(manual.PhysicsEnabledAfterImport && Node(manual, 1).IsDynamicRoot && !Node(manual, 3).IsDynamicRoot && manual.InitialPhysicsSelectionStatus.Contains("off"),
+            check(manual.PhysicsEnabledAfterImport && Node(manual, 1).IsDynamicRoot && !Node(manual, 3).IsDynamicRoot && manual.InitialPhysicsSelectionStatus.English.Contains("off"),
                 "new import opt-out preserves hand selection and sets requested enable flag");
 
             foreach (var kind in new[] { LoadProcess.LoadProcessKind.Load, LoadProcess.LoadProcessKind.Import, LoadProcess.LoadProcessKind.Copy })

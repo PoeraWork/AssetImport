@@ -37,7 +37,7 @@ internal static class PhysicsRootSelectionChecks
         check(import.BoneNodes.SequenceEqual(originalNodes) && import.GameObject.GetComponentsInChildren<Transform>(true).SequenceEqual(originalTransforms), "clear preserves every bone node and game transform");
         check(originalTransforms.Select(t => t.parent).SequenceEqual(originalParents) && originalTransforms.All(t => t), "clear neither reparents nor destroys the full skeleton");
         import.ClearPhysicsRoots();
-        check(import.SelectPmxHairRoots().Contains("2 added"), "clear is repeatable and auto-selection works again");
+        check(import.SelectPmxHairRoots().English.Contains("2 added"), "clear is repeatable and auto-selection works again");
 
         var parentConflict = new Import(model);
         Node(parentConflict, 2).SetDynamic(true);
@@ -61,10 +61,10 @@ internal static class PhysicsRootSelectionChecks
         check(status.Contains("1 added") && status.Contains("1 skipped") && missingNode.Bone(7), "missing UI bone entry is reported and does not destroy the skeleton");
 
         var disabled = new Import(model) { ImportBones = false };
-        check(disabled.SelectPmxHairRoots().Contains("Enable Import Armature") && disabled.BoneNodes.All(n => !n.IsDynamic), "armature-disabled import is not modified");
+        check(disabled.SelectPmxHairRoots().English.Contains("Enable Import Armature") && disabled.BoneNodes.All(n => !n.IsDynamic), "armature-disabled import is not modified");
         var otherFormat = new Import(model, false);
         Node(otherFormat, 9).SetDynamic(true);
-        check(otherFormat.SelectPmxHairRoots().Contains("Enable Import Armature") && otherFormat.BoneNodes.Count(n => n.IsDynamicRoot) == 1,
+        check(otherFormat.SelectPmxHairRoots().English.Contains("Enable Import Armature") && otherFormat.BoneNodes.Count(n => n.IsDynamicRoot) == 1,
             "non-PMX import keeps existing selection unchanged");
 
         var all = new Import(model);
@@ -72,15 +72,15 @@ internal static class PhysicsRootSelectionChecks
         check(status.Contains("3 added") && new[] { 3, 7, 9 }.All(i => Node(all, i).IsDynamicRoot), "all-chain action selects both hair and skirt roots");
         var allSkirtProperties = Node(all, 9).GetDynamicBoneProperties();
         allSkirtProperties.radius = .41f;
-        check(all.SelectPmxPhysicsRoots().Contains("3 already selected") && ReferenceEquals(allSkirtProperties, Node(all, 9).GetDynamicBoneProperties()) && allSkirtProperties.radius == .41f,
+        check(all.SelectPmxPhysicsRoots().English.Contains("3 already selected") && ReferenceEquals(allSkirtProperties, Node(all, 9).GetDynamicBoneProperties()) && allSkirtProperties.radius == .41f,
             "repeated all-chain action preserves selected properties without duplicating roots");
-        check(all.SelectPmxHairRoots().Contains("2 already selected") && Node(all, 9).IsDynamicRoot, "hair-only action after all-chain action keeps skirt selection");
+        check(all.SelectPmxHairRoots().English.Contains("2 already selected") && Node(all, 9).IsDynamicRoot, "hair-only action after all-chain action keeps skirt selection");
         all.ClearPhysicsRoots();
         Node(all, 4).SetDynamic(true);
         status = all.SelectPmxPhysicsRoots();
         check(status.Contains("2 added") && status.Contains("1 skipped") && Node(all, 4).IsDynamicRoot && !Node(all, 3).IsDynamicRoot,
             "all-chain action preserves manual child root and adds the independent skirt and hair chains");
-        check(disabled.SelectPmxPhysicsRoots().Contains("Enable Import Armature") && disabled.BoneNodes.All(n => !n.IsDynamic), "all-chain action respects armature opt-out");
+        check(disabled.SelectPmxPhysicsRoots().English.Contains("Enable Import Armature") && disabled.BoneNodes.All(n => !n.IsDynamic), "all-chain action respects armature opt-out");
 
         var generic = new PmxModel {
             Bones = new[] { ("root", -1), ("腰", 0), ("jewel", 1), ("pendantTip", 2), ("Leaf", 1), ("hairNoBody", 1), ("tip", 5) }

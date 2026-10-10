@@ -43,6 +43,8 @@ Both packagers accept `--notes <file>` to explicitly include an additional UTF-8
 
 ## Changes and bug reports
 
+Interface strings use `L.Text` or `L.Format`; messages retained for later display use `L.Message` so they follow language changes. English source text is the fallback key, with Simplified Chinese entries in `AssetImport.Localization.zhCN.cs`. Keep format placeholders consistent. Do not translate model names, file paths, configuration keys, saved data, or diagnostic identifiers. Localization checks cover placeholder parity, live switching and unchanged message arguments.
+
 Describe the problem, resulting behavior, and relevant validation in a pull request. Keep changes focused and preserve compatibility with both target frameworks. Check imported scene/card restoration when changing persistence or hierarchy behavior.
 
 For bugs, include the game, build identifier, reproduction steps, import options, and relevant log excerpts. For VMD playback, specify the affected frame range. Remove personal paths and unrelated log content before posting publicly.

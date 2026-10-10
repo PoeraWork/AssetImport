@@ -105,35 +105,34 @@ namespace AssetImport
             return GetAccessoryPhysics(ChaControl.fileStatus.coordinateType, AccessoriesApi.SelectedMakerAccSlot, out asset);
         }
 
-        internal string GetSelectedAccessoryPhysicsStatus()
+        internal LocalizedText GetSelectedAccessoryPhysicsStatus()
         {
             var physics = GetSelectedAccessoryPhysics(out var asset);
-            if (!physics) return "Select an accessory imported by AssetImport to control its physics.";
+            if (!physics) return L.Message("Select an accessory imported by AssetImport to control its physics.");
             var chains = physics.GetOwnedChains();
-            if (chains.Count == 0) return "Selected accessory has no physics chains. Select roots when importing.";
+            if (chains.Count == 0) return L.Message("Selected accessory has no physics chains. Select roots when importing.");
             int enabled = 0;
             foreach (var chain in chains) if (chain.enabled) enabled++;
-            return "Accessory physics: " + enabled + "/" + chains.Count + " chains ON.";
+            return L.Message("Accessory physics: {0}/{1} chains ON.", enabled, chains.Count);
         }
 
-        internal string SetSelectedAccessoryPhysicsEnabled(bool enabled)
+        internal LocalizedText SetSelectedAccessoryPhysicsEnabled(bool enabled)
         {
             var physics = GetSelectedAccessoryPhysics(out var asset);
-            if (!physics) return "Select an accessory imported by AssetImport first.";
+            if (!physics) return L.Message("Select an accessory imported by AssetImport first.");
             int count = physics.SetEnabled(enabled);
-            if (count == 0) return "No physics chains exist. Select roots when importing the accessory.";
+            if (count == 0) return L.Message("No physics chains exist. Select roots when importing the accessory.");
             asset.PhysicsEnabled = enabled;
-            return "Accessory physics " + (enabled ? "ON" : "OFF") + ": " + count + " chains; roots and colliders retained.";
+            return L.Message("Accessory physics {0}: {1} chains; roots and colliders retained.", L.Message(enabled ? "ON" : "OFF"), count);
         }
 
-        internal string ResetSelectedAccessoryPhysics()
+        internal LocalizedText ResetSelectedAccessoryPhysics()
         {
             var physics = GetSelectedAccessoryPhysics(out var asset);
-            if (!physics) return "Select an accessory imported by AssetImport first.";
+            if (!physics) return L.Message("Select an accessory imported by AssetImport first.");
             var result = PhysicsReset.Reset(physics.GetOwnedChains());
             foreach (string message in result.FailureMessages) Logger.LogWarning("Cannot reset accessory physics: " + message);
-            return "Physics reset: " + result.ResetCount + " chain(s); " + result.InactiveCount +
-                " inactive, " + result.InvalidCount + " invalid, " + result.FailedCount + " failed. Settings retained.";
+            return L.Message("Physics reset: {0} chain(s); {1} inactive, {2} invalid, {3} failed. Settings retained.", result.ResetCount, result.InactiveCount, result.InvalidCount, result.FailedCount);
         }
 
         // used to transfer plugin data from Coordinate Load Options temp character to the real characters.
@@ -545,7 +544,7 @@ namespace AssetImport
 
                             if (GameObject.Find("CoordinateTooglePanel/AccessoriesTooglePanel/BtnChangeAccLoadMode")?.GetComponentInChildren<Text>()?.text != "Replace Mode")
                             {
-                                Logger.LogMessage("Asset Import WARNING: Add Mode is not supported! Stopping asset load");
+                                Logger.LogMessage(L.Text("Asset Import WARNING: Add Mode is not supported! Stopping asset load"));
                                 return;
                             }
 
@@ -901,7 +900,7 @@ namespace AssetImport
             
             if (!(File.Exists(path)))
             {
-                Logger.LogMessage($"File {path} does not exist");
+                Logger.LogMessage(L.Format("File {0} does not exist", path));
                 return;
             }
 
@@ -910,7 +909,7 @@ namespace AssetImport
             ChaAccessoryComponent accessory = ChaControl.GetAccessoryComponent(slot);
             if (!accessory)
             {
-                Logger.LogMessage("Please specify a Type and Parent by choosing a normal accessory first.");
+                Logger.LogMessage(L.Text("Please specify a Type and Parent by choosing a normal accessory first."));
                 return;
             }
 

@@ -23,49 +23,49 @@ namespace AssetImport
                 _chainSelection.Clear(); _chainPhysicsOpen = false;
             }
             GUI.enabled = !PreloadUI;
-            GUI.Label(new Rect(10, y += 8, 220, 22), "Selected model physics");
+            GUI.Label(new Rect(10, y += 8, 220, 22), L.Text("Selected model physics"));
             var contacts = environment.GetComponent<NativeContactController>();
             if (contacts)
             {
-                if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.NativeBreastContacts, "Breast contacts (experimental)"))
+                if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.NativeBreastContacts, L.Text("Breast contacts (experimental)")))
                     _environmentDraft.NativeBreastContacts = !_environmentDraft.NativeBreastContacts;
                 var contactStyle = new GUIStyle(GUI.skin.label) { wordWrap = true };
                 string contactStatus = contacts.Status;
                 if (AssetDebug.Enabled) contactStatus += "\n" + contacts.DiagnosticSummary;
                 if (_environmentDraft.NativeBreastContacts != environment.Settings.NativeBreastContacts)
-                    contactStatus += "\nPending change: click Apply physics settings.";
+                    contactStatus += L.Text("\nPending change: click Apply physics settings.");
                 float contactHeight = contactStyle.CalcHeight(new GUIContent(contactStatus), 220);
                 GUI.Label(new Rect(10, y += 27, 220, contactHeight), contactStatus, contactStyle);
                 y += (int)contactHeight - 25;
             }
-            if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.Floor, "Ground collision"))
+            if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.Floor, L.Text("Ground collision")))
                 _environmentDraft.Floor = !_environmentDraft.Floor;
-            GUI.Label(new Rect(10, y += 28, 140, 22), "Ground offset");
+            GUI.Label(new Rect(10, y += 28, 140, 22), L.Text("Ground offset"));
             _floorOffsetText = GUI.TextField(new Rect(153, y, 77, 22), _floorOffsetText);
-            GUI.Label(new Rect(10, y += 25, 140, 22), "Downward force");
+            GUI.Label(new Rect(10, y += 25, 140, 22), L.Text("Downward force"));
             _downwardForceText = GUI.TextField(new Rect(153, y, 77, 22), _downwardForceText);
-            if (GUI.Button(new Rect(10, y += 25, 220, 25), "Default: " + PhysicsModeName(_environmentDraft.DefaultMode)))
+            if (GUI.Button(new Rect(10, y += 25, 220, 25), L.Format("Default: {0}", PhysicsModeName(_environmentDraft.DefaultMode))))
                 _environmentDraft.NaturalDrape = !_environmentDraft.NaturalDrape;
-            if (GUI.Button(new Rect(10, y += 28, 220, 25), "Physics chains (" + environment.Chains.Length + ")..."))
+            if (GUI.Button(new Rect(10, y += 28, 220, 25), L.Format("Physics chains ({0})...", environment.Chains.Length)))
                 _chainPhysicsOpen = !_chainPhysicsOpen;
-            if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.Settle, "Settle on load / reset"))
+            if (CheckButton(new Rect(10, y += 25, 220, 25), _environmentDraft.Settle, L.Text("Settle on load / reset")))
                 _environmentDraft.Settle = !_environmentDraft.Settle;
             var style = new GUIStyle(GUI.skin.label) { wordWrap = true };
-            string help = "Ground offset is relative to the model origin. Force: 0 to 0.02 (0 = off). Pause motion before settling.";
+            string help = L.Text("Ground offset is relative to the model origin. Force: 0 to 0.02 (0 = off). Pause motion before settling.");
             if (_environmentDraft.NaturalDrape)
-                help += NaturalDrapePatch.Available ? " Free hanging removes shape retention and PMX angular support."
-                    : " Free hanging is unavailable with this physics runtime. Check the log.";
+                help += NaturalDrapePatch.Available ? L.Text(" Free hanging removes shape retention and PMX angular support.")
+                    : L.Text(" Free hanging is unavailable with this physics runtime. Check the log.");
             float height = style.CalcHeight(new GUIContent(help), 220);
             GUI.Label(new Rect(10, y += 28, 220, height), help, style);
             y += (int)height;
-            if (GUI.Button(new Rect(10, y += 4, 220, 25), "Apply physics settings"))
+            if (GUI.Button(new Rect(10, y += 4, 220, 25), L.Text("Apply physics settings")))
                 ApplyPhysicsDraft();
-            if (GUI.Button(new Rect(10, y += 30, 220, 25), environment.IsSettling ? "Restart settling" : "Settle physics"))
-                _physicsActionStatus = environment.RequestSettle() > 0 ? "Settling physics." : "Enable physics before settling.";
+            if (GUI.Button(new Rect(10, y += 30, 220, 25), environment.IsSettling ? L.Text("Restart settling") : L.Text("Settle physics")))
+                _physicsActionStatus = environment.RequestSettle() > 0 ? L.Message("Settling physics.") : L.Message("Enable physics before settling.");
             y += 25;
             if (environment.IsSettling)
             {
-                GUI.Label(new Rect(10, y += 4, 220, 22), "Settling physics...");
+                GUI.Label(new Rect(10, y += 4, 220, 22), L.Text("Settling physics..."));
                 y += 22;
             }
             GUI.enabled = true;
@@ -79,7 +79,7 @@ namespace AssetImport
                 !float.TryParse(_downwardForceText, NumberStyles.Float, CultureInfo.InvariantCulture, out force) ||
                 !PhysicsEnvironmentMath.Finite(offset) || !PhysicsEnvironmentMath.Finite(force) ||
                 offset < -100f || offset > 100f || force < 0f || force > .02f)
-                _physicsActionStatus = "Enter ground offset from -100 to 100 and force from 0 to 0.02.";
+                _physicsActionStatus = L.Message("Enter ground offset from -100 to 100 and force from 0 to 0.02.");
             else
             {
                 _environmentDraft.FloorOffset = offset; _environmentDraft.DownwardForce = force;
@@ -87,7 +87,7 @@ namespace AssetImport
                 var contacts = _environment.GetComponent<NativeContactController>();
                 if (contacts) { contacts.ResetContacts(); contacts.ReportSettingsApplied(); }
                 PhysicsEnvironmentPersistence.Write(_environmentAsset, _environmentDraft);
-                _physicsActionStatus = "Physics settings applied.";
+                _physicsActionStatus = L.Message("Physics settings applied.");
             }
         }
     }

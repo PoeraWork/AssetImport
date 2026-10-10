@@ -13,7 +13,7 @@ namespace AssetImport
         private readonly CubeLut lut;
         private static Request active;
         internal static int PendingImports { get; private set; }
-        internal static string Status { get; private set; }
+        internal static LocalizedText Status { get; private set; }
         internal ImportTextureData(CubeLut lut) { this.lut = lut; }
 
         private sealed class Data
@@ -95,7 +95,7 @@ namespace AssetImport
                 {
                     var group = groups[i];
                     TexturePath first = group[0];
-                    Status = "Importing textures " + (i + 1) + "/" + groups.Count + ". Wait before saving.";
+                    Status = L.Message("Importing textures {0}/{1}. Wait before saving.", i + 1, groups.Count);
                     byte[] bytes = null;
                     Exception error = null;
                     IEnumerator read = ReadAsync(first.Path, lut != null && first.Type == Assimp.TextureType.Diffuse,
@@ -125,14 +125,14 @@ namespace AssetImport
                 }
                 if (!isAlive()) yield break;
                 finished = true;
-                Status = failures == 0 ? "Textures ready." : "Textures finished with " + failures + " error(s). See log.";
+                Status = failures == 0 ? L.Message("Textures ready.") : L.Message("Textures finished with {0} error(s). See log.", failures);
                 completed();
             }
             finally
             {
                 PendingImports--;
-                if (PendingImports > 0) Status = "Importing textures. Wait before saving.";
-                else if (!finished) Status = "Texture import cancelled.";
+                if (PendingImports > 0) Status = L.Message("Importing textures. Wait before saving.");
+                else if (!finished) Status = L.Message("Texture import cancelled.");
             }
         }
 

@@ -44,7 +44,7 @@ internal static class PairAndBoundChecks
             // This double injects a growing offset, not a native collision.
             // Without feeding the bound back, the proxy crosses the hard limit.
             for (int i = 0; i < 3000; i++) controller.Tick(1f / 60);
-            check(controller.Status.Contains("1 active") && (bone.position - original).magnitude <= radius + 1e-6f, "bounded writeback remains live through 3000 frames of injected accumulating displacement");
+            check(controller.Status.English.Contains("1 active") && (bone.position - original).magnitude <= radius + 1e-6f, "bounded writeback remains live through 3000 frames of injected accumulating displacement");
             check(native.ResetCalls > 100 && (native.LastResetBodyPosition - original).magnitude <= radius + 1e-6f, "native particle reset observes the same bounded position as the visible bone");
             var report = controller.BuildDiagnosticReport();
             check(report.Contains("result=ancestor-overlaps-reference-pose") && report.Contains("boundObstacles=2") && report.Contains("outputRebases="), "report preserves exclusion reasons and native bound feedback counts");

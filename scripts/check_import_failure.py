@@ -72,6 +72,8 @@ def main():
         work = Path(temp)
         (work / "Program.cs").write_text(PREAMBLE + source[start:end] + POSTAMBLE, encoding="utf-8")
         (work / "Debug.cs").write_text((ROOT / "src/AssetImport/AssetImport.Debug.cs").read_text(encoding="utf-8"), encoding="utf-8")
+        for localization in (ROOT / "src/AssetImport").glob("AssetImport.Localization*.cs"):
+            (work / localization.name).write_text(localization.read_text(encoding="utf-8"), encoding="utf-8")
         (work / "check.csproj").write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>')
         subprocess.run([args.dotnet, "run", "--project", str(work / "check.csproj"), "-c", "Release", "--disable-build-servers", "-p:UseSharedCompilation=false", "-v:q"], cwd=ROOT, check=True)
 
