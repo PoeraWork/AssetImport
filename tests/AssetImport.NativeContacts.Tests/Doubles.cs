@@ -68,6 +68,13 @@ namespace UnityEngine
         private System.Numerics.Quaternion _v;
         public Quaternion(float x, float y, float z, float w) { _v = new(x, y, z, w); }
         public static Quaternion identity => new(0, 0, 0, 1);
+        public static Quaternion Euler(float x, float y, float z)
+        {
+            float k = MathF.PI / 360;
+            return new Quaternion(0, MathF.Sin(y * k), 0, MathF.Cos(y * k)) *
+                new Quaternion(MathF.Sin(x * k), 0, 0, MathF.Cos(x * k)) *
+                new Quaternion(0, 0, MathF.Sin(z * k), MathF.Cos(z * k));
+        }
         public static Quaternion Inverse(Quaternion q) => new() { _v = System.Numerics.Quaternion.Inverse(q._v) };
         public static Quaternion operator *(Quaternion a, Quaternion b) => new() { _v = a._v * b._v };
         public static Vector3 operator *(Quaternion q, Vector3 v) { var r = System.Numerics.Vector3.Transform(new(v.x, v.y, v.z), q._v); return new(r.X, r.Y, r.Z); }

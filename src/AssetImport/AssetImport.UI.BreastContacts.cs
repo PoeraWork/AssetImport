@@ -15,6 +15,11 @@ namespace AssetImport
         private float _chainBreastRadiusOverride;
         private Vector3 _chainBreastOffset;
         private string _breastAbsoluteText = "0", _breastXText = "0", _breastYText = "0", _breastZText = "0";
+        private bool _chainBreastCapsule, _chainBreastMirror;
+        private float _chainBreastLength;
+        private Vector3 _chainBreastRotation;
+        private Vector2 _breastEditorScroll;
+        private string _breastLengthText = "0", _breastRotXText = "0", _breastRotYText = "0", _breastRotZText = "0";
 
         private static string BreastRoleName(int role)
         { return role == 1 ? "Breast" : role == 2 ? "Exclude" : "Automatic"; }
@@ -30,6 +35,13 @@ namespace AssetImport
             _breastXText = clean.BreastOffsetX.ToString("0.####", CultureInfo.InvariantCulture);
             _breastYText = clean.BreastOffsetY.ToString("0.####", CultureInfo.InvariantCulture);
             _breastZText = clean.BreastOffsetZ.ToString("0.####", CultureInfo.InvariantCulture);
+            _chainBreastCapsule = clean.BreastCapsule; _chainBreastMirror = clean.BreastMirrorX;
+            _chainBreastLength = clean.BreastLength;
+            _chainBreastRotation = new Vector3(clean.BreastRotationX, clean.BreastRotationY, clean.BreastRotationZ);
+            _breastLengthText = clean.BreastLength.ToString("0.####", CultureInfo.InvariantCulture);
+            _breastRotXText = clean.BreastRotationX.ToString("0.##", CultureInfo.InvariantCulture);
+            _breastRotYText = clean.BreastRotationY.ToString("0.##", CultureInfo.InvariantCulture);
+            _breastRotZText = clean.BreastRotationZ.ToString("0.##", CultureInfo.InvariantCulture);
         }
 
         private void WriteBreastFields(PhysicsChainSettings settings)
@@ -37,6 +49,8 @@ namespace AssetImport
             settings.BreastRole = _chainBreastRole; settings.BreastRadiusScale = _chainBreastRadiusScale;
             settings.BreastMeshVolume = _chainBreastMeshVolume; settings.BreastRadiusOverride = _chainBreastRadiusOverride;
             settings.BreastOffsetX = _chainBreastOffset.x; settings.BreastOffsetY = _chainBreastOffset.y; settings.BreastOffsetZ = _chainBreastOffset.z;
+            settings.BreastCapsule = _chainBreastCapsule; settings.BreastLength = _chainBreastLength; settings.BreastMirrorX = _chainBreastMirror;
+            settings.BreastRotationX = _chainBreastRotation.x; settings.BreastRotationY = _chainBreastRotation.y; settings.BreastRotationZ = _chainBreastRotation.z;
         }
 
         private NativeContactShape[] PreviewBreastSettings(NativeContactController contacts)
@@ -57,42 +71,62 @@ namespace AssetImport
 
         private void DrawChainBreastEditor(int y)
         {
+            _breastEditorScroll = GUI.BeginScrollView(new Rect(0, y + 29, 638, _chainPhysicsRect.height - y - 35),
+                _breastEditorScroll, new Rect(0, 0, 610, 380));
+            DrawBreastVolumeFields();
+            GUI.EndScrollView();
+        }
+
+        private void DrawBreastVolumeFields()
+        {
             var contacts = _environment.GetComponent<NativeContactController>();
             bool editable = contacts && _chainSelection.Count > 0;
             GUI.enabled = editable;
             for (int role = 0; role < 3; role++)
-                if (CheckButton(new Rect(12 + role * 206, y + 29, 198, 25), _chainBreastRole == role, BreastRoleName(role))) _chainBreastRole = role;
-            if (CheckButton(new Rect(12, y + 59, 198, 25), !_chainBreastMeshVolume, "Source volumes")) ResetBreastVolume(false);
-            if (CheckButton(new Rect(218, y + 59, 198, 25), _chainBreastMeshVolume, "Fit to mesh")) ResetBreastVolume(true);
-            GUI.Label(new Rect(425, y + 61, 200, 22), "Resets size and center");
-            GUI.Label(new Rect(12, y + 91, 170, 22), "Sphere radius (%)");
+                if (CheckButton(new Rect(12 + role * 200, 0, 192, 25), _chainBreastRole == role, BreastRoleName(role))) _chainBreastRole = role;
+            if (CheckButton(new Rect(12, 30, 190, 25), !_chainBreastMeshVolume, "Source volumes")) ResetBreastVolume(false);
+            if (CheckButton(new Rect(212, 30, 190, 25), _chainBreastMeshVolume, "Fit to mesh")) ResetBreastVolume(true);
+            GUI.Label(new Rect(410, 32, 195, 22), "Resets size and center");
+            if (CheckButton(new Rect(12, 60, 100, 25), !_chainBreastCapsule, "Sphere")) _chainBreastCapsule = false;
+            if (CheckButton(new Rect(120, 60, 110, 25), _chainBreastCapsule, "Capsule")) _chainBreastCapsule = true;
+            GUI.enabled = editable && _chainBreastCapsule;
+            GUI.Label(new Rect(245, 62, 110, 22), "Total length");
+            _breastLengthText = GUI.TextField(new Rect(360, 60, 100, 23), _breastLengthText);
+            GUI.Label(new Rect(470, 62, 135, 22), "Min: 2 x radius");
+            GUI.enabled = editable;
+            GUI.Label(new Rect(12, 92, 160, 22), "Radius (%)");
             GUI.enabled = editable && _chainBreastRadiusOverride == 0;
-            float value = GUI.HorizontalSlider(new Rect(190, y + 99, 332, 20), _chainBreastRadiusScale, .1f, 4f);
+            float value = GUI.HorizontalSlider(new Rect(180, 100, 315, 20), _chainBreastRadiusScale, .1f, 4f);
             if (value != _chainBreastRadiusScale)
             { _chainBreastRadiusScale = value; _chainBreastRadiusText = (value * 100f).ToString("0.##", CultureInfo.InvariantCulture); }
-            _chainBreastRadiusText = GUI.TextField(new Rect(535, y + 91, 90, 23), _chainBreastRadiusText);
+            _chainBreastRadiusText = GUI.TextField(new Rect(510, 92, 95, 23), _chainBreastRadiusText);
             float percent;
-            bool valid = float.TryParse(_chainBreastRadiusText, NumberStyles.Float, CultureInfo.InvariantCulture, out percent) &&
-                PhysicsEnvironmentMath.Finite(percent) && percent >= 10f && percent <= 400f;
+            bool valid = ReadContactValue(_chainBreastRadiusText, 10, 400, out percent);
             if (valid) _chainBreastRadiusScale = percent / 100f;
             GUI.enabled = editable;
-            GUI.Label(new Rect(12, y + 120, 185, 22), "Radius (0 = scaled)");
-            _breastAbsoluteText = GUI.TextField(new Rect(200, y + 120, 90, 23), _breastAbsoluteText);
-            GUI.Label(new Rect(302, y + 120, 325, 22), "Model units; independent of source size");
-            GUI.Label(new Rect(12, y + 149, 120, 22), "Center offset");
-            GUI.Label(new Rect(135, y + 149, 20, 22), "X"); _breastXText = GUI.TextField(new Rect(157, y + 149, 125, 23), _breastXText);
-            GUI.Label(new Rect(305, y + 149, 20, 22), "Y"); _breastYText = GUI.TextField(new Rect(327, y + 149, 125, 23), _breastYText);
-            GUI.Label(new Rect(475, y + 149, 20, 22), "Z"); _breastZText = GUI.TextField(new Rect(497, y + 149, 128, 23), _breastZText);
-            float absolute, x, z, offsetY;
+            GUI.Label(new Rect(12, 122, 185, 22), "Radius (0 = scaled)");
+            _breastAbsoluteText = GUI.TextField(new Rect(200, 120, 90, 23), _breastAbsoluteText);
+            GUI.Label(new Rect(302, 122, 300, 22), "Model units; 0 uses percentage");
+            DrawContactVectorFields(150, "Center offset", ref _breastXText, ref _breastYText, ref _breastZText);
+            GUI.enabled = editable && _chainBreastCapsule;
+            DrawContactVectorFields(180, "Rotation (deg)", ref _breastRotXText, ref _breastRotYText, ref _breastRotZText);
+            GUI.enabled = editable;
+            if (CheckButton(new Rect(12, 210, 158, 25), _chainBreastMirror, "Mirror across X")) _chainBreastMirror = !_chainBreastMirror;
+            GUI.Label(new Rect(180, 208, 425, 32), "When mirrored: negative X moves inward, positive outward; Y/Z rotations reflect.", new GUIStyle(GUI.skin.label) { wordWrap = true });
+            float absolute, x, z, offsetY, length, rx, ry, rz;
             bool volumeValid = ReadContactValue(_breastAbsoluteText, 0, 2, out absolute) &
                 ReadContactValue(_breastXText, -2, 2, out x) & ReadContactValue(_breastYText, -2, 2, out offsetY) &
                 ReadContactValue(_breastZText, -2, 2, out z);
+            bool capsuleValid = ReadContactValue(_breastLengthText, 0, 4, out length) &
+                ReadContactValue(_breastRotXText, -180, 180, out rx) & ReadContactValue(_breastRotYText, -180, 180, out ry) &
+                ReadContactValue(_breastRotZText, -180, 180, out rz);
             if (volumeValid) { _chainBreastRadiusOverride = absolute; _chainBreastOffset = new Vector3(x, offsetY, z); }
-            valid &= volumeValid;
+            if (capsuleValid) { _chainBreastLength = length; _chainBreastRotation = new Vector3(rx, ry, rz); }
+            valid &= volumeValid && (!_chainBreastCapsule || capsuleValid);
             GUI.enabled = true;
-            if (CheckButton(new Rect(12, y + 178, 190, 25), !_breastPreviewApplied, "Draft (cyan)")) _breastPreviewApplied = false;
-            if (CheckButton(new Rect(210, y + 178, 200, 25), _breastPreviewApplied, "Applied (green)")) _breastPreviewApplied = true;
-            if (CheckButton(new Rect(418, y + 178, 210, 25), _breastShowObstacles, "Body obstacles")) _breastShowObstacles = !_breastShowObstacles;
+            if (CheckButton(new Rect(12, 244, 190, 25), !_breastPreviewApplied, "Draft (cyan)")) _breastPreviewApplied = false;
+            if (CheckButton(new Rect(212, 244, 190, 25), _breastPreviewApplied, "Applied (green)")) _breastPreviewApplied = true;
+            if (CheckButton(new Rect(412, 244, 190, 25), _breastShowObstacles, "Body obstacles")) _breastShowObstacles = !_breastShowObstacles;
             string summary = "Select one or more physics chains.";
             if (contacts && _chainSelection.Count > 0)
             {
@@ -101,35 +135,41 @@ namespace AssetImport
                     shapes.Min(s => s.Radius).ToString("0.####", CultureInfo.InvariantCulture) + " - " + shapes.Max(s => s.Radius).ToString("0.####", CultureInfo.InvariantCulture)) +
                     (_breastPreviewApplied ? (_environment.Settings.NativeBreastContacts ? " (applied)" : " (contacts OFF)") : " (draft; click Apply)");
             }
-            GUI.Label(new Rect(12, y + 208, 615, 23), summary);
+            GUI.Label(new Rect(12, 274, 590, 23), summary);
             GUI.enabled = editable && valid;
-            if (GUI.Button(new Rect(12, y + 236, 218, 27), "Apply breast settings"))
+            if (GUI.Button(new Rect(12, 302, 218, 27), "Apply breast settings"))
             {
-                foreach (string root in _chainSelection)
-                {
-                    WriteBreastFields(_environmentDraft.EditRoot(root));
-                }
+                foreach (string root in _chainSelection) WriteBreastFields(_environmentDraft.EditRoot(root));
                 ApplyPhysicsDraft();
             }
             GUI.enabled = editable;
-            if (GUI.Button(new Rect(240, y + 236, 185, 27), "Reset breast settings"))
+            if (GUI.Button(new Rect(240, 302, 185, 27), "Reset breast settings"))
             {
                 LoadChainBreastSettings(null);
-                foreach (string root in _chainSelection)
-                    WriteBreastFields(_environmentDraft.EditRoot(root));
+                foreach (string root in _chainSelection) WriteBreastFields(_environmentDraft.EditRoot(root));
                 ApplyPhysicsDraft();
             }
             GUI.enabled = true;
-            string help = !contacts ? "Breast contacts require an imported PMX model." : !valid ? "Radius: 0 to 2. Offsets: -2 to 2. Scale: 10% to 400%." :
+            string help = !contacts ? "Breast contacts require an imported PMX model." : !valid ? "Radius: 0-2. Length: 0-4. Offset: -2 to 2. Rotation: -180 to 180." :
                 !_environmentDraft.NativeBreastContacts ? "Enable Breast contacts in Selected model physics to use these settings." :
-                "Contacts use branch endpoints only. Fit adjusts each endpoint's mesh region. Yellow: allowed body obstacles (max 64); Apply activates edits.";
-            GUI.Label(new Rect(12, y + 269, 615, 36), help, new GUIStyle(GUI.skin.label) { wordWrap = true });
+                "Select one chain to adjust each side separately. Capsule length includes both caps. Yellow: allowed body obstacles. Apply activates edits.";
+            GUI.Label(new Rect(12, 335, 590, 42), help, new GUIStyle(GUI.skin.label) { wordWrap = true });
+        }
+
+        private static void DrawContactVectorFields(int y, string label, ref string x, ref string offsetY, ref string z)
+        {
+            GUI.Label(new Rect(12, y + 2, 120, 22), label);
+            GUI.Label(new Rect(135, y + 2, 20, 22), "X"); x = GUI.TextField(new Rect(155, y, 110, 23), x);
+            GUI.Label(new Rect(300, y + 2, 20, 22), "Y"); offsetY = GUI.TextField(new Rect(320, y, 110, 23), offsetY);
+            GUI.Label(new Rect(465, y + 2, 20, 22), "Z"); z = GUI.TextField(new Rect(485, y, 120, 23), z);
         }
 
         private void ResetBreastVolume(bool mesh)
         {
             int role = _chainBreastRole;
-            LoadChainBreastSettings(new PhysicsChainSettings { BreastRole = role, BreastMeshVolume = mesh });
+            LoadChainBreastSettings(new PhysicsChainSettings { BreastRole = role, BreastMeshVolume = mesh,
+                BreastCapsule = _chainBreastCapsule, BreastLength = _chainBreastLength, BreastMirrorX = _chainBreastMirror,
+                BreastRotationX = _chainBreastRotation.x, BreastRotationY = _chainBreastRotation.y, BreastRotationZ = _chainBreastRotation.z });
             _breastPreviewApplied = false;
         }
         private static bool ReadContactValue(string text, float min, float max, out float value)
@@ -150,7 +190,7 @@ namespace AssetImport
                     if (!shape.Bone) continue;
                     var center = shape.Bone.TransformPoint(shape.Center);
                     float radius = shape.Radius * Math.Abs(shape.Bone.lossyScale.x);
-                    DrawContactSphere(camera, center, radius);
+                    DrawContactVolume(camera, center, radius, shape.Bone.rotation * NativeContactGeometry.ContactHalfAxis(shape) * Math.Abs(shape.Bone.lossyScale.x));
                 }
                 if (_breastShowObstacles && contacts.Definition != null)
                 {
@@ -160,22 +200,40 @@ namespace AssetImport
                         if (!body.Bone) continue;
                         var center = body.Bone.TransformPoint(body.Center);
                         float scale = Math.Abs(body.Bone.lossyScale.x), radius = body.Radius * scale;
-                        var axis = body.Direction == 0 ? Vector3.right : body.Direction == 2 ? Vector3.forward : Vector3.up;
-                        var half = body.Bone.rotation * body.Rotation * axis * (Math.Max(0, body.Height * .5f - body.Radius) * scale);
-                        DrawContactSphere(camera, center + half, radius);
-                        if (half.sqrMagnitude > 0)
-                        {
-                            DrawContactSphere(camera, center - half, radius);
-                            var perpendicular = body.Direction == 0 ? Vector3.up : Vector3.right;
-                            var side = body.Bone.rotation * body.Rotation * perpendicular * radius;
-                            DrawContactArc(camera, center + half + side, center - half + side);
-                            DrawContactArc(camera, center + half - side, center - half - side);
-                        }
+                        var half = NativeContactGeometry.HalfAxis(body.Radius, body.Height, body.Direction, body.Bone.rotation * body.Rotation) * scale;
+                        DrawContactVolume(camera, center, radius, half);
                     }
                 }
             }
             finally { GUI.color = old; }
         }
+        private static void DrawContactVolume(Camera camera, Vector3 center, float radius, Vector3 half)
+        {
+            if (half.sqrMagnitude <= 1e-12f) { DrawContactSphere(camera, center, radius); return; }
+            var axis = half.normalized;
+            var side = Vector3.Cross(axis, Math.Abs(axis.y) < .8f ? Vector3.up : Vector3.right).normalized * radius;
+            var other = Vector3.Cross(axis, side);
+            foreach (var v in new[] { side, -side, other, -other })
+                DrawContactArc(camera, center + half + v, center - half + v);
+            for (int i = 0; i < 24; i++)
+            {
+                float a = i * Mathf.PI / 12, b = (i + 1) * Mathf.PI / 12;
+                var va = side * Mathf.Cos(a) + other * Mathf.Sin(a);
+                var vb = side * Mathf.Cos(b) + other * Mathf.Sin(b);
+                DrawContactArc(camera, center + half + va, center + half + vb);
+                DrawContactArc(camera, center - half + va, center - half + vb);
+                if (i >= 12) continue;
+                for (int plane = 0; plane < 2; plane++)
+                {
+                    var radial = plane == 0 ? side : other;
+                    var ra = radial * Mathf.Cos(a); var rb = radial * Mathf.Cos(b);
+                    var aa = axis * (radius * Mathf.Sin(a)); var ab = axis * (radius * Mathf.Sin(b));
+                    DrawContactArc(camera, center + half + ra + aa, center + half + rb + ab);
+                    DrawContactArc(camera, center - half + ra - aa, center - half + rb - ab);
+                }
+            }
+        }
+
         private static void DrawContactSphere(Camera camera, Vector3 center, float radius)
         {
             for (int axis = 0; axis < 3; axis++)

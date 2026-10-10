@@ -11,6 +11,7 @@ namespace AssetImport
         public Vector3 Center;
         public Quaternion Rotation = new Quaternion(0, 0, 0, 1);
         public float Radius, Height;
+        public bool Capsule;
         public int Direction;
         public string SourceBody;
         public bool HasReferencePose;

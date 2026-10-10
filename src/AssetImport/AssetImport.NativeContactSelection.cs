@@ -25,8 +25,13 @@ namespace AssetImport
             {
                 var choice = Preference(settings, shape.ChainRoot);
                 shape.Radius = choice.BreastRadiusOverride > 0 ? choice.BreastRadiusOverride : shape.Radius * choice.BreastRadiusScale;
-                var offset = new Vector3(choice.BreastOffsetX, choice.BreastOffsetY, choice.BreastOffsetZ);
+                float side = choice.BreastMirrorX && shape.ReferenceCenter.x < 0 ? -1f : 1f;
+                var offset = new Vector3(choice.BreastOffsetX * side, choice.BreastOffsetY, choice.BreastOffsetZ);
                 shape.Center += offset; shape.ReferenceCenter += offset;
+                shape.Capsule = choice.BreastCapsule;
+                shape.Height = shape.Capsule ? Math.Max(shape.Radius * 2f, choice.BreastLength) : 0f;
+                shape.Direction = 1;
+                shape.Rotation = Quaternion.Euler(choice.BreastRotationX, choice.BreastRotationY * side, choice.BreastRotationZ * side);
             }
             return result.ToArray();
         }

@@ -19,14 +19,13 @@ namespace AssetImport
                 for (int i = 0; i < EligibleCount; i++)
                 {
                     var shape = ContactShapes[i];
-                    float radius = shape.Radius * Math.Abs(shape.Bone.lossyScale.x);
                     float before = float.PositiveInfinity, after = float.PositiveInfinity;
                     string nearestBefore = "none", nearestAfter = "none";
                     foreach (var obstacle in Definition.Obstacles)
                     {
                         if (NativeContactPairPolicy.Exclusion(shape, obstacle) != null) continue;
-                        float a = SurfaceGap(_inputCenters[i], radius, obstacle);
-                        float b = SurfaceGap(_outputCenters[i], radius, obstacle);
+                        float a = ContactGap(shape, _inputCenters[i], obstacle);
+                        float b = ContactGap(shape, _outputCenters[i], obstacle);
                         if (a < before) { before = a; nearestBefore = obstacle.SourceBody; }
                         if (b < after) { after = b; nearestAfter = obstacle.SourceBody; }
                     }

@@ -120,6 +120,14 @@ namespace AssetImport
             return NativeContactPairPolicy.Gap(center, radius, obstacle.Bone.TransformPoint(obstacle.Center),
                 obstacle.Bone.rotation * obstacle.Rotation, obstacle.Radius * scale, obstacle.Height * scale, obstacle.Direction);
         }
+        internal static float ContactGap(NativeContactShape shape, Vector3 center, NativeContactShape obstacle)
+        {
+            float scale = Math.Abs(shape.Bone.lossyScale.x), otherScale = Math.Abs(obstacle.Bone.lossyScale.x);
+            return NativeContactGeometry.Gap(center, shape.Bone.rotation * NativeContactGeometry.ContactHalfAxis(shape) * scale,
+                shape.Radius * scale, obstacle.Bone.TransformPoint(obstacle.Center),
+                NativeContactGeometry.HalfAxis(obstacle.Radius, obstacle.Height, obstacle.Direction, obstacle.Bone.rotation * obstacle.Rotation) * otherScale,
+                obstacle.Radius * otherScale);
+        }
         private string ContactSample(NativeContactShape shape)
         {
             if (!shape.Bone) return "sample: missing breast bone";
@@ -129,7 +137,7 @@ namespace AssetImport
             foreach (var obstacle in Definition.Obstacles)
             {
                 if (NativeContactPairPolicy.Exclusion(shape, obstacle) != null) { excluded++; continue; }
-                float distance = SurfaceGap(center, radius, obstacle);
+                float distance = ContactGap(shape, center, obstacle);
                 if (distance <= 0) overlap++;
                 if (distance < gap) { gap = distance; nearest = obstacle.Bone.name + "/" + obstacle.SourceBody; }
             }
@@ -162,6 +170,7 @@ namespace AssetImport
             {
                 report.AppendLine("Recognition:\n" + Definition.RecognitionReport);
                 report.AppendLine("Contact policy: branch-endpoints; shared-driver deduplicated; authored-reference-overlap excluded");
+                report.AppendLine("Capsule method: per-step closest-point obstacle mapping; one native spring per endpoint; no angular response");
                 report.AppendLine("Bound breasts=" + EligibleCount + "; obstacles=" + Definition.Obstacles.Length);
                 var selected = new HashSet<Transform>();
                 foreach (var shape in ContactShapes) selected.Add(shape.Bone);
@@ -179,6 +188,8 @@ namespace AssetImport
                     report.AppendLine("Contact selection: bone=" + (shape.Bone ? shape.Bone.name : "missing") +
                         "; selection=" + shape.Selection + "; chain=" + shape.ChainRoot + "; source=" + shape.SourceBody +
                         "; radius=" + Number(shape.Radius) + "; localCenter=" + Vector(shape.Center) +
+                        "; shape=" + (shape.Capsule ? "capsule" : "sphere") + "; length=" + Number(shape.Height) +
+                        "; halfAxis=" + Vector(NativeContactGeometry.ContactHalfAxis(shape)) +
                         "; worldRadius=" + Number(shape.Radius * (shape.Bone ? Math.Abs(shape.Bone.lossyScale.x) : 0)) +
                         "; endpointNode=" + (NativeContactSelection.EndpointNode(shape) ? NativeContactSelection.EndpointNode(shape).name : "missing") +
                         "; parent=" + (shape.Bone && shape.Bone.parent ? shape.Bone.parent.name : "none"));
@@ -197,8 +208,7 @@ namespace AssetImport
                         report.AppendLine("Pair: breast=" + (shape.Bone ? shape.Bone.name : "missing") + "; obstacle=" + obstacle.SourceBody +
                             "; result=" + (NativeContactPairPolicy.Exclusion(shape, obstacle) ?? "allowed") +
                             "; referenceGap=" + (shape.HasReferencePose && obstacle.HasReferencePose ? Number(NativeContactPairPolicy.ReferenceGap(shape, obstacle)) : "unavailable") +
-                            "; liveGap=" + (shape.Bone && obstacle.Bone ? Number(SurfaceGap(shape.Bone.TransformPoint(shape.Center),
-                                shape.Radius * Math.Abs(shape.Bone.lossyScale.x), obstacle)) : "unavailable"));
+                            "; liveGap=" + (shape.Bone && obstacle.Bone ? Number(ContactGap(shape, shape.Bone.TransformPoint(shape.Center), obstacle)) : "unavailable"));
                 }
                 foreach (var shape in Definition.Obstacles)
                     report.AppendLine("Obstacle: " + shape.SourceBody + "; bone=" + (shape.Bone ? shape.Bone.name : "missing") +
@@ -209,12 +219,17 @@ namespace AssetImport
             AppendSkinBindings(report);
             if (_environment)
                 foreach (var chain in _environment.Chains)
-                    if (chain) report.AppendLine("Chain: " + (chain.m_Root ? chain.m_Root.name : "missing root") +
+                    if (chain)
+                    {
+                        var setting = _environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings();
+                        report.AppendLine("Chain: " + (chain.m_Root ? chain.m_Root.name : "missing root") +
                         "; enabled=" + chain.enabled + "; weight=" + Number(chain.m_Weight) + "; mode=" + _environment.Mode(chain) +
-                        "; breastRole=" + (_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastRole +
-                        "; breastRadiusScale=" + Number((_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastRadiusScale) +
-                        "; meshVolume=" + (_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastMeshVolume +
-                        "; radiusOverride=" + Number((_environment.Settings.ForRoot(chain.m_Root ? chain.m_Root.name : "") ?? new PhysicsChainSettings()).BreastRadiusOverride));
+                        "; breastRole=" + setting.BreastRole + "; breastRadiusScale=" + Number(setting.BreastRadiusScale) +
+                        "; meshVolume=" + setting.BreastMeshVolume + "; radiusOverride=" + Number(setting.BreastRadiusOverride) +
+                        "; capsule=" + setting.BreastCapsule + "; length=" + Number(setting.BreastLength) +
+                        "; mirrorX=" + setting.BreastMirrorX + "; offset=" + Vector(new Vector3(setting.BreastOffsetX, setting.BreastOffsetY, setting.BreastOffsetZ)) +
+                        "; rotation=" + Vector(new Vector3(setting.BreastRotationX, setting.BreastRotationY, setting.BreastRotationZ)));
+                    }
             report.AppendLine("Recent events:");
             foreach (var line in _diagnosticEvents) report.AppendLine(line);
             report.AppendLine("Surface gaps are sampled sphere/capsule approximations. Changed-after-write also includes manual edits.");

@@ -247,8 +247,10 @@ namespace AssetImport
                 DiagnosticEvent("initializing bone=" + shape.Bone.name + "; radius=" + Number(radius) + "; obstacles=" + pairs.Count + "/" + _obstacles.Count);
                 if (pairs.Count == 0) continue;
                 _engines[i] = new NativeContactEngine(transform, shape.Bone.TransformPoint(shape.Center), shape.Bone.rotation, radius, pairs,
-                    message => DiagnosticEvent("bone=" + shape.Bone.name + "; " + message));
+                    message => DiagnosticEvent("bone=" + shape.Bone.name + "; " + message),
+                    NativeContactGeometry.ContactHalfAxis(shape) * UniformScale(shape.Bone));
                 _objects.Add(_engines[i].Host);
+                if (_engines[i].CapsuleObstacles) _objects.Add(_engines[i].CapsuleObstacles);
                 AssetImport.Logger.LogInfo("PMX native breast initialized: bone=" + shape.Bone.name + "; radius=" + radius +
                     "; obstacles=" + pairs.Count + "; nativeParticles=" + _engines[i].ParticleCount +
                     "; sphereSelfCheck=passed; engine=" + typeof(DynamicBone_Ver02).Assembly.GetName().Version + ".");

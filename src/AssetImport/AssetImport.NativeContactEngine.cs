@@ -15,6 +15,10 @@ namespace AssetImport
         private readonly MethodInfo _step, _restore, _apply, _reset;
         private readonly object[] _timeArgument = new object[1];
         private readonly float _radius;
+        private readonly Vector3 _capsuleHalfAxis;
+        private NativeContactCapsule _capsule;
+        private Vector3 _lastOutput;
+        internal GameObject CapsuleObstacles { get { return _capsule == null ? null : _capsule.Host; } }
         private Vector3 _previousInput;
         private bool _started;
         private readonly Action<string> _diagnostic;
@@ -26,10 +30,11 @@ namespace AssetImport
         internal float MaximumRawDisplacement { get; private set; }
 
         internal NativeContactEngine(Transform owner, Vector3 center, Quaternion rotation, float radius, List<DynamicBoneCollider> colliders,
-            Action<string> diagnostic = null)
+            Action<string> diagnostic = null, Vector3 capsuleHalfAxis = default(Vector3))
         {
             _diagnostic = diagnostic;
             _radius = radius;
+            _capsuleHalfAxis = capsuleHalfAxis;
             _host = new GameObject("AI_BreastContactProxy");
             // Keep the component inactive, including Awake/OnEnable/Start. Its
             // configured solver is invoked explicitly after all pose writers.
@@ -85,6 +90,12 @@ namespace AssetImport
                 Follow(center, rotation);
                 _reset.Invoke(_engine, null);
                 ValidateResponse(center, rotation, colliders);
+                if (_capsuleHalfAxis.sqrMagnitude > 1e-12f)
+                {
+                    _capsule = new NativeContactCapsule(owner, colliders);
+                    _engine.Colliders = _capsule.Colliders;
+                    ValidateCapsuleResponse(owner, center, rotation);
+                }
                 OutputRebases = 0; LastRawDisplacement = MaximumRawDisplacement = 0;
             }
             catch { Dispose(); throw; }
@@ -149,8 +160,9 @@ namespace AssetImport
             Follow(input, rotation);
             _restore.Invoke(_engine, null);
             if (!_started || elapsed > .2f || (input - _previousInput).sqrMagnitude > 64f * _radius * _radius)
-                _reset.Invoke(_engine, null);
+            { _reset.Invoke(_engine, null); _lastOutput = Vector3.zero; }
             _started = true; _previousInput = input;
+            if (_capsule != null) _capsule.Update(input + _lastOutput, rotation * _capsuleHalfAxis);
             if (elapsed > 0)
             {
                 _timeArgument[0] = Math.Min(elapsed, 1f / 30f);
@@ -174,9 +186,40 @@ namespace AssetImport
                 _reset.Invoke(_engine, null);
                 OutputRebases++;
             }
+            _lastOutput = displacement;
             return displacement;
         }
 
-        public void Dispose() { if (_host) UnityEngine.Object.Destroy(_host); }
+        private void ValidateCapsuleResponse(Transform owner, Vector3 center, Quaternion rotation)
+        {
+            var original = _capsule; NativeContactCapsule test = null; GameObject testObject = null;
+            try
+            {
+                testObject = new GameObject("AI_ContactValidation");
+                var axis = _capsuleHalfAxis.normalized;
+                var side = Math.Abs(axis.x) < .8f ? new Vector3(1, 0, 0) : new Vector3(0, 1, 0);
+                float dot = axis.x * side.x + axis.y * side.y + axis.z * side.z;
+                side = (side - axis * dot).normalized;
+                testObject.transform.position = center + rotation * (_capsuleHalfAxis + side * (_radius * .8f));
+                var sphere = testObject.AddComponent<DynamicBoneCollider>(); sphere.m_Radius = _radius * .5f;
+                sphere.m_Height = 0; sphere.m_Bound = DynamicBoneCollider.Bound.Outside;
+                test = new NativeContactCapsule(owner, new List<DynamicBoneCollider> { sphere });
+                _capsule = test; _engine.Colliders = test.Colliders;
+                _restore.Invoke(_engine, null); _reset.Invoke(_engine, null); _started = false;
+                float response = 0;
+                for (int i = 0; i < 8; i++) response = Math.Max(response, Step(center, rotation, 1f / 60f).magnitude);
+                Report("selfCheck.capsuleEndDisplacement=" + NativeContactController.Number(response));
+                if (response < _radius * .02f) throw new InvalidOperationException("Native capsule end self-check produced no response.");
+            }
+            finally
+            {
+                if (test != null) test.Dispose();
+                if (testObject) { testObject.SetActive(false); UnityEngine.Object.Destroy(testObject); }
+                _capsule = original; _engine.Colliders = original.Colliders;
+                _restore.Invoke(_engine, null); _reset.Invoke(_engine, null); _started = false; _lastOutput = Vector3.zero;
+            }
+        }
+
+        public void Dispose() { if (_capsule != null) _capsule.Dispose(); if (_host) UnityEngine.Object.Destroy(_host); }
     }
 }

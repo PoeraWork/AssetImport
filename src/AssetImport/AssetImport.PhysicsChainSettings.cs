@@ -20,6 +20,12 @@ namespace AssetImport
         [Key("BreastOffsetX")] public float BreastOffsetX;
         [Key("BreastOffsetY")] public float BreastOffsetY;
         [Key("BreastOffsetZ")] public float BreastOffsetZ;
+        [Key("BreastCapsule")] public bool BreastCapsule;
+        [Key("BreastLength")] public float BreastLength;
+        [Key("BreastRotationX")] public float BreastRotationX;
+        [Key("BreastRotationY")] public float BreastRotationY;
+        [Key("BreastRotationZ")] public float BreastRotationZ;
+        [Key("BreastMirrorX")] public bool BreastMirrorX;
 
         internal PhysicsChainSettings Copy()
         {
@@ -35,7 +41,12 @@ namespace AssetImport
                 BreastRadiusOverride = Clean(BreastRadiusOverride, 0f, 2f, 0f),
                 BreastOffsetX = Clean(BreastOffsetX, -2f, 2f, 0f),
                 BreastOffsetY = Clean(BreastOffsetY, -2f, 2f, 0f),
-                BreastOffsetZ = Clean(BreastOffsetZ, -2f, 2f, 0f)
+                BreastOffsetZ = Clean(BreastOffsetZ, -2f, 2f, 0f),
+                BreastCapsule = BreastCapsule, BreastLength = Clean(BreastLength, 0f, 4f, 0f),
+                BreastRotationX = Clean(BreastRotationX, -180f, 180f, 0f),
+                BreastRotationY = Clean(BreastRotationY, -180f, 180f, 0f),
+                BreastRotationZ = Clean(BreastRotationZ, -180f, 180f, 0f),
+                BreastMirrorX = BreastMirrorX
             };
         }
         private static float Clean(float value, float min, float max, float fallback)

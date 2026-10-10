@@ -24,8 +24,8 @@ namespace AssetImport
 
         internal static float ReferenceGap(NativeContactShape breast, NativeContactShape obstacle)
         {
-            return Gap(breast.ReferenceCenter, breast.Radius, obstacle.ReferenceCenter, obstacle.Rotation,
-                obstacle.Radius, obstacle.Height, obstacle.Direction);
+            return NativeContactGeometry.Gap(breast.ReferenceCenter, NativeContactGeometry.ContactHalfAxis(breast), breast.Radius,
+                obstacle.ReferenceCenter, NativeContactGeometry.HalfAxis(obstacle.Radius, obstacle.Height, obstacle.Direction, obstacle.Rotation), obstacle.Radius);
         }
         internal static float Gap(Vector3 center, float radius, Vector3 obstacleCenter, Quaternion rotation,
             float obstacleRadius, float height, int direction)
