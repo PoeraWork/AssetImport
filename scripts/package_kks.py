@@ -8,7 +8,7 @@ import re
 import zipfile
 
 from build_identity import package_identity, build_note
-from package import ROOT, PLUGIN, NATIVE, version_output, write_zip, notes_files
+from package import ROOT, PLUGIN, NATIVE, version_output, write_zip, write_checksum, notes_files
 
 UPSTREAM_SHA256 = "3c2743096c44a3b6d2d9a54198e7a5b865e105706ccc65b65c4e8ba571828e5d"
 RUNTIMES = [
@@ -84,8 +84,7 @@ def main():
     }
     package.with_suffix(".manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    package.with_suffix(".zip.sha256").write_text(
-        hashlib.sha256(package.read_bytes()).hexdigest() + "  " + package.name + "\n")
+    write_checksum(package)
     print(package)
 
 

@@ -43,6 +43,8 @@ When upgrading, replace the existing installation and move obsolete plugin copie
 
 Package instructions: [KK](docs/INSTALL-KK.txt) · [KKS](docs/INSTALL-KKS.txt).
 
+Development builds are available as `packages-…` artifacts from successful [Actions runs](https://github.com/PoeraWork/AssetImport/actions/workflows/build.yml), retained for 30 days. A GitHub account is required to download them. See [CI and releases](CONTRIBUTING.md#ci-and-releases) for build and release instructions.
+
 ## Usage
 
 In the plugin settings list (BepInEx Configuration Manager), open **KK_AssetImport / KKS_AssetImport → _General_ → Language** to choose **English** or **简体中文**. English is the default; changes apply immediately, including pending status messages. No translation plugin is required. The same setting is available in `BepInEx/config/org.njaecha.plugins.assetimport.cfg`. Diagnostic logs retain their original identifiers and technical details.

@@ -43,6 +43,8 @@ Windows 64 位系统，以及对应游戏的前置插件：
 
 包内安装说明：[KK](docs/INSTALL-KK.txt) · [KKS](docs/INSTALL-KKS.txt)。
 
+开发构建可从成功的 [Actions 运行](https://github.com/PoeraWork/AssetImport/actions/workflows/build.yml)中下载 `packages-…` 产物，保留 30 天；下载需登录 GitHub。构建与发布方式见 [CI 和发布说明](CONTRIBUTING.md#ci-and-releases)。
+
 ## 使用
 
 在插件设置列表（BepInEx Configuration Manager）中，展开 **KK_AssetImport / KKS_AssetImport → _General_ → Language**，可选择 **English** 或 **简体中文**。默认英文，切换后立即生效，已有状态提示也会更新。无需安装翻译插件；也可修改 `BepInEx/config/org.njaecha.plugins.assetimport.cfg` 中的同一设置。诊断日志保留原有标识与技术详情。

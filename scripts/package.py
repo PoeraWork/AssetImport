@@ -34,6 +34,13 @@ def write_zip(path, files):
             archive.writestr(info, data)
 
 
+def write_checksum(path):
+    # Keep checksum files compatible with sha256sum on Unix after a Windows build.
+    path = Path(path)
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    path.with_suffix(path.suffix + ".sha256").write_bytes((digest + "  " + path.name + "\n").encode("utf-8"))
+
+
 def notes_files(path):
     """Include only a notes file explicitly selected by the caller."""
     if path is None:
@@ -122,8 +129,7 @@ def main():
         write_zip(source_zip, sources)
         created.append(source_zip)
     for path in created:
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        path.with_suffix(path.suffix + ".sha256").write_text(digest + "  " + path.name + "\n")
+        write_checksum(path)
         print(path)
 
 
